@@ -1,0 +1,506 @@
+# specs/workflow_graph.yaml
+# G1 Factory Model — machine-readable topology
+# Status: APPROVED (OPTION_2_STANDARD · RESUME_TOKEN: G1_HARNESS_APPROVED_v1 granted 2026-07-23)
+# Anchors: WP-F1 L0-L4 · WP-S1 three-harness Factory Model · BLUE.md G1
+# Schema: declarative only — no executable payloads
+
+version: "1.0.0"
+domain: G1
+kind: factory_workflow_graph
+status: APPROVED
+resume_token: G1_HARNESS_APPROVED_v1
+recommended_path: OPTION_2_STANDARD
+selected_path: OPTION_2_STANDARD
+hitl_approval:
+  decision: OPTION_2_STANDARD
+  resume_token: G1_HARNESS_APPROVED_v1
+  granted: true
+  granted_at: "2026-07-23"
+  signal: human_session
+  effect: unlock_G2_through_G10_under_option_2_overlays
+precedence:
+  whitepapers: "WP-S* supersedes WP-F* on overlap"
+  runtime_constitution: AGENTS.md
+  deep_spec: HARNESS_SPEC.md
+
+metadata:
+  workspace_root: /home/carlospg/workspace/agentic-rd
+  substrate: wsl2-ubuntu-24.04
+  venv: .venv-hermes
+  harness_runtime: hermes+antigravity
+  skills_spec: agentskills.io
+  default_agent_level: L2
+  l4_enabled: false
+  model_routing: dynamic  # premium_frontier | strong_coding | fast_flash
+
+# ---------------------------------------------------------------------------
+# Core equations
+# ---------------------------------------------------------------------------
+equations:
+  agent: "model + harness"
+  harness_union: ["context_harness", "constraint_harness", "evaluation_harness"]
+  loop: ["read", "write", "test", "observe", "fix"]
+  wp_f1_loop: ["get_mission", "scan_scene", "think", "act", "observe_iterate"]
+
+# ---------------------------------------------------------------------------
+# Taxonomy (WP-F1) with factory binding (WP-S1)
+# ---------------------------------------------------------------------------
+taxonomy:
+  levels:
+    L0:
+      name: core_reasoning_system
+      agentic: false
+      tools: false
+      memory: false
+      multi_agent: false
+      self_evolve: false
+      min_harnesses: []
+      developer_mode: null
+      topology: single_shot
+    L1:
+      name: connected_problem_solver
+      agentic: true
+      tools: true
+      memory: false
+      multi_agent: false
+      self_evolve: false
+      min_harnesses: [context_harness, constraint_harness, evaluation_harness]
+      developer_mode: conductor
+      topology: single_agent_tools
+    L2:
+      name: strategic_problem_solver
+      agentic: true
+      tools: true
+      memory: true
+      context_engineering: true
+      multi_agent: false
+      self_evolve: false
+      min_harnesses: [context_harness, constraint_harness, evaluation_harness]
+      developer_mode: conductor_to_light_orchestrator
+      topology: single_agent_sequential_multitool
+      default_for_workspace: true
+    L3:
+      name: collaborative_multi_agent_system
+      agentic: true
+      tools: true
+      memory: true
+      multi_agent: true
+      a2a: true
+      self_evolve: false
+      min_harnesses: [context_harness, constraint_harness, evaluation_harness]
+      developer_mode: orchestrator
+      topology: hierarchical_coordinator_specialists
+      requires_gate: G4_TOPOLOGY_APPROVED_v1
+    L4:
+      name: self_evolving_system
+      agentic: true
+      tools: true
+      memory: true
+      multi_agent: true
+      self_evolve: true
+      min_harnesses: [context_harness, constraint_harness, evaluation_harness, meta_evaluation]
+      developer_mode: orchestrator
+      topology: dynamic_with_agent_creator
+      requires_gate: G7_SELF_IMPROVE_BOUNDED  # placeholder until G7 pack locks exact token
+      enabled: false
+
+# ---------------------------------------------------------------------------
+# Harness nodes
+# ---------------------------------------------------------------------------
+harnesses:
+  context_harness:
+    id: H_CONTEXT
+    kind: harness
+    wp_s1_refs: ["pp.15-18 six context types", "pp.16-17 static vs dynamic", "pp.17-18 skills progressive disclosure"]
+    context_types:
+      instructions:
+        placement: static
+        artifacts: [AGENTS.md, "module GEMINI.md|CLAUDE.md"]
+        token_share_target: "5-10%"
+      knowledge:
+        placement: progressive_dynamic
+        artifacts: [specs/, docs/, specs/references/]
+        token_share_target: on_demand
+      memory:
+        placement: hybrid
+        artifacts: [session_store, honcho_profile, SESSION_STATE_SPEC]
+        token_share_target: "2-5% pinned + windowed dynamic"
+      examples:
+        placement: dynamic_on_skill_match
+        artifacts: [examples/, eval_goldens, skill_embedded]
+        token_share_target: on_demand
+      tools:
+        placement: progressive_dynamic
+        artifacts: [TOOL_REGISTRY.md, mcp_schemas]
+        token_share_target: on_demand
+        policy: rag_for_tools
+      guardrails:
+        placement: static_core_plus_dynamic_specialized
+        artifacts: [HARNESS_SPEC.md#constraint-catalog, hooks, policy_snippets]
+        token_share_target: "3-5% core"
+    static_budget_hard_cap_pct: 20
+    assembly_pipeline:
+      - load_static_pack
+      - skill_l1_match
+      - skill_l2_l3_load
+      - tool_schema_intent_match
+      - knowledge_retrieve
+      - memory_window_attach
+      - model_invoke
+      - capture_action_observation
+      - compact_if_threshold
+      - verdict_or_loop
+    owns_downstream: [G3]
+    edge_semantics_default: deterministic_load
+
+  constraint_harness:
+    id: H_CONSTRAINT
+    kind: harness
+    wp_s1_refs: ["pp.28 hooks/guardrails", "pp.29-30 SDLC harness phases", "p.41 security remediation"]
+    enforcement_layers:
+      L0_hooks: deterministic
+      L1_structural_tests: deterministic
+      L2_linters_auditors: deterministic
+      L3_llm_auditor: strong_coding
+      L4_human_gate: hitl
+    catalog_ref: HARNESS_SPEC.md#31-constraint-catalog
+    catalog_ids:
+      - C-FS-01
+      - C-FS-02
+      - C-LIB-01
+      - C-LIB-02
+      - C-ARCH-01
+      - C-ARCH-02
+      - C-ARCH-03
+      - C-ARCH-04
+      - C-CODE-01
+      - C-CODE-02
+      - C-CODE-03
+      - C-SEC-01
+      - C-SEC-02
+      - C-SEC-03
+      - C-LOOP-01
+      - C-LOOP-02
+      - C-MODEL-01
+      - C-HITL-01
+    sandbox:
+      required: true
+      substrate: wsl2
+      append_windows_path: false
+    owns_downstream: [G2, G6, G8, G10]
+    edge_semantics_default: deterministic_enforce
+
+  evaluation_harness:
+    id: H_EVAL
+    kind: harness
+    wp_s1_refs: ["pp.14-15 tests vs evals", "p.23 quality flywheel", "p.30 feedback loop", "p.44 eval bar"]
+    correctness_classes:
+      - syntactic
+      - structural
+      - functional
+      - trajectory
+      - semantic_quality
+      - security_trust
+    loop_integration:
+      on_pass: complete_or_next_mission
+      on_fail: fix_if_budget_else_escalate
+      on_escalate: hitl_tool
+    g1_minimum_suite:
+      - constitution_integrity
+      - constraint_catalog_coverage
+      - workflow_graph_validation
+      - taxonomy_conformance
+      - no_secret_scan
+    full_suite_owner: G5
+    owns_downstream: [G5, G7, G9, G10]
+    edge_semantics_default: mixed  # deterministic tests + probabilistic judges
+
+# ---------------------------------------------------------------------------
+# Human + model tier nodes
+# ---------------------------------------------------------------------------
+actors:
+  human_systems_architect:
+    id: HUMAN
+    modes: [conductor, orchestrator]
+    responsibilities:
+      - approve_hitl_gates
+      - set_architecture_tradeoffs
+      - own_factory_configuration
+  model_premium_frontier:
+    id: M_PREMIUM
+    tier: premium_frontier
+  model_strong_coding:
+    id: M_STRONG
+    tier: strong_coding
+  model_fast_flash:
+    id: M_FLASH
+    tier: fast_flash
+
+# ---------------------------------------------------------------------------
+# Domain nodes (G1 active; G2-G10 stubs gated)
+# ---------------------------------------------------------------------------
+domains:
+  G1:
+    id: D_G1
+    name: agent_foundations_architecture
+    state: APPROVED
+    artifacts:
+      - HARNESS_SPEC.md
+      - AGENTS.md
+      - specs/workflow_graph.yaml
+    steps:
+      A: { name: ingestion_synthesis, tier: premium_frontier, status: complete_for_gate }
+      B: { name: capability_discovery, tier: fast_flash, status: pending_post_hitl }
+      C: { name: feature_decomposition, tier: strong_coding, status: pending_post_hitl }
+      D: { name: workspace_branching_skill_drafting, tier: strong_coding, status: artifacts_emitted_approved }
+      E: { name: code_generation_testing_structural, tier: strong_coding, status: blocked_on_hitl }
+      F: { name: sandbox_verification_tag, tier: fast_flash, status: blocked_on_hitl }
+    hitl:
+      status: APPROVED
+      resume_token: G1_HARNESS_APPROVED_v1
+      recommended: OPTION_2_STANDARD
+      selected: OPTION_2_STANDARD
+      granted: true
+      granted_at: "2026-07-23"
+      options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+      required_telemetry:
+        - HARNESS_AUDIT_REPORT.md severity counts  # produced Step E/F
+        - git diff of constitution trio
+  G2:
+    id: D_G2
+    name: tool_use_mcp
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_CONSTRAINT, H_CONTEXT]
+  G3:
+    id: D_G3
+    name: context_skills_memory
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_CONTEXT]
+    resume_token_expected: G3_CONTEXT_LAYER_LOCKED_v1
+  G4:
+    id: D_G4
+    name: multi_agent_orchestration
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    enables_level: L3
+    resume_token_expected: G4_TOPOLOGY_APPROVED_v1
+  G5:
+    id: D_G5
+    name: evaluation_observability
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_EVAL]
+  G6:
+    id: D_G6
+    name: vibe_coding_spec_harness
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_CONSTRAINT, H_EVAL]
+  G7:
+    id: D_G7
+    name: self_improvement
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1, G5]
+    primary_harness_touch: [H_EVAL, H_CONSTRAINT]
+    enables_level: L4
+  G8:
+    id: D_G8
+    name: multitenant_policy
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_CONSTRAINT]
+    resume_token_expected: G8_MULTITENANT_APPROVED_v1
+  G9:
+    id: D_G9
+    name: autonomous_research_loops
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1]
+    primary_harness_touch: [H_CONTEXT, H_EVAL]
+    resume_token_expected: G9_RESEARCH_FLEET_LOCKED_v1
+  G10:
+    id: D_G10
+    name: production_agentops
+    state: READY_FOR_DOMAIN
+    requires: [G1_HARNESS_APPROVED_v1, G2, G3, G4, G5, G6, G7, G8, G9]
+    primary_harness_touch: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    resume_token_expected: G10_PRODUCTION_DEPLOY_v1
+
+# ---------------------------------------------------------------------------
+# Agent role nodes (factory floor)
+# ---------------------------------------------------------------------------
+agents:
+  root_executor:
+    id: A_ROOT
+    level: L2
+    mode_support: [conductor, orchestrator]
+    harnesses: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    model_policy: dynamic_matrix
+  specialist_stub:
+    id: A_SPECIALIST
+    level: L3
+    enabled: false
+    requires_gate: G4_TOPOLOGY_APPROVED_v1
+    harnesses: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+  agent_creator:
+    id: A_CREATOR
+    level: L4
+    enabled: false
+    requires_gate: G7_SELF_IMPROVE_BOUNDED
+
+# ---------------------------------------------------------------------------
+# Edges
+# edge.kind:
+#   deterministic  — pure machinery, no LM discretion
+#   dynamic        — LM chooses among lawful options
+#   hitl           — requires human resume token / tool pause
+# ---------------------------------------------------------------------------
+edges:
+  # Human configures factory
+  - { id: E001, from: HUMAN, to: H_CONTEXT, kind: hitl, label: configure_instructions_and_specs }
+  - { id: E002, from: HUMAN, to: H_CONSTRAINT, kind: hitl, label: approve_blocker_catalog }
+  - { id: E003, from: HUMAN, to: H_EVAL, kind: hitl, label: approve_rubrics_and_thresholds }
+
+  # Context → models
+  - { id: E010, from: H_CONTEXT, to: M_PREMIUM, kind: dynamic, label: route_if_architecture_or_synthesis }
+  - { id: E011, from: H_CONTEXT, to: M_STRONG, kind: dynamic, label: route_if_scaffold_or_spec_emit }
+  - { id: E012, from: H_CONTEXT, to: M_FLASH, kind: dynamic, label: route_if_validate_or_mechanical }
+
+  # Models → root agent
+  - { id: E020, from: M_PREMIUM, to: A_ROOT, kind: deterministic, label: bind_reasoning_tier }
+  - { id: E021, from: M_STRONG, to: A_ROOT, kind: deterministic, label: bind_coding_tier }
+  - { id: E022, from: M_FLASH, to: A_ROOT, kind: deterministic, label: bind_flash_tier }
+
+  # Autonomous loop (Read→Write→Test→Observe→Fix)
+  - { id: E030, from: A_ROOT, to: H_CONSTRAINT, kind: deterministic, label: pre_tool_hooks }
+  - { id: E031, from: H_CONSTRAINT, to: A_ROOT, kind: deterministic, label: allow_or_deny_action }
+  - { id: E032, from: A_ROOT, to: H_EVAL, kind: deterministic, label: submit_observation_and_artifacts }
+  - { id: E033, from: H_EVAL, to: A_ROOT, kind: dynamic, label: fail_feedback_into_fix_loop }
+  - { id: E034, from: H_EVAL, to: HUMAN, kind: hitl, label: escalate_HITL }
+  - { id: E035, from: H_EVAL, to: D_G1, kind: deterministic, label: record_pass_telemetry }
+
+  # Domain spine (sequential constitution → later domains)
+  - { id: E100, from: D_G1, to: HUMAN, kind: hitl, label: G1_HARD_STOP_decision_matrix }
+  - { id: E101, from: HUMAN, to: D_G1, kind: hitl, label: grant_G1_HARNESS_APPROVED_v1 }
+  - { id: E110, from: D_G1, to: D_G2, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E111, from: D_G1, to: D_G3, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E112, from: D_G1, to: D_G4, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E113, from: D_G1, to: D_G5, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E114, from: D_G1, to: D_G6, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E115, from: D_G5, to: D_G7, kind: deterministic, label: eval_bounds_before_self_improve }
+  - { id: E116, from: D_G1, to: D_G8, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E117, from: D_G1, to: D_G9, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
+  - { id: E118, from: D_G9, to: D_G10, kind: deterministic, label: research_ok_before_prod_pack }
+  - { id: E119, from: D_G8, to: D_G10, kind: deterministic, label: tenant_policy_before_prod }
+  - { id: E120, from: D_G7, to: D_G10, kind: deterministic, label: self_improve_bounds_before_prod }
+  - { id: E121, from: D_G6, to: D_G10, kind: deterministic, label: spec_harness_before_prod }
+  - { id: E122, from: D_G4, to: D_G10, kind: deterministic, label: topology_before_prod }
+  - { id: E123, from: D_G3, to: D_G10, kind: deterministic, label: context_layer_before_prod }
+  - { id: E124, from: D_G2, to: D_G10, kind: deterministic, label: tool_registry_before_prod }
+  - { id: E125, from: D_G5, to: D_G10, kind: deterministic, label: eval_framework_before_prod }
+  - { id: E130, from: D_G10, to: HUMAN, kind: hitl, label: final_production_gate }
+
+  # Multi-agent enablement (post G4)
+  - { id: E200, from: D_G4, to: A_SPECIALIST, kind: hitl, label: enable_L3_specialists, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: E201, from: A_ROOT, to: A_SPECIALIST, kind: dynamic, label: delegate_via_a2a_or_agent_tool, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: E202, from: A_SPECIALIST, to: H_EVAL, kind: deterministic, label: specialist_trajectory_score, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+
+  # L4 enablement (post G7)
+  - { id: E300, from: D_G7, to: A_CREATOR, kind: hitl, label: enable_L4_creator, gated_by: G7_SELF_IMPROVE_BOUNDED }
+  - { id: E301, from: A_ROOT, to: A_CREATOR, kind: dynamic, label: request_capability_expansion, gated_by: G7_SELF_IMPROVE_BOUNDED }
+  - { id: E302, from: A_CREATOR, to: H_EVAL, kind: deterministic, label: meta_evaluate_new_capability, gated_by: G7_SELF_IMPROVE_BOUNDED }
+  - { id: E303, from: A_CREATOR, to: HUMAN, kind: hitl, label: approve_new_agent_or_tool, gated_by: G7_SELF_IMPROVE_BOUNDED }
+
+# ---------------------------------------------------------------------------
+# Option overlays (G1 decision) — structural consequences
+# ---------------------------------------------------------------------------
+active_decision_overlay: OPTION_2_STANDARD
+decision_overlays:
+  OPTION_1_CONSERVATIVE:
+    active: false
+    default_level: L1
+    allow_L3: false
+    allow_L4: false
+    topologies_allowed: [single_agent_tools, single_agent_sequential_multitool]
+    notes: "Sequential harness emphasis; blocks advanced G4/G7 patterns"
+  OPTION_2_STANDARD:
+    active: true
+    default_level: L2
+    allow_L3: true  # after G4 gate
+    allow_L4: true  # after G7 gate
+    topologies_allowed:
+      - single_agent_sequential_multitool
+      - hierarchical_coordinator_specialists
+      - sequential_assembly_line
+    notes: "Classic three-harness Factory + full audit trail — SELECTED"
+  OPTION_3_CREATIVE:
+    active: false
+    default_level: L2
+    allow_L3: true
+    allow_L4: true
+    allow_runtime_constraint_rewrite: true
+    topologies_allowed:
+      - single_agent_sequential_multitool
+      - hierarchical_coordinator_specialists
+      - dynamic_with_agent_creator
+      - swarm  # deferred detail to G4
+    requires_strong_evaluation: true
+    notes: "Self-evolving harness selector — highest HITL + eval burden"
+
+# ---------------------------------------------------------------------------
+# Mermaid projection (documentation aid; source of truth is edges above)
+# ---------------------------------------------------------------------------
+mermaid: |
+  flowchart TB
+    HUMAN[Human Systems Architect]
+    CH[Context Harness]
+    KH[Constraint Harness]
+    EH[Evaluation Harness]
+    MP[Premium Frontier]
+    MS[Strong Coding]
+    MF[Fast Flash]
+    ROOT[Root Executor L2]
+    G1[Domain G1 Constitution]
+    GX[Domains G2-G10 gated]
+
+    HUMAN -->|HITL configure| CH
+    HUMAN -->|HITL approve| KH
+    HUMAN -->|HITL rubrics| EH
+    CH -->|dynamic route| MP
+    CH -->|dynamic route| MS
+    CH -->|dynamic route| MF
+    MP --> ROOT
+    MS --> ROOT
+    MF --> ROOT
+    ROOT -->|pre-tool deterministic| KH
+    KH -->|allow/deny| ROOT
+    ROOT -->|artifacts/traces| EH
+    EH -->|fail fix dynamic| ROOT
+    EH -->|escalate| HUMAN
+    EH --> G1
+    G1 -->|HARD_STOP| HUMAN
+    HUMAN -->|resume token| G1
+    G1 -->|deterministic unlock| GX
+
+# ---------------------------------------------------------------------------
+# Validation sniffs (consumed by G1 Step E structural tests)
+# ---------------------------------------------------------------------------
+validation:
+  required_root_files:
+    - AGENTS.md
+    - HARNESS_SPEC.md
+    - specs/workflow_graph.yaml
+  required_keys:
+    - harnesses.context_harness
+    - harnesses.constraint_harness
+    - harnesses.evaluation_harness
+    - taxonomy.levels.L0
+    - taxonomy.levels.L4
+    - domains.G1.hitl.resume_token
+  invariants:
+    - "l4_enabled == false until G7 gate"
+    - "every domains.G2+ requires G1 resume token"
+    - "edges with gated_by must reference a known resume token or gate id"
+    - "no edge may mark irreversible production deploy as deterministic without hitl neighbor"
