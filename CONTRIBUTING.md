@@ -72,12 +72,15 @@ Host Windows Python/uv is never used for project work.
 - No hallucinated or slopsquat packages; lockfiles are source of truth
 - Skills: progressive disclosure (`SKILL.md` + optional `references/`, `scripts/`, `assets/`)
 
-## G1 Gate Status
+## Gate Status
 
 | Gate | Status |
 |---|---|
 | G1 HARNESS | `APPROVED` (`G1_HARNESS_APPROVED_v1` — `OPTION_2_STANDARD`) |
-| G2–G10 | READY_FOR_DOMAIN (each has own HITL gate) |
+| G2 Tools & MCP | `APPROVED` (`G2_TOOL_REGISTRY_LOCKED_v1` — `OPTION_2_STANDARD`; alias `G2_TOOLING_APPROVED_v1`) |
+| G3–G10 | READY_FOR_DOMAIN (each has own HITL gate) |
+
+G2 declarative pack: `specs/g2_tools/`. Verify with `python scripts/verify_g2_tools.py` and `python -m unittest tests.test_g2_security -v` inside WSL2 `.venv-hermes`.
 
 ## Questions?
 

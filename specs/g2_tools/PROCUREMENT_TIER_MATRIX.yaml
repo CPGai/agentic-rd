@@ -1,0 +1,278 @@
+# PROCUREMENT_TIER_MATRIX.yaml
+# Domain G2 Step C — Feature Decomposition
+# Status: LOCKED under OPTION_2_STANDARD · G2_TOOL_REGISTRY_LOCKED_v1
+# Anchors: BLUE §G2 Step C · WP-S2 procurement · WP-F2 risk classes · TOOL_REGISTRY.md §2
+
+schema_version: "1.0.0"
+domain: G2
+artifact: PROCUREMENT_TIER_MATRIX
+status: LOCKED
+selected_path: OPTION_2_STANDARD
+resume_token: G2_TOOL_REGISTRY_LOCKED_v1
+resume_token_alias: G2_TOOLING_APPROVED_v1
+generated_at: "2026-07-23"
+inherits:
+  - specs/g2_tools/TOOL_REGISTRY.md
+  - specs/g2_tools/MCP_COMPAT_MATRIX.yaml
+  - HARNESS_SPEC.md
+
+# -------------------------------------------------------------------------
+# Normative: verticals scored per tier
+# -------------------------------------------------------------------------
+# risk_class: LOW | LOW_MED | MED | MED_HIGH | HIGH | CRITICAL
+# latency_ceiling_ms: hard client abort target (soft warn at 70%)
+# lro_threshold_ms: if expected/observed duration exceeds, require MCP Tasks /
+#                   async pattern OR HITL continuation (BLUE >10s rule)
+# hitl_requirement: never | smart | always
+# defense_mechanism: primary control stack (IDs → MCP_COMPAT_MATRIX security_controls_catalog)
+
+option_2_allowed_tiers: [T1, T2]
+option_2_conditional_tiers: [T3]   # after Step E audit + explicit matrix prod_eligible
+option_2_forbidden_tiers: [T4]    # prototype dune only; never default profile prod
+
+tiers:
+  T1_skills_native:
+    id: T1
+    name: First-party Skills Hub + native Hermes toolsets
+    procurement_rank: 1
+    option_2_production: true
+    risk_ceiling: MED
+    risk_floor: LOW
+    default_risk_class: LOW_MED
+    latency_ceiling_ms: 30000
+    soft_warn_ms: 21000
+    lro_threshold_ms: 10000
+    lro_hitl: smart          # if LRO and side_effect >= MED
+    hitl_requirement: smart
+    max_parallel_invocations: 4
+    disclosure_default_top_k: 8
+    side_effects_permitted: [read, write_workspace, exec_sandboxed]
+    side_effects_forbidden: [payment, unrestricted_egress_new_host, prod_data_mutate_without_hitl]
+    defense_mechanism:
+      primary:
+        - C-FS-02                 # agentskills.io layout
+        - C-LIB-01
+        - C-LIB-02                # slopsquat
+        - C-ARCH-01               # WSL2 routing for shell/python
+        - C-SEC-02                # least privilege toolscopes
+        - SEC-HITL-01
+      secondary:
+        - progressive_L1_L2_L3
+        - skill_linter
+    examples:
+      - hermes_fs
+      - hermes_skills
+      - hermes_terminal          # still HIGH ops need smart HITL per action class
+    notes: |
+      Terminal/exec remain HIGH at the *action* level even inside T1.
+      Tier ceiling MED means the tier is allowed online; individual tools
+      may still demand HITL via action_class matrix.
+
+  T2_vetted_mcp:
+    id: T2
+    name: Vetted / official MCP servers behind broker ACL
+    procurement_rank: 2
+    option_2_production: true
+    risk_ceiling: MED_HIGH
+    risk_floor: LOW
+    default_risk_class: MED
+    latency_ceiling_ms: 45000
+    soft_warn_ms: 30000
+    lro_threshold_ms: 10000
+    lro_hitl: always           # remote/open-world ambiguity → always surface LRO
+    hitl_requirement: smart
+    max_parallel_invocations: 2
+    disclosure_default_top_k: 5
+    requires:
+      - allowlist_entry
+      - schema_or_package_pin
+      - output_sanitization
+      - broker_acl
+    side_effects_permitted: [read, limited_egress_allowlisted]
+    side_effects_forbidden: [payment, filesystem_unscoped, credential_prompt_to_model]
+    defense_mechanism:
+      primary:
+        - SEC-DYN-01
+        - SEC-SH-01
+        - SEC-IN-01
+        - SEC-LK-01
+        - SEC-AUTH-01
+        - SEC-RATE-01
+        - SEC-TIMEOUT-01
+        - SEC-PUB-01
+        - SEC-SEC-01
+      secondary:
+        - version_pin
+        - listChanged_revalidate
+        - annotations_untrusted
+    examples:
+      - context7
+    pin_policy: mandatory
+    unauthenticated_allowed: |
+      Only when side_effect=read AND open-world docs/search class AND
+      SEC-IN-01 output sanitize enforced (context7 pattern).
+
+  T3_custom_mcp:
+    id: T3
+    name: Custom / internal MCP adapters under controlled deploy
+    procurement_rank: 3
+    option_2_production: conditional
+    option_2_conditions:
+      - step_e_security_audit_green
+      - matrix_prod_eligible_true
+      - controlled_deploy_environment
+      - per_tool_acl
+    risk_ceiling: HIGH
+    risk_floor: MED
+    default_risk_class: MED_HIGH
+    latency_ceiling_ms: 60000
+    soft_warn_ms: 42000
+    lro_threshold_ms: 10000
+    lro_hitl: always
+    hitl_requirement: always_on_destructive
+    max_parallel_invocations: 1
+    disclosure_default_top_k: 3
+    side_effects_permitted: [read, write_scoped, egress_allowlisted]
+    side_effects_forbidden: [payment_without_ap2_mandate]
+    defense_mechanism:
+      primary:
+        - SEC-CD-01
+        - SEC-CD-02
+        - SEC-DYN-01
+        - SEC-SH-01
+        - SEC-IN-01
+        - SEC-AUTH-01
+        - mTLS_or_gateway
+        - SEC-HITL-01
+      secondary:
+        - red_team_on_first_prod
+    examples: []
+    notes: No T3 servers registered at lock time.
+
+  T4_ad_hoc:
+    id: T4
+    name: Unverified public MCP · one-off REST · shadow scripts
+    procurement_rank: 4
+    option_2_production: false
+    prototype_dune_only: true
+    risk_ceiling: CRITICAL
+    risk_floor: HIGH
+    default_risk_class: CRITICAL
+    latency_ceiling_ms: 15000
+    soft_warn_ms: 8000
+    lro_threshold_ms: 5000
+    lro_hitl: always
+    hitl_requirement: always
+    max_parallel_invocations: 0          # prod path
+    dune_max_parallel_invocations: 1
+    side_effects_permitted_on_dune: [read]
+    side_effects_forbidden: ["*"]         # prod profile
+    defense_mechanism:
+      primary:
+        - SEC-PUB-01
+        - quarantine
+        - grill_me_on_gap
+        - no_prod_credentials
+      secondary:
+        - source_audit_before_any_promote_to_T2
+    examples:
+      - public_unverified_wildcard
+    registered_count_at_lock: 0
+
+# -------------------------------------------------------------------------
+# Action-class overlay (applies inside any tier)
+# -------------------------------------------------------------------------
+action_classes:
+  read_local:
+    risk_class: LOW
+    hitl: never
+    latency_ceiling_ms: 5000
+  read_remote:
+    risk_class: LOW_MED
+    hitl: never
+    latency_ceiling_ms: 15000
+    sanitize_output: true
+  write_workspace:
+    risk_class: MED
+    hitl: smart
+    latency_ceiling_ms: 10000
+  exec_shell:
+    risk_class: HIGH
+    hitl: smart
+    latency_ceiling_ms: 180000
+    constraint: C-ARCH-01
+  network_egress_new_host:
+    risk_class: HIGH
+    hitl: always
+    latency_ceiling_ms: 15000
+  destructive_fs:
+    risk_class: HIGH
+    hitl: always
+    latency_ceiling_ms: 10000
+  payment:
+    risk_class: CRITICAL
+    hitl: always
+    latency_ceiling_ms: 30000
+    requires_mandate: true
+    option_2_live: false
+  a2a_delegate:
+    risk_class: HIGH
+    hitl: smart
+    gated_by: G4_TOPOLOGY_APPROVED_v1
+    latency_ceiling_ms: 60000
+    lro_hitl: always
+
+# -------------------------------------------------------------------------
+# LRO (long-running operation) policy — BLUE >10 s
+# -------------------------------------------------------------------------
+lro_policy:
+  threshold_ms: 10000
+  detection: max(expected_duration_ms, observed_elapsed_ms)
+  patterns:
+    - name: mcp_tasks_async
+      description: Prefer MCP Tasks / async job id when server supports it
+      status: DECLARED_NOT_IMPLEMENTED
+    - name: hitl_continue
+      description: Surface progress + ask human to continue/abort
+      status: REQUIRED_WHEN_NO_ASYNC
+    - name: soft_timeout_warn
+      description: Emit trajectory warning at 70% of tier latency_ceiling_ms
+      status: REQUIRED
+  forbidden_on_lro:
+    - silent_block_without_observation
+    - auto_retry_storm
+
+# -------------------------------------------------------------------------
+# Priority backlog (post-lock engineering — not blocking tag)
+# -------------------------------------------------------------------------
+priority_backlog:
+  - id: G2-P0-pin-context7
+    tier: T2
+    summary: Pin @upstash/context7-mcp to concrete version in broker + matrix
+    status: IN_STEP_E
+  - id: G2-P0-broker-schemas
+    tier: T2
+    summary: Author broker_config + timeout_budgets + disclosure policy
+    status: IN_STEP_D_EXT
+  - id: G2-P1-security-audit-scripts
+    tier: T1-T2
+    summary: Deterministic confused-deputy / sanitize / pin tests
+    status: IN_STEP_E
+  - id: G2-P2-loopback-harden-bridge
+    tier: infra
+    summary: Prefer loopback bind for hermes-api-bridge (G8 adjacent)
+    status: DEFERRED_G8
+  - id: G2-P3-honcho-auth
+    tier: infra
+    summary: Enable Honcho auth for non-dev
+    status: DEFERRED_G3_G8
+
+# -------------------------------------------------------------------------
+# Mermaid-friendly tier decision (logical)
+# -------------------------------------------------------------------------
+decision_flow:
+  - if_exists_t1: use_t1
+  - else_if_allowlisted_t2: use_t2_via_broker
+  - else_if_official_candidate: audit_promote_to_t2
+  - else_if_internal_api: prefer_t3_custom_mcp
+  - else: t4_dune_only

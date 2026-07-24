@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "domain": "G2",
+  "artifact": "skills_registry",
+  "status": "LOCKED",
+  "selected_path": "OPTION_2_STANDARD",
+  "resume_token": "G2_TOOL_REGISTRY_LOCKED_v1",
+  "format": "agentskills.io-progressive-disclosure",
+  "generated_at": "2026-07-23",
+  "notes": "Index only — full skill bodies remain in profile/workspace skills trees (G3 owns deep skill/memory architecture).",
+  "procurement_tier": "T1",
+  "skills": [
+    {
+      "name": "wsl2-execution-routing",
+      "tier": "T1",
+      "risk_class": "HIGH",
+      "one_line": "Route all shell/Python through WSL2 + .venv-hermes",
+      "disclosure": "L1-always-on-for-project",
+      "related_tools": ["terminal", "execute_code"]
+    },
+    {
+      "name": "agentic-rd-g-domain-runbook",
+      "tier": "T1",
+      "risk_class": "LOW",
+      "one_line": "Execute Blueprint G-domains A–F with HITL gates",
+      "disclosure": "L2-on-trigger",
+      "related_tools": ["read_file", "write_file", "terminal"]
+    },
+    {
+      "name": "hermes-mcp-server-setup",
+      "tier": "T1",
+      "risk_class": "MED",
+      "one_line": "Add/configure/test MCP servers in Hermes profiles",
+      "disclosure": "L2-on-trigger",
+      "related_tools": ["terminal"],
+      "related_servers": ["context7"]
+    },
+    {
+      "name": "hermes-agent",
+      "tier": "T1",
+      "risk_class": "MED",
+      "one_line": "Configure and extend Hermes Agent itself",
+      "disclosure": "L2-on-trigger",
+      "related_tools": ["terminal", "read_file"]
+    }
+  ],
+  "mcp_bridges": [
+    {
+      "server_id": "context7",
+      "tier": "T2",
+      "package": "@upstash/context7-mcp",
+      "version_pin": "3.2.4",
+      "tools": [
+        "mcp__context7__resolve_library_id",
+        "mcp__context7__query_docs",
+        "mcp__context7__list_prompts",
+        "mcp__context7__get_prompt",
+        "mcp__context7__list_resources",
+        "mcp__context7__read_resource"
+      ]
+    }
+  ],
+  "g3_handoff": {
+    "owns_next": ["session_state", "memory_providers", "full_skills_tree_budgets"],
+    "resume_token_expected": "G3_CONTEXT_LAYER_LOCKED_v1"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "domain": "G2",
+  "artifact": "npm-mcp-pins",
+  "status": "LOCKED",
+  "selected_path": "OPTION_2_STANDARD",
+  "resume_token": "G2_TOOL_REGISTRY_LOCKED_v1",
+  "generated_at": "2026-07-23",
+  "policy": {
+    "enforce": true,
+    "allow_floating_npx": false,
+    "slopsquat_check": true,
+    "registry": "https://registry.npmjs.org"
+  },
+  "pins": [
+    {
+      "server_id": "context7",
+      "package": "@upstash/context7-mcp",
+      "version": "3.2.4",
+      "resolved_at": "2026-07-23",
+      "manager": "npm",
+      "transport": "stdio",
+      "command": "npx",
+      "args_template": ["-y", "@upstash/context7-mcp@3.2.4"],
+      "notes": "Pin closes floating npx GAP from pre-HITL draft."
+    }
+  ]
+}

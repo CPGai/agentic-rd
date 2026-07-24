@@ -269,9 +269,32 @@ domains:
   G2:
     id: D_G2
     name: tool_use_mcp
-    state: READY_FOR_DOMAIN
+    state: APPROVED
     requires: [G1_HARNESS_APPROVED_v1]
     primary_harness_touch: [H_CONSTRAINT, H_CONTEXT]
+    resume_token: G2_TOOL_REGISTRY_LOCKED_v1
+    resume_token_alias: G2_TOOLING_APPROVED_v1
+    recommended: OPTION_2_STANDARD
+    selected: OPTION_2_STANDARD
+    granted: true
+    granted_at: "2026-07-23"
+    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    artifacts:
+      - specs/g2_tools/TOOL_REGISTRY.md
+      - specs/g2_tools/MCP_COMPAT_MATRIX.yaml
+      - specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
+      - specs/g2_tools/broker_config.yaml
+      - specs/g2_tools/timeout_budgets.yaml
+      - specs/g2_tools/TOOL_DISCLOSURE_POLICY.md
+      - specs/g2_tools/skills_registry.json
+      - specs/g2_tools/pins/npm-mcp-pins.json
+    required_telemetry:
+      - tier4_items_count
+      - unauthenticated_mcp_servers
+      - audit severity counts
+      - pin enforcement for @upstash/context7-mcp@3.2.4
+    next_domain: G3
+    next_resume_token_expected: G3_CONTEXT_LAYER_LOCKED_v1
   G3:
     id: D_G3
     name: context_skills_memory

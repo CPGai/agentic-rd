@@ -1,0 +1,537 @@
+# MCP_COMPAT_MATRIX.yaml
+# Domain G2 — declarative compatibility & security matrix
+# Status: LOCKED v1.0.0 — OPTION_2_STANDARD · G2_TOOL_REGISTRY_LOCKED_v1
+# Anchors: WP-F2 (Nov 2025), WP-S2 (May 2026 supersedes on overlap), BLUE §G2
+# Companion: TOOL_REGISTRY.md
+# No secrets. No live binds authorized by presence of a row alone.
+
+schema_version: "1.0.0"
+domain: G2
+artifact: MCP_COMPAT_MATRIX
+status: LOCKED
+version: "1.0.0"
+course_precedence: WP-S2_over_WP-F2
+inherits:
+  - HARNESS_SPEC.md
+  - AGENTS.md
+  - specs/workflow_graph.yaml
+resume_token: G2_TOOL_REGISTRY_LOCKED_v1
+resume_token_expected_blue: G2_TOOL_REGISTRY_LOCKED_v1
+resume_token_alias_user_checkpoint: G2_TOOLING_APPROVED_v1  # non-authoritative alias; BLUE wins
+selected_path: OPTION_2_STANDARD
+recommended_path: OPTION_2_STANDARD
+granted_at: "2026-07-23"
+generated_at: "2026-07-23"
+audit_substrate: WSL2_Ubuntu-24.04
+profile: wsl-runtime
+related_artifacts:
+  - specs/g2_tools/TOOL_REGISTRY.md
+  - specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
+  - specs/g2_tools/broker_config.yaml
+  - specs/g2_tools/timeout_budgets.yaml
+  - specs/g2_tools/TOOL_DISCLOSURE_POLICY.md
+  - specs/g2_tools/skills_registry.json
+  - specs/g2_tools/pins/npm-mcp-pins.json
+
+# ---------------------------------------------------------------------------
+# Protocol baseline (all servers)
+# ---------------------------------------------------------------------------
+protocol_baseline:
+  rpc: JSON-RPC-2.0
+  message_types: [request, result, error, notification]
+  specs_anchor:
+    - WP-F2:p23
+  initialize_required: true
+  discovery_methods:
+    - method: tools/list
+      required: true
+    - method: resources/list
+      required: false
+    - method: prompts/list
+      required: false
+  invoke_method: tools/call
+  error_classes:
+    protocol:
+      example_code: -32602
+      meaning: unknown_tool_or_invalid_params
+      anchor: WP-F2:p30
+    tool_execution:
+      result_flag: isError
+      meaning: backend_or_business_logic_failure
+      anchor: WP-F2:p30
+  tool_object_fields:
+    required_by_mcp: [name, description, inputSchema]
+    required_by_workspace: [name, title, description, inputSchema, outputSchema]
+    optional: [annotations]
+    annotations_are_hints_only: true  # WP-F2:p27 — never trust for authz
+    annotation_keys:
+      - destructiveHint
+      - idempotentHint
+      - openWorldHint
+      - readOnlyHint
+      - title
+  transports:
+    stdio:
+      use_for: [local, prototype, trusted_subprocess]
+      direction: host_spawns_server_subprocess
+      channels: [stdin, stdout]
+      anchors: [WP-F2:p23, WP-S2:p14]
+    streamable_http:
+      use_for: [remote, managed_3p]
+      notes: Recommended remote; SSE streaming optional; may be plain HTTP stateless
+      anchors: [WP-F2:p23]
+    sse_over_http:
+      use_for: [remote_streaming]
+      notes: Course-2 vibe path name for remote; map to streamable HTTP family
+      anchors: [WP-S2:p14]
+  client_capabilities_optional:
+    - sampling
+    - elicitation
+    - roots
+  server_capabilities:
+    first_class: [tools]
+    secondary: [resources, prompts]
+
+# ---------------------------------------------------------------------------
+# Procurement tiers (mirror TOOL_REGISTRY.md §2)
+# ---------------------------------------------------------------------------
+procurement_tiers:
+  T1_skills_native:
+    description: First-party skills hub + native Hermes toolsets
+    prod_under_option_2: true
+    prefer_over: [T2, T3, T4]
+  T2_vetted_mcp:
+    description: Official / audited MCP servers behind broker ACL
+    prod_under_option_2: true
+    requires: [allowlist_entry, schema_pin_or_version_pin, output_sanitize]
+  T3_custom_mcp:
+    description: Internally built MCP adapters under controlled deploy
+    prod_under_option_2: conditional
+    requires: [step_e_security_audit, broker_acl, hitl_on_destructive]
+  T4_ad_hoc:
+    description: Unverified public MCP, one-off REST, shadow scripts
+    prod_under_option_2: false
+    prototype_dune_only: true
+
+procurement_source_order:
+  - internal_private_registry
+  - official_3p_remote_mcp
+  - public_mcp_registry_prototype_only
+  - custom_build_last
+
+# ---------------------------------------------------------------------------
+# Confused-deputy & related controls (applied to every server row)
+# ---------------------------------------------------------------------------
+security_controls_catalog:
+  SEC-CD-01:
+    name: least_privilege_backend_identity
+    threat: confused_deputy
+    anchor: WP-F2:p49-p51
+  SEC-CD-02:
+    name: end_user_authz_not_only_server_capability
+    threat: confused_deputy
+  SEC-DYN-01:
+    name: allowlist_and_pin_on_tools_list
+    threat: dynamic_capability_injection
+    anchor: WP-F2:p40-p41
+  SEC-SH-01:
+    name: tool_name_collision_and_semantic_shadow_check
+    threat: tool_shadowing
+    anchor: WP-F2:p42-p43
+  SEC-IN-01:
+    name: input_validation_and_output_sanitization
+    threat: malicious_defs_and_content
+    anchor: WP-F2:p44
+  SEC-LK-01:
+    name: taint_tracking_and_prompt_separation
+    threat: sensitive_leaks_elicitation
+    anchor: WP-F2:p45-p46
+  SEC-AUTH-01:
+    name: gateway_per_tool_acl_beyond_coarse_mcp_oauth
+    threat: coarse_mcp_auth
+    anchor: WP-F2:p46
+  SEC-SLOP-01:
+    name: slopsquat_package_block
+    threat: supply_chain
+    constraint_id: C-LIB-02
+  SEC-PUB-01:
+    name: ban_unverified_public_mcp_in_prod
+    threat: supply_chain
+    anchor: WP-S2:p16
+  SEC-SEC-01:
+    name: secrets_env_only_redact_logs
+    threat: credential_leak
+  SEC-HITL-01:
+    name: hitl_high_risk_sinks
+    threat: unauthorized_actions
+    anchor: [WP-F2:p43, WP-S2:p16]
+  SEC-RATE-01:
+    name: rate_limit_and_backoff
+    threat: abuse_availability
+  SEC-TIMEOUT-01:
+    name: adaptive_timeouts_lro_tasks
+    threat: hang_resource_exhaustion
+    note: Detailed budgets deferred to timeout_budgets.yaml (Step D extended)
+
+default_controls_option_2:
+  - SEC-CD-01
+  - SEC-CD-02
+  - SEC-DYN-01
+  - SEC-SH-01
+  - SEC-IN-01
+  - SEC-LK-01
+  - SEC-AUTH-01
+  - SEC-SLOP-01
+  - SEC-PUB-01
+  - SEC-SEC-01
+  - SEC-HITL-01
+  - SEC-RATE-01
+  - SEC-TIMEOUT-01
+
+# ---------------------------------------------------------------------------
+# Progressive disclosure (RAG-for-tools)
+# ---------------------------------------------------------------------------
+disclosure:
+  policy: rag_for_tools
+  anchors: [WP-S2:p15, HARNESS_SPEC:section_2]
+  static_index_fields: [name, one_line, risk_class, server_id, tier]
+  default_top_k_schemas: 5
+  max_top_k_schemas: 8
+  drop_when: [slice_complete, token_pressure, mission_change]
+  shadow_collision_blocks_load: true
+
+# ---------------------------------------------------------------------------
+# Broker seat (architectural; config files deferred)
+# ---------------------------------------------------------------------------
+broker:
+  permanent_component: true
+  status: SCHEMA_LOCKED_NOT_WIRED
+  config_ref: specs/g2_tools/broker_config.yaml
+  responsibilities:
+    - identity_tenant_scoping
+    - server_and_tool_acl
+    - schema_pin_enforcement
+    - response_sanitization
+    - rate_limit_timeout
+    - audit_logging
+    - collision_detection
+  locked_artifacts:
+    - broker_config.yaml
+    - timeout_budgets.yaml
+    - TOOL_DISCLOSURE_POLICY.md
+    - skills_registry.json
+    - PROCUREMENT_TIER_MATRIX.yaml
+    - pins/npm-mcp-pins.json
+
+# ---------------------------------------------------------------------------
+# Native surfaces (non-MCP) referenced for completeness
+# ---------------------------------------------------------------------------
+native_tool_families:
+  - id: hermes_fs
+    tools: [read_file, write_file, patch, search_files]
+    risk_class: MED
+    wsl2_required: false  # path bridge ok; execution still caution
+  - id: hermes_terminal
+    tools: [terminal, process]
+    risk_class: HIGH
+    wsl2_required: true
+    constraint: C-ARCH-01
+  - id: hermes_code
+    tools: [execute_code]
+    risk_class: MED
+    wsl2_required: true
+  - id: hermes_delegate
+    tools: [delegate_task]
+    risk_class: HIGH
+    gated_by: G4_TOPOLOGY_APPROVED_v1
+  - id: hermes_skills
+    tools: [skill_view, skill_manage, skills_list]
+    risk_class: MED
+    tier: T1
+  - id: hermes_memory
+    tools: [memory, honcho_profile, honcho_search, honcho_reasoning, honcho_context, honcho_conclude]
+    risk_class: MED
+    backend: honcho_localhost_8000
+  - id: hermes_web
+    tools: [web_search]
+    risk_class: MED
+    open_world: true
+  - id: hermes_messaging
+    tools: [send_message]
+    risk_class: HIGH
+    hitl_smart_approvals: true
+  - id: hermes_cron
+    tools: [cronjob]
+    risk_class: HIGH
+
+# ---------------------------------------------------------------------------
+# MCP servers matrix
+# ---------------------------------------------------------------------------
+mcp_servers:
+  - server_id: context7
+    display_name: Context7 Library Docs
+    tier: T2
+    enabled: true
+    prod_eligible_option_2: true
+    transport:
+      kind: stdio
+      command: npx
+      args: ["-y", "@upstash/context7-mcp@3.2.4"]
+      cwd: null
+      env_passthrough: []
+    package:
+      name: "@upstash/context7-mcp"
+      version_pin: "3.2.4"
+      registry: npm
+      supply_chain_review: pinned_2026-07-23
+      pins_ref: specs/g2_tools/pins/npm-mcp-pins.json
+    auth:
+      class: none_public
+      oauth: false
+      api_key_env: null
+      notes: Lower public rate limits without key; do not place secrets in queries
+    network:
+      egress: true
+      destinations: [context7_cloud_undocumented_exact_hosts]
+      local_only: false
+    rate_limits:
+      known: false
+      reported: public_tier_unspecified
+      client_policy: backoff_on_error_and_cap_query_docs_3_per_question
+    tools:
+      - name: resolve-library-id
+        bridge_name: mcp__context7__resolve_library_id
+        risk_class: LOW
+        side_effect: read
+        annotations_expected:
+          readOnlyHint: true
+          openWorldHint: true
+        hitl: false
+        input_summary: libraryName + query ranking context
+        output_summary: context7-compatible library IDs
+      - name: query-docs
+        bridge_name: mcp__context7__query_docs
+        risk_class: LOW_MED
+        side_effect: read
+        annotations_expected:
+          readOnlyHint: true
+          openWorldHint: true
+        hitl: false
+        max_calls_guidance: 3_per_user_question
+        input_summary: libraryId + focused query
+        output_summary: documentation snippets — SANITIZE before context inject
+      - name: list_prompts
+        bridge_name: mcp__context7__list_prompts
+        risk_class: LOW
+        side_effect: read
+        hitl: false
+      - name: get_prompt
+        bridge_name: mcp__context7__get_prompt
+        risk_class: LOW
+        side_effect: read
+        hitl: false
+      - name: list_resources
+        bridge_name: mcp__context7__list_resources
+        risk_class: LOW
+        side_effect: read
+        hitl: false
+      - name: read_resource
+        bridge_name: mcp__context7__read_resource
+        risk_class: LOW_MED
+        side_effect: read
+        hitl: false
+        notes: Resource bodies from 3P need allowlist mindset (WP-F2:p45)
+    schemas:
+      validation: enforce_when_outputSchema_present
+      pin:
+        mode: revalidate_on_connect
+        hash_alg: sha256
+        current_pins:
+          package: "@upstash/context7-mcp"
+          version: "3.2.4"
+    list_changed_policy: revalidate_or_disconnect
+    confused_deputy:
+      risk: MED
+      rationale: |
+        Unauthenticated docs proxy does not hold enterprise repo credentials,
+        but broker must still ensure model cannot pivot docs-injection into
+        high-privilege native tools without SEC-IN-01 / SEC-HITL-01.
+      controls: [SEC-IN-01, SEC-LK-01, SEC-DYN-01, SEC-RATE-01, SEC-PUB-01]
+    allowlist:
+      tools_permitted:
+        - resolve-library-id
+        - query-docs
+        - list_prompts
+        - get_prompt
+        - list_resources
+        - read_resource
+      tools_denied: []
+    audit:
+      log_calls: true
+      redact_secrets: true
+    option_flags:
+      OPTION_1_CONSERVATIVE: retain_if_already_skill_wrapped_else_disable
+      OPTION_2_STANDARD: enable_with_broker_acl
+      OPTION_3_CREATIVE: enable_plus_future_a2ui_surfaces
+    anchors: [runtime_config_wsl-runtime, WP-S2:p10-p16, WP-F2:p26-p30]
+
+  # Example blocked class (no instance connected) — documentary row
+  - server_id: public_unverified_wildcard
+    display_name: Any unaudited public MCP
+    tier: T4
+    enabled: false
+    prod_eligible_option_2: false
+    transport:
+      kind: any
+    auth:
+      class: unknown
+    confused_deputy:
+      risk: CRITICAL
+      rationale: |
+        Coarse MCP auth + possible privileged local stdio = classic confused deputy
+        and tool shadowing substrate (WP-F2 appendix).
+      controls: [SEC-PUB-01, SEC-CD-01, SEC-CD-02, SEC-SH-01]
+    allowlist:
+      tools_permitted: []
+      tools_denied: ["*"]
+    note: Pattern row — matching servers must not be added to prod profiles
+
+# ---------------------------------------------------------------------------
+# A2A / A2UI / commerce extension stubs (not MCP servers; matrix adjacency)
+# ---------------------------------------------------------------------------
+a2a:
+  status: SCHEMA_ONLY_UNTIL_G4
+  resume_gate: G4_TOPOLOGY_APPROVED_v1
+  agent_card_template_ref: TOOL_REGISTRY.md#5
+  discovery:
+    - private_registry
+    - public_marketplace_later
+  connection_patterns: [direct_endpoint, registry_resolve]
+  extensions:
+    a2ui:
+      enabled_option_2: false
+      security_model: trusted_component_catalog_only
+      catalog_default: basic_v0.9
+      production_catalog: byo_design_system
+      xss_rule: no_executable_ui_code_from_model
+      anchors: [WP-S2:p32-p43]
+    ucp:
+      enabled_option_2: false
+      role: catalog_cart_order
+      anchors: [WP-S2:p45]
+    ap2:
+      enabled_option_2: false
+      role: signed_mandate_payments
+      requires: [merchant_allowlist, spending_limit, cryptographic_mandate]
+      hitl: always
+      anchors: [WP-S2:p46]
+    x402_l402:
+      enabled_option_2: false
+      role: micro_payment_http_402
+      anchors: [WP-S2:p30-p31]
+
+# ---------------------------------------------------------------------------
+# Environment telemetry (Step B)
+# ---------------------------------------------------------------------------
+environment_audit:
+  date: "2026-07-23"
+  wsl_cli_present:
+    - bash
+    - git
+    - curl
+    - wget
+    - python3
+    - pip
+    - node
+    - npm
+    - npx
+    - docker
+    - docker-compose
+    - kubectl
+    - openssl
+    - ssh
+    - gcc
+    - make
+    - nc
+    - ss
+    - lsof
+    - systemctl
+    - claude
+  wsl_cli_absent_notable:
+    - jq
+    - rg
+    - fd
+    - gh
+    - sqlite3
+    - hermes  # linux PATH; available on Windows profile host
+    - uv      # Windows profile bin uv.exe only at audit
+  docker_ps:
+    - name: honcho-api-1
+      ports: "127.0.0.1:8000->8000/tcp"
+    - name: honcho-deriver-1
+      ports: "8000/tcp"
+    - name: honcho-redis-1
+      ports: "127.0.0.1:6379->6379/tcp"
+    - name: honcho-database-1
+      ports: "127.0.0.1:5432->5432/tcp"
+    - name: hermes-api-bridge
+      ports: "0.0.0.0:8642->8642/tcp"
+      risk_note: non_loopback_bind
+  mcp_servers_enabled_count: 1
+  unauthenticated_mcp_servers:
+    - context7
+  unauthenticated_mcp_count: 1
+  tier4_registered_count: 0
+  floating_version_pins: []
+  pinned_mcp_packages:
+    - server_id: context7
+      package: "@upstash/context7-mcp"
+      version: "3.2.4"
+
+# ---------------------------------------------------------------------------
+# HITL telemetry bundle (REQUIRED_TELEMETRY for gate)
+# ---------------------------------------------------------------------------
+hitl_telemetry:
+  tier4_items_count: 0
+  unauthenticated_mcp_servers: [context7]
+  unauthenticated_mcp_count: 1
+  audit_severity_counts:
+    critical_open: 0
+    high_open: 1  # hermes-api-bridge non-loopback bind (G8-adjacent)
+    medium_open: 2  # honcho AUTH_USE_AUTH=false local; context7 unauth docs egress
+    low_open: 1     # missing convenience CLIs in WSL PATH
+    high_closed_this_lock: 1  # context7 floated npx → pinned 3.2.4
+  artifacts:
+    - specs/g2_tools/TOOL_REGISTRY.md
+    - specs/g2_tools/MCP_COMPAT_MATRIX.yaml
+    - specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
+    - specs/g2_tools/broker_config.yaml
+    - specs/g2_tools/timeout_budgets.yaml
+    - specs/g2_tools/TOOL_DISCLOSURE_POLICY.md
+    - specs/g2_tools/skills_registry.json
+    - specs/g2_tools/pins/npm-mcp-pins.json
+  deferred_step_d_ext: []
+  deferred_steps: []
+  completed_steps: [A, B, C, D, E, F]
+  gate:
+    status: APPROVED
+    selected_path: OPTION_2_STANDARD
+    resume_token: G2_TOOL_REGISTRY_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# Option matrix (mirrors BLUE G2; decision by human only)
+# ---------------------------------------------------------------------------
+options:
+  OPTION_1_CONSERVATIVE:
+    summary: T1 skills/native only; disable new MCP bind surface
+    allows_tiers: [T1]
+    mcp: disable_or_skill_wrap_only
+  OPTION_2_STANDARD:
+    summary: T1 + T2 MCP with broker ACLs + progressive disclosure
+    allows_tiers: [T1, T2]
+    mcp: allowlisted_only
+    recommended: true
+  OPTION_3_CREATIVE:
+    summary: T1–T4 paths + live AP2 limits UI + A2UI sheet-music
+    allows_tiers: [T1, T2, T3, T4]
+    requires_extra: [red_team, payment_harness, a2ui_catalog_lock]

@@ -1,0 +1,155 @@
+# broker_config.yaml
+# Domain G2 Step D-ext — MCP Broker declarative seat (OPTION_2_STANDARD)
+# Status: LOCKED schema · runtime implementation N/A this domain (declarative only)
+# Anchors: BLUE G2 · WP-F2 security · WP-S2 broker-as-permanent-component · TOOL_REGISTRY §9.1
+
+schema_version: "1.0.0"
+domain: G2
+artifact: broker_config
+status: LOCKED_SCHEMA
+selected_path: OPTION_2_STANDARD
+resume_token: G2_TOOL_REGISTRY_LOCKED_v1
+implementation_state: DECLARED_NOT_WIRED
+generated_at: "2026-07-23"
+
+identity:
+  broker_id: agentic-rd-mcp-broker
+  environment: wsl-runtime
+  substrate: WSL2_Ubuntu-24.04
+  profile: wsl-runtime
+  tenant_mode: single_tenant_dev
+  supervisor: constraint_harness
+
+tenant_scoping:
+  default_tenant: local-dev
+  require_tenant_header: false
+  isolation:
+    cross_profile_writes: deny
+    cross_tenant_tool_state: deny
+
+policy:
+  allowed_tiers: [T1, T2]
+  conditional_tiers: [T3]
+  denied_tiers: [T4]
+  require_allowlist: true
+  require_pin_for_mcp: true
+  annotations_trust: never_for_authz
+  public_unverified_mcp: deny
+  progressive_disclosure: rag_for_tools
+  audit_log: true
+  redact_secrets: true
+
+acls:
+  servers:
+    - server_id: context7
+      enabled: true
+      tier: T2
+      transport: stdio
+      authenticated: false
+      max_rps: 2
+      max_concurrent: 1
+      tools_allow:
+        - resolve-library-id
+        - query-docs
+        - list_prompts
+        - get_prompt
+        - list_resources
+        - read_resource
+      tools_deny: []
+      arg_guards:
+        - tool: query-docs
+          rules:
+            - field: query
+              deny_regexes:
+                - "(?i)(api[_-]?key|password|secret|bearer\\s+[a-z0-9._\\-]+)"
+                - "(?i)(BEGIN (RSA |OPENSSH )?PRIVATE KEY)"
+            - field: libraryId
+              allow_regex: "^/[A-Za-z0-9._\\-]+(/[A-Za-z0-9._\\-]+)+$"
+      output_sanitization:
+        strip_patterns:
+          - "(?i)sk-[a-z0-9]{10,}"
+          - "(?i)bearer\\s+[a-z0-9\\-._~+/]+=*"
+        strip_html_active: true
+        max_content_chars: 24000
+      pin:
+        package: "@upstash/context7-mcp"
+        version: "3.2.4"
+        manager: npm
+        enforce: true
+    - server_id: public_unverified_wildcard
+      enabled: false
+      tier: T4
+      tools_allow: []
+      tools_deny:
+        - "*"
+
+  native_action_guards:
+    - action_class: exec_shell
+      hitl: smart
+      wsl2_required: true
+    - action_class: destructive_fs
+      hitl: always
+    - action_class: network_egress_new_host
+      hitl: always
+    - action_class: payment
+      hitl: always
+      live: false
+
+response_sanitization:
+  enabled: true
+  validate_output_schema_when_present: true
+  taint_untrusted_mcp_content: true
+  block_resource_urls_not_allowlisted: true
+  resource_url_allowlist: []
+
+collision_detection:
+  enabled: true
+  on_exact_name_collision: block_new
+  on_semantic_similarity:
+    enabled: true
+    threshold: 0.86
+    action: hitl_review
+  shadowing_control_id: SEC-SH-01
+
+dynamic_capability_guard:
+  control_id: SEC-DYN-01
+  on_connect: tools_list_and_pin_compare
+  on_list_changed: revalidate_or_disconnect
+  on_hash_mismatch: disconnect_and_alert
+  silent_tool_add_without_allowlist_amend: deny
+
+confused_deputy_controls:
+  control_ids:
+    - SEC-CD-01
+    - SEC-CD-02
+  rules:
+    - never_forward_user_free_text_to_privileged_backend_without_sanitize
+    - authorize_as_end_user_not_only_server_service_identity
+    - deny_broad_repo_credentials_on_docs_only_servers
+
+rate_limits:
+  default_rps: 5
+  default_burst: 10
+  per_server_override_from_acl: true
+  on_exceed: error_backoff_observation
+
+timeouts_ref: specs/g2_tools/timeout_budgets.yaml
+disclosure_ref: specs/g2_tools/TOOL_DISCLOSURE_POLICY.md
+tier_matrix_ref: specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
+compat_matrix_ref: specs/g2_tools/MCP_COMPAT_MATRIX.yaml
+pins_ref: specs/g2_tools/pins/npm-mcp-pins.json
+
+audit:
+  fields:
+    - timestamp
+    - tenant
+    - server_id
+    - tool_name
+    - args_hash
+    - decision
+    - latency_ms
+    - is_error
+    - taint_out
+  retention_days_dev: 30
+
+sequence_ref: specs/g2_tools/TOOL_CALL_SEQUENCE.md

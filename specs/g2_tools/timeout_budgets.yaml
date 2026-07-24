@@ -1,0 +1,108 @@
+# timeout_budgets.yaml
+# Domain G2 Step D-ext — adaptive timeout tiers + LRO (>10s) policy
+# Status: LOCKED · OPTION_2_STANDARD · G2_TOOL_REGISTRY_LOCKED_v1
+
+schema_version: "1.0.0"
+domain: G2
+artifact: timeout_budgets
+status: LOCKED
+selected_path: OPTION_2_STANDARD
+resume_token: G2_TOOL_REGISTRY_LOCKED_v1
+generated_at: "2026-07-23"
+blue_lro_threshold_ms: 10000
+
+units: milliseconds
+
+global:
+  soft_warn_ratio: 0.70
+  hard_abort_grace_ms: 500
+  max_retries_idempotent: 2
+  max_retries_non_idempotent: 0
+  retry_backoff_ms: [500, 1500]
+  clock: monotonic_client
+
+# Adaptive tiers — selected by action_class / procurement tier (strictest wins)
+budgets:
+  handshake:
+    description: MCP initialize + first tools/list
+    connect_ms: 8000
+    initialize_ms: 8000
+    tools_list_ms: 8000
+    total_ms: 20000
+
+  T1_native_read:
+    latency_ceiling_ms: 5000
+    soft_warn_ms: 3500
+    lro_threshold_ms: 10000
+
+  T1_native_write:
+    latency_ceiling_ms: 10000
+    soft_warn_ms: 7000
+    lro_threshold_ms: 10000
+
+  T1_native_exec:
+    latency_ceiling_ms: 180000   # aligns hermes terminal default upper
+    soft_warn_ms: 60000
+    lro_threshold_ms: 10000
+    lro_hitl: smart
+
+  T2_mcp_read:
+    latency_ceiling_ms: 45000
+    soft_warn_ms: 30000
+    lro_threshold_ms: 10000
+    lro_hitl: always
+    per_call_ms: 20000
+
+  T2_mcp_context7:
+    server_id: context7
+    resolve_library_id_ms: 12000
+    query_docs_ms: 20000
+    total_turn_cap_ms: 45000
+    max_query_docs_per_question: 3
+
+  T3_custom:
+    latency_ceiling_ms: 60000
+    soft_warn_ms: 42000
+    lro_threshold_ms: 10000
+    lro_hitl: always
+
+  T4_dune_only:
+    latency_ceiling_ms: 15000
+    soft_warn_ms: 8000
+    lro_threshold_ms: 5000
+    lro_hitl: always
+    prod_profile: deny
+
+  payment_disabled:
+    latency_ceiling_ms: 30000
+    live: false
+
+lro:
+  threshold_ms: 10000
+  on_cross:
+    - emit_trajectory_warning
+    - prefer_async_mcp_task_if_advertised
+    - else_hitl_continue_or_abort
+  mcp_tasks:
+    status: DECLARED_NOT_IMPLEMENTED
+    when_supported: use_task_id_poll_with_budget
+  forbidden:
+    - swallow_timeout_without_observation
+    - unbounded_wait
+
+selection_rules:
+  - match: {server_id: context7}
+    use: T2_mcp_context7
+  - match: {tier: T2, side_effect: read}
+    use: T2_mcp_read
+  - match: {tier: T1, action_class: exec_shell}
+    use: T1_native_exec
+  - match: {tier: T1, action_class: write_workspace}
+    use: T1_native_write
+  - match: {tier: T1, action_class: read_local}
+    use: T1_native_read
+  - match: {tier: T3}
+    use: T3_custom
+  - match: {tier: T4}
+    use: T4_dune_only
+  - default: T2_mcp_read

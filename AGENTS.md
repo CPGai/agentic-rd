@@ -103,7 +103,7 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 | Domain | Gate focus | Resume token (Blueprint) | Recommended default |
 |---|---|---|---|
 | **G1** Foundations & Harness | Constitution adoption | `G1_HARNESS_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G2** Tools & MCP | Registry + disclosure + broker | `G2_*` (see domain pack) | OPTION_2_STANDARD |
+| **G2** Tools & MCP | Registry + disclosure + broker | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
 | **G3** Context / Skills / Memory | Co-load precedence + budgets | `G3_CONTEXT_LAYER_LOCKED_v1` | OPTION_2_STANDARD |
 | **G4** Multi-Agent | Topology + AP2 bounds | `G4_TOPOLOGY_APPROVED_v1` | OPTION_2_STANDARD |
 | **G5** Eval & Observability | Trust posture + thresholds | domain token | OPTION_2_STANDARD |
@@ -136,6 +136,7 @@ AGENTS.md                 ← you are here (static instructions)
 HARNESS_SPEC.md           ← deep architecture + constraint IDs
 specs/workflow_graph.yaml ← nodes, edges, gates, harness ownership
 specs/references/         ← WP-F* / WP-S* corpus (immutable inputs)
+specs/g2_tools/           ← G2 tool registry, MCP matrix, broker schemas
 specs/**                  ← domain blueprints (G2+)
 skills/**                 ← progressive disclosure procedures
 .gherkin/                 ← acceptance scenarios (harness + domains)
