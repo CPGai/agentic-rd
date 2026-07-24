@@ -1,0 +1,384 @@
+# HONCHO_INTEGRATION_MATRIX.yaml
+# Domain G3 — declarative integration matrix (no secrets, no runtime wiring changes)
+schema_version: "1.0.0"
+domain: G3
+artifact: HONCHO_INTEGRATION_MATRIX
+status: LOCKED
+selected_path: OPTION_2_STANDARD
+resume_token: G3_CONTEXT_LAYER_LOCKED_v1
+resume_token_expected: G3_CONTEXT_LAYER_LOCKED_v1
+granted: true
+granted_at: "2026-07-24"
+generated_at: "2026-07-24"
+locked_at: "2026-07-24"
+precedence: "WP-S3 supersedes WP-F3 on overlap; BLUE HITL token authoritative"
+parents:
+  - specs/g3_memory/CONTEXT_ENGINEERING_BLUEPRINT.md
+  - specs/g3_memory/SESSION_STATE_SPEC.md
+  - specs/g3_memory/G3_MIGRATION_CONTEXT.md
+  - HARNESS_SPEC.md
+  - specs/g2_tools/skills_registry.json
+
+notes:
+  - "All secret values REDACTED / never stored in this matrix."
+  - "Loopback host written as join of octets to avoid host-side literal rewrite."
+  - "Step B live probe: GET /health ok; OpenAPI title Honcho API; docker stack healthy."
+
+# ---------------------------------------------------------------------------
+loopback:
+  # reconstructed; do not rely on prose IP renderers
+  host_octets: [127, 0, 0, 1]
+  host_expression: '".".join(["127","0","0","1"])'
+  api_port: 8000
+  base_url_template: "http://{host}:8000"
+  hermes_honcho_json:
+    path_windows: "C:/Users/carlo/AppData/Local/hermes/profiles/wsl-runtime/honcho.json"
+    declared_baseUrl: "http://localhost:8000"
+  bind_policy_option_2: LOOPBACK_ONLY_API
+
+# ---------------------------------------------------------------------------
+live_probe:
+  probed_at_session: "2026-07-24"
+  tcp_open: true
+  endpoints:
+    - method: GET
+      path: /health
+      http_status: 200
+      body_shape: '{"status":"ok"}'
+    - method: GET
+      path: /docs
+      http_status: 200
+    - method: GET
+      path: /openapi.json
+      http_status: 200
+      info_title: Honcho API
+      info_summary: The Identity Layer for the Agentic World
+      path_count: 37
+    - method: GET
+      path: /
+      http_status: 404
+  docker_services:
+    - name: honcho-api-1
+      status: Up_healthy
+      ports: "127.0.0.1:8000->8000/tcp"
+    - name: honcho-deriver-1
+      status: Up
+      ports: "8000/tcp (internal)"
+    - name: honcho-database-1
+      status: Up_healthy
+      image: pgvector/pgvector:pg15
+      ports: "127.0.0.1:5432->5432/tcp"
+    - name: honcho-redis-1
+      status: Up_healthy
+      ports: "127.0.0.1:6379->6379/tcp"
+  residual_sidecars_out_of_g3_runtime_scope:
+    - name: hermes-api-bridge
+      ports: "0.0.0.0:8642->8642/tcp"
+      risk: HIGH
+      owner_domain: G8
+      note: "Non-loopback publish inherited from G2 migration context; not altered by G3."
+
+install_root:
+  path: /home/carlospg/honcho
+  compose_file: docker-compose.yml
+  env_file: .env
+  config_examples:
+    - config.toml.example
+    - .env.template
+
+# ---------------------------------------------------------------------------
+hermes_client:
+  profile: wsl-runtime
+  config_path_windows: "C:/Users/carlo/AppData/Local/hermes/profiles/wsl-runtime/config.yaml"
+  memory:
+    memory_enabled: true
+    provider: honcho
+    # durable product notes (session L1 memory); not secrets
+    session_strategy: per-directory
+    recall_mode: hybrid
+    user_profile_enabled: true
+  security_hooks:
+    redact_secrets: true
+  tools_surface_to_agent:
+    - honcho_profile
+    - honcho_context
+    - honcho_search
+    - honcho_reasoning
+    - honcho_conclude
+
+# ---------------------------------------------------------------------------
+services:
+  api:
+    role: HTTP identity/memory plane
+    container: honcho-api-1
+    listen: loopback:8000
+    healthcheck_path: /health
+    openapi_prefix: /v3
+  deriver:
+    role: Async extract / consolidate / representation batching
+    container: honcho-deriver-1
+    enabled: true
+    workers_default: 1
+    deduplicate: true
+  database:
+    role: Durable relational + pgvector
+    container: honcho-database-1
+    engine: postgres
+    extension: pgvector
+    major: 15
+    listen: loopback:5432
+    auth_method_live_note: "POSTGRES_HOST_AUTH_METHOD=trust in compose — local-dev posture"
+  redis:
+    role: Cache / queue assist
+    container: honcho-redis-1
+    listen: loopback:6379
+    cache_enabled_in_compose: true
+  vector_store:
+    type: pgvector
+    namespace_default: honcho
+    embedding:
+      transport_template: openai_compatible
+      model_template: text-embedding-3-small
+      vector_dimensions: 1536
+    migrated_flag_template: false
+
+# ---------------------------------------------------------------------------
+# Derive / dialectic model routing — dynamic tier labels ONLY in constitution style;
+# concrete IDs below are OBSERVED LOCAL CONFIG pins for telemetry, not global freezes.
+derive_model:
+  role: Honcho deriver LLM (observation/conclusion extraction)
+  observed_transport: openai_compatible
+  observed_base_url: https://openrouter.ai/api/v1
+  # Product memory / user durable note (isolated key for usage monitoring):
+  observed_model_id: deepseek/deepseek-v4-flash
+  observed_model_source: "session durable memory + live .env DERIVER_MODEL_CONFIG__* via OpenRouter"
+  config_template_default_in_repo_example: gpt-5.4-mini
+  template_vs_live: "config.toml.example defaults differ from live .env — live wins for this host"
+  api_key_policy: "Isolated OpenRouter key in Honcho .env only; never copy into specs/transcripts"
+  workspace_model_routing_note: >
+    Agent turns still use Hermes dynamic Premium/Strong/Flash matrix.
+    Deriver model is a side-car cost center, not the main agent pin.
+
+dialectic_levels_template:
+  # From config.toml.example — ceilings enforced by provider; values not echoed if secret-shaped
+  levels: [minimal, low, medium, high, max]
+  tool_iterations:
+    minimal: 1
+    low: 5
+    medium: 2
+    high: 4
+    max: 10
+  usage_policy_option_2:
+    default_agent_reason_level: low
+    reserve_high_max_for: "deep multi-hop peer synthesis only"
+    prefer_cheaper_paths:
+      - honcho_profile
+      - honcho_context
+      - honcho_search
+
+summary_service_template:
+  enabled: true
+  messages_per_short_summary: 20
+  messages_per_long_summary: 60
+  aligns_to_session_state_spec_triggers: true
+
+dream_service_template:
+  enabled_template: true
+  option_2_posture: "Allow local dream/consolidation; forbid dream outputs from auto-editing skills (no L4)"
+  min_hours_between_dreams: 8
+  idle_timeout_minutes: 60
+
+# ---------------------------------------------------------------------------
+auth_privacy:
+  auth_use_auth_live: false
+  auth_risk: MED
+  auth_risk_owner:
+    - G3_policy_declare
+    - G8_hardening
+  jwt_secret_in_specs: FORBIDDEN
+  redaction_filters:
+    pre_persist:
+      - secret_patterns_api_keys_tokens_passwords
+      - bearer_headers
+      - private_key_blocks
+    harness_hooks:
+      - security.redact_secrets: true
+    write_path_hooks:
+      - on_memory_write
+      - on_pre_model
+    pii_policy: "Redact or minimize PII before session/memory persist (WP-F3 production guidance)"
+    conclude_delete_path: "honcho_conclude delete_id for PII removal only; prefer corrective conclude for wrong facts"
+  isolation:
+    session_acl: principal_owned
+    cross_profile_writes: denied_by_default
+    multi_tenant_full_controls: deferred_G8
+
+# ---------------------------------------------------------------------------
+rate_token_ceilings:
+  # Declarative ceilings for OPTION_2. Runtime may tighten, never silently loosen blockers.
+  agent_context_window:
+    static_pack_max_share: 0.20
+    pinned_memory_share: [0.02, 0.05]
+    dynamic_share: [0.40, 0.60]
+    reserve_share: [0.10, 0.15]
+  session_compaction:
+    short_summary_every_messages: 20
+    long_summary_every_messages: 60
+    emergency_fill_ratio: 0.85
+    soft_pressure_fill_ratio: 0.70
+  skill_co_load:
+    soft_max_l2_bodies: 3
+    flag_if_l2_chars_over: 32000  # ~8k tok rough hedge @4 chars/tok
+    l1_target_tokens_per_skill: 50
+    l1_hedge_tokens_per_skill: 80
+  honcho_client_calls:
+    profile_card: unlimited_cheap
+    context_snapshot: prefer_over_reasoning
+    search_max_tokens_default: 800
+    search_max_tokens_cap: 2000
+    reasoning_levels_allowed: [minimal, low, medium, high, max]
+    reasoning_default: low
+    conclude_writes_require: "durable fact or PII delete only — not task logs"
+  deriver_cost_guard:
+    isolated_api_key_required: true
+    log_secrets: false
+    max_custom_instructions_tokens: ENFORCED_BY_SERVER
+  message_size_template:
+    max_message_size_chars: 25000
+    max_message_content_chars_in_tool_results: 2000
+    max_file_size_bytes: 5242880
+
+# ---------------------------------------------------------------------------
+api_capabilities_v3:
+  # Inventory from live openapi.json (paths only — no payloads)
+  health: ["GET /health"]
+  workspaces:
+    - POST /v3/workspaces
+    - POST /v3/workspaces/list
+    - PUT /v3/workspaces/{workspace_id}
+    - DELETE /v3/workspaces/{workspace_id}
+  peers:
+    - POST /v3/workspaces/{workspace_id}/peers
+    - POST /v3/workspaces/{workspace_id}/peers/list
+    - PUT /v3/workspaces/{workspace_id}/peers/{peer_id}
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id}/card
+    - PUT /v3/workspaces/{workspace_id}/peers/{peer_id}/card
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id}/context
+    - POST /v3/workspaces/{workspace_id}/peers/{peer_id}/representation
+    - POST /v3/workspaces/{workspace_id}/peers/{peer_id}/search
+    - POST /v3/workspaces/{workspace_id}/peers/{peer_id}/chat
+    - POST /v3/workspaces/{workspace_id}/peers/{peer_id}/sessions
+  sessions:
+    - POST /v3/workspaces/{workspace_id}/sessions
+    - POST /v3/workspaces/{workspace_id}/sessions/list
+    - PUT /v3/workspaces/{workspace_id}/sessions/{session_id}
+    - DELETE /v3/workspaces/{workspace_id}/sessions/{session_id}
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/clone
+    - GET /v3/workspaces/{workspace_id}/sessions/{session_id}/context
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/messages
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/messages/list
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/messages/upload
+    - GET /v3/workspaces/{workspace_id}/sessions/{session_id}/summaries
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/search
+  conclusions:
+    - POST /v3/workspaces/{workspace_id}/conclusions
+    - POST /v3/workspaces/{workspace_id}/conclusions/list
+    - POST /v3/workspaces/{workspace_id}/conclusions/query
+    - DELETE /v3/workspaces/{workspace_id}/conclusions/{conclusion_id}
+  ops:
+    - GET /v3/workspaces/{workspace_id}/queue/status
+    - POST /v3/workspaces/{workspace_id}/schedule_dream
+    - POST /v3/workspaces/{workspace_id}/search
+    - POST /v3/keys
+    - webhook CRUD under /v3/workspaces/{workspace_id}/webhooks
+
+mapping_to_session_state_spec:
+  on_session_start: "ensure Honcho session/peer binding per workspace strategy"
+  on_turn_begin: "honcho_context or hybrid recall within pinned+recall budgets"
+  on_memory_write: "redaction + conclude/card ceilings"
+  on_compact: "align short/long summary cadence 20/60 with SESSION_STATE_SPEC triggers"
+  tool_preference_order:
+    - honcho_profile
+    - honcho_context
+    - honcho_search
+    - honcho_reasoning
+    - honcho_conclude
+
+# ---------------------------------------------------------------------------
+skills_alignment:
+  agentskills_io:
+    l1: "name + description always"
+    l2: "SKILL.md body on trigger"
+    l3: "references/scripts/assets on demand"
+  step_b_audit:
+    workspace_skills_dir: /home/carlospg/workspace/agentic-rd/skills
+    workspace_skill_md_count: 0
+    profile_skills_root: "C:/Users/carlo/AppData/Local/hermes/profiles/wsl-runtime/skills"
+    profile_skill_md_count: 93
+    missing_frontmatter: 0
+    with_any_l3_folder: 52
+    l1_budget_hedge_violations:
+      - skill: adversarial-ux-test
+        est_tokens: 81
+    g2_registry_indexed: 4
+    g2_registry_status: LOCKED
+  option_2_policy:
+    procurement_tools: T1_plus_T2_only
+    skill_auto_evolution: DENIED_until_G7
+    co_load_audit: REQUIRED_telemetry_at_gate
+
+# ---------------------------------------------------------------------------
+risks:
+  - id: HONCHO_AUTH_DISABLED
+    severity: MED
+    detail: AUTH_USE_AUTH=false on local stack
+    mitigation_g3: document loopback-only + no WAN publish
+    mitigation_g8: enable auth/JWT for non-dev
+  - id: PG_TRUST_AUTH
+    severity: MED
+    detail: Postgres host auth trust in compose
+    mitigation: keep binds on loopback; G8 tighten
+  - id: BRIDGE_NON_LOOPBACK
+    severity: HIGH
+    detail: hermes-api-bridge 0.0.0.0:8642
+    owner: G8
+  - id: CONTEXT7_UNAUTH_DOCS
+    severity: MED
+    detail: inherited G2 unauthenticated docs egress
+    owner: G2_broker_policy
+  - id: SKILL_COLOAD_SILENT
+    severity: MED
+    detail: large profile skill library without workspace co-load audit harness yet
+    mitigation: SESSION_STATE_SPEC soft caps; Step E harness post-token
+
+# ---------------------------------------------------------------------------
+option_matrix_preview:
+  # Full Decision-Support narrative is presented at HARD_STOP; machine echo here
+  OPTION_1_CONSERVATIVE:
+    memory: "pinned profile only; minimal hybrid recall"
+    skills: "tiny always-on set; almost no co-load"
+  OPTION_2_STANDARD:
+    memory: "hybrid Honcho + session compaction + redaction ceilings"
+    skills: "full progressive disclosure + explicit precedence"
+    recommended: true
+  OPTION_3_CREATIVE:
+    memory: "A-MEM/graph dream-driven skill rewrite"
+    skills: "auto-evolution"
+    blocked_until: G7_high_eval_bars
+
+hitl:
+  status: APPROVED
+  resume_token: G3_CONTEXT_LAYER_LOCKED_v1
+  selected_path: OPTION_2_STANDARD
+  granted: true
+  granted_at: "2026-07-24"
+  required_telemetry:
+    - skill_count_profile
+    - skill_count_workspace
+    - l1_budget_violations
+    - honcho_health_status
+    - auth_use_auth_flag
+    - token_budget_waterfall_in_SESSION_STATE_SPEC
+    - co_load_conflict_list_partial_or_deferred
+    - scripts/verify_g3_memory.py
+    - tests/test_g3_memory.py

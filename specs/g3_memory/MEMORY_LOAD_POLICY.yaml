@@ -1,0 +1,67 @@
+# MEMORY_LOAD_POLICY.yaml — proactive vs reactive memory (G3 Step C)
+schema_version: "1.0.0"
+domain: G3
+artifact: MEMORY_LOAD_POLICY
+status: LOCKED
+selected_path: OPTION_2_STANDARD
+resume_token: G3_CONTEXT_LAYER_LOCKED_v1
+generated_at: "2026-07-24"
+parents:
+  - specs/g3_memory/SESSION_STATE_SPEC.md
+  - specs/g3_memory/token_budget.yaml
+  - specs/g3_memory/HONCHO_INTEGRATION_MATRIX.yaml
+
+priority_matrix:
+  - id: PINNED_PROFILE
+    class: proactive
+    when: every_turn_on_session_start_and_refresh
+    source: honcho_profile_card
+    budget_bucket: pinned_memory
+    max_share_of_window: 0.05
+    deny_if: busy_task_log_dump
+  - id: HYBRID_RECALL
+    class: reactive_hybrid
+    when: turn_begin_or_explicit_need
+    source: honcho_search_or_context
+    budget_bucket: dynamic
+    max_tokens_default: 800
+    max_tokens_cap: 2000
+  - id: DIALECTIC_REASON
+    class: reactive_on_demand
+    when: multi_hop_peer_question_only
+    source: honcho_reasoning
+    default_level: low
+    prefer_cheaper_first: true
+  - id: SESSION_WINDOW
+    class: proactive_view_filter
+    when: every_model_call
+    source: session_store_events_plus_bookmark
+    strategy: [C_SLIDE_N, C_TOKEN_BACKFILL]
+  - id: MEMORY_OFFLOAD
+    class: async_write
+    when: compact_or_session_close_or_user_pin
+    source: extractor_deriver
+    writes: [conclusions, card]
+    redaction_required: true
+  - id: FULL_CORPUS_PRELOAD
+    class: denied
+    when: never_under_option_2
+    rationale: context_rot_and_token_waste
+
+loading_decision_tree:
+  - if: needs_standing_preference
+    then: PINNED_PROFILE
+  - if: needs_past_fact_raw
+    then: HYBRID_RECALL
+  - if: needs_synthesized_peer_answer
+    then: DIALECTIC_REASON
+  - if: history_band_exceeded
+    then: compact_then_SESSION_WINDOW
+  - if: durable_fact_learned
+    then: MEMORY_OFFLOAD
+
+option_2_rules:
+  - tools_remain_t1_t2_only
+  - no_auto_skill_mutation_from_memory
+  - memory_never_overrides_constraints
+  - honor_static_pack_ceiling_0_20

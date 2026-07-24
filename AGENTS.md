@@ -104,7 +104,7 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 |---|---|---|---|
 | **G1** Foundations & Harness | Constitution adoption | `G1_HARNESS_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G2** Tools & MCP | Registry + disclosure + broker | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
-| **G3** Context / Skills / Memory | Co-load precedence + budgets | `G3_CONTEXT_LAYER_LOCKED_v1` | OPTION_2_STANDARD |
+| **G3** Context / Skills / Memory | Co-load precedence + budgets | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G4** Multi-Agent | Topology + AP2 bounds | `G4_TOPOLOGY_APPROVED_v1` | OPTION_2_STANDARD |
 | **G5** Eval & Observability | Trust posture + thresholds | domain token | OPTION_2_STANDARD |
 | **G6** Vibe→Spec harness | Production vs prototype boundary | domain token | OPTION_2_STANDARD |

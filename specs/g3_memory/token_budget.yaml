@@ -1,0 +1,105 @@
+# token_budget.yaml — G3 locked token economics (shares of active model window)
+schema_version: "1.0.0"
+domain: G3
+artifact: token_budget
+status: LOCKED
+selected_path: OPTION_2_STANDARD
+resume_token: G3_CONTEXT_LAYER_LOCKED_v1
+generated_at: "2026-07-24"
+inherits:
+  - HARNESS_SPEC.md#2.2
+  - specs/g3_memory/SESSION_STATE_SPEC.md#5
+notes:
+  - "Absolute tokens are runtime-derived from the live model window (dynamic routing)."
+  - "No frozen agent model pins in this constitution artifact."
+
+window:
+  unit: share_of_active_context_window
+  static_pack_hard_ceiling: 0.20
+
+buckets:
+  instructions:
+    share_min: 0.05
+    share_max: 0.10
+    contents: distilled_AGENTS_constitution
+  guardrails_core:
+    share_min: 0.03
+    share_max: 0.05
+    contents: inviolable_constraint_ids
+  pinned_memory:
+    share_min: 0.02
+    share_max: 0.05
+    contents: peer_card_standing_profile
+  mission_scene:
+    share_min: 0.15
+    share_max: 0.25
+    contents: goal_acceptance_open_file_map
+  dynamic:
+    share_min: 0.40
+    share_max: 0.60
+    contents:
+      - skill_l2_bodies
+      - tool_schemas
+      - knowledge_chunks
+      - examples
+      - live_observations
+      - session_history_band
+  reserve_output:
+    share_min: 0.10
+    share_max: 0.15
+    contents: completion_and_structured_verdict
+
+session_history_band:
+  max_verbatim_turns: 20
+  backward_fill_share_of_window: [0.15, 0.25]
+  summary_prefix_max_share: 0.08
+  tool_result_policy: evict_when_folded_into_session_state
+
+skills:
+  l1_target_tokens_per_skill: 50
+  l1_hedge_tokens_per_skill: 80
+  concurrent_l2_soft_max: 3
+  l2_co_load_flag_chars: 32000  # ~8k tok @ 4 chars/token hedge
+  capability_profiles_required_when_l1_catalog_blows_routing_slice: true
+
+token_economics_reference:
+  # WP-S3 / BLUE illustrative contrast — not a runtime pin
+  monolithic_50_workflows_tokens: 15000
+  skills_library_effective_tokens_approx: 6000
+  blue_contrast_effective_tokens_approx: 3000
+  documented_extreme_reduction_pct: 98
+
+fill_pressure_curve:
+  green_max: 0.40
+  watch_max: 0.70
+  compact_mandatory_above: 0.70
+  emergency_truncate_above: 0.85
+
+debit_order_when_over_budget:
+  - duplicate_tool_schemas
+  - oldest_folded_tool_results
+  - low_score_knowledge_chunks
+  - extra_l3_reference_prose
+  - oldest_verbatim_turns_to_summary
+  - extra_coloaded_l2_skills
+  # never: core_guardrails, sandbox_isolation
+
+compaction_triggers:
+  short_summary_every_messages: 20
+  long_summary_every_messages: 60
+  align_honcho_summary_defaults: true
+
+memory_load:
+  proactive_pinned_profile: true
+  proactive_full_corpus: false
+  reactive_hybrid_recall: true
+  dialectic_on_demand_only: true
+
+telemetry_fields:
+  - ctx.static_tokens_est
+  - ctx.dynamic_tokens_est
+  - ctx.fill_ratio
+  - skills.l1_count
+  - skills.l2_loaded
+  - memory.pinned_tokens_est
+  - compact.trigger

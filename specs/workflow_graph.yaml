@@ -298,10 +298,39 @@ domains:
   G3:
     id: D_G3
     name: context_skills_memory
-    state: READY_FOR_DOMAIN
-    requires: [G1_HARNESS_APPROVED_v1]
+    state: APPROVED
+    requires: [G1_HARNESS_APPROVED_v1, G2_TOOL_REGISTRY_LOCKED_v1]
     primary_harness_touch: [H_CONTEXT]
-    resume_token_expected: G3_CONTEXT_LAYER_LOCKED_v1
+    resume_token: G3_CONTEXT_LAYER_LOCKED_v1
+    recommended: OPTION_2_STANDARD
+    selected: OPTION_2_STANDARD
+    granted: true
+    granted_at: "2026-07-24"
+    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    artifacts:
+      - specs/g3_memory/CONTEXT_ENGINEERING_BLUEPRINT.md
+      - specs/g3_memory/SESSION_STATE_SPEC.md
+      - specs/g3_memory/HONCHO_INTEGRATION_MATRIX.yaml
+      - specs/g3_memory/token_budget.yaml
+      - specs/g3_memory/MEMORY_LOAD_POLICY.yaml
+      - specs/g3_memory/SKILL_COLOAD_AUDIT.yaml
+      - specs/g3_memory/G3_MIGRATION_CONTEXT.md
+      - skills/software-development/
+      - scripts/verify_g3_memory.py
+      - scripts/g3_memory/
+      - tests/test_g3_memory.py
+    required_telemetry:
+      - skill_count_profile
+      - skill_count_workspace
+      - l1_budget_violations
+      - honcho_health_status
+      - auth_use_auth_flag
+      - token_budget_waterfall
+      - co_load_conflict_list
+      - scripts/verify_g3_memory.py green
+      - tests/test_g3_memory.py green
+    next_domain: G4
+    next_resume_token_expected: G4_TOPOLOGY_APPROVED_v1
   G4:
     id: D_G4
     name: multi_agent_orchestration
