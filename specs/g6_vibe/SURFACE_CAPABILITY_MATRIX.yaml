@@ -1,0 +1,384 @@
+# G6 — Surface Capability Matrix
+# Status: DRAFT_PRE_GATE
+# Upstream: G5 APPROVED · eval-v1.0.0
+# BLUE resume: G6_VIBE_ENV_LOCKED_v1
+# Recommended: OPTION_2_STANDARD
+# Primary surface: Hermes CLI + Antigravity hybrid
+
+version: "1.0.0"
+domain: G6
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: eval-v1.0.0
+blue_resume_token: G6_VIBE_ENV_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# Surface inventory (observed in workspace)
+# ---------------------------------------------------------------------------
+surfaces:
+  hermes_cli:
+    id: SURF_HERMES_CLI
+    kind: cli_agent
+    available: true
+    mode: [conductor, orchestrator]
+    autonomy: medium
+    description: "Hermes Agent CLI — interactive chat, single query, worktree mode"
+    surfaces:
+      interactive_chat:
+        command: "hermes"
+        config_key: "display.interface: cli"
+        use_case: "real-time pair coding, conductor mode"
+      tui:
+        command: "hermes (display.interface: tui)"
+        config_key: "display.interface: tui"
+        use_case: "Ink TUI interface"
+      single_query:
+        command: "hermes chat -q"
+        use_case: "fire-and-forget one-shot"
+      worktree:
+        command: "hermes -w"
+        use_case: "isolated git worktree for parallel agents"
+    slash_commands:
+      session_control:
+        - "/new (reset)"
+        - "/clear"
+        - "/retry"
+        - "/undo"
+        - "/title"
+        - "/compress"
+        - "/stop"
+        - "/rollback"
+        - "/snapshot"
+        - "/background"
+        - "/queue"
+        - "/steer"
+        - "/agents (tasks)"
+        - "/resume"
+        - "/goal"
+        - "/redraw"
+      configuration:
+        - "/config"
+        - "/model"
+        - "/personality"
+        - "/reasoning"
+        - "/verbose"
+        - "/voice"
+        - "/yolo"
+        - "/busy"
+        - "/indicator"
+        - "/footer"
+        - "/skin"
+        - "/statusbar"
+      tools_skills:
+        - "/tools"
+        - "/toolsets"
+        - "/skills"
+        - "/skill"
+        - "/reload-skills"
+        - "/reload"
+        - "/reload-mcp"
+        - "/cron"
+        - "/curator"
+        - "/kanban"
+        - "/plugins"
+      gateway:
+        - "/approve"
+        - "/deny"
+        - "/restart"
+        - "/sethome"
+        - "/update"
+        - "/topic"
+        - "/platforms (gateway)"
+      utility:
+        - "/branch (fork)"
+        - "/handoff"
+        - "/fast"
+        - "/browser"
+        - "/history"
+        - "/save"
+        - "/copy"
+        - "/paste"
+        - "/image"
+      info:
+        - "/help"
+        - "/commands"
+        - "/usage"
+        - "/insights"
+        - "/status"
+        - "/profile"
+        - "/debug"
+      exit:
+        - "/quit (exit, q)"
+
+  hermes_desktop:
+    id: SURF_HERMES_DESKTOP
+    kind: desktop_app
+    available: true
+    mode: [conductor]
+    autonomy: low
+    description: "Hermes native Electron desktop app — chat, file browser, terminal pane, review pane"
+    command: "hermes desktop (alias: hermes gui)"
+    use_case: "IDE-adjacent real-time coding with file inspection"
+    panes: [chat, files, terminal, review, sessions]
+
+  hermes_dashboard:
+    id: SURF_HERMES_DASHBOARD
+    kind: web_dashboard
+    available: true
+    mode: [conductor, orchestrator]
+    autonomy: medium
+    description: "Web admin panel + embedded chat"
+    command: "hermes dashboard"
+    use_case: "remote admin, session management, multi-profile"
+
+  hermes_acp:
+    id: SURF_HERMES_ACP
+    kind: ide_integration
+    available: true
+    mode: [conductor]
+    autonomy: low
+    description: "ACP server for IDE integration (VS Code / Zed / JetBrains)"
+    command: "hermes acp"
+    use_case: "inline completions, chat panel inside IDE"
+
+  hermes_proxy:
+    id: SURF_HERMES_PROXY
+    kind: openai_proxy
+    available: true
+    mode: [conductor]
+    autonomy: low
+    description: "OpenAI-compatible local proxy backed by OAuth provider"
+    command: "hermes proxy"
+    use_case: "route IDE completions through Hermes credential pool"
+
+  antigravity_cli:
+    id: SURF_AGY
+    kind: cli_agent
+    available: false
+    mode: [conductor, orchestrator]
+    autonomy: medium
+    description: "Antigravity CLI (agy) — coding agent backend with Gemini/Claude model selection"
+    procurement_note: "agy binary not found in WSL2 PATH; install via agy install or BLUE unified harness setup"
+    shell_wrapper_commands:
+      - "agy help"
+      - "agy install"
+      - "agy plugin list"
+      - "agy plugin install"
+      - "agy update"
+      - "agy changelog"
+      - "agy --version"
+    non_interactive:
+      command: "agy --print (agy -p)"
+      use_case: "one-shot scripted prompts, smoke tests, second opinions"
+      model_flag: "--model"
+      model_examples: ["Gemini 3.1 Pro (High)", "Claude Opus 4.6 (Thinking)"]
+    interactive_tui:
+      command: "agy"
+      in_session_slash: ["/config", "/permissions", "/skills", "/agents"]
+      requires_pty: true
+    worktree_support: true
+
+  serverless_agent_engine:
+    id: SURF_AGENT_ENGINE
+    kind: cloud_sandbox
+    available: false
+    mode: [orchestrator]
+    autonomy: high
+    description: "Google Agent Engine (cloud-hosted sandbox for production agents)"
+    status: "DECLARED_NOT_WIRED"
+    procurement_note: "Cloud-hosted; requires Google Cloud setup. Declared as architectural seat, not wired in this workspace."
+    use_case: "production agent deployment, persistent memory at scale, scoped permissions"
+
+# ---------------------------------------------------------------------------
+# BLUE-specified slash commands (from BLUE §G6 L351)
+# ---------------------------------------------------------------------------
+blue_slash_commands:
+  /goal:
+    command: "/goal [text|sub]"
+    surface: hermes_cli
+    description: "Set a standing goal Hermes works on across turns until achieved"
+    subcommands: [status, pause, resume, clear]
+    model_tier: varies_by_goal
+    vibe_spectrum: structured_assisted_to_agentic
+    notes: "Primary mechanism for Orchestrator-mode async delegation"
+
+  /grill-me:
+    command: "/grill-me"
+    surface: blue_meta_prompt
+    description: "BLUE Meta-Prompt: use for any ambiguity before proceeding with codegen"
+    model_tier: premium_frontier
+    vibe_spectrum: agentic_engineering
+    notes: "Enforces spec-first discipline; prevents vibe coding on production paths"
+    usage_in_blue:
+      - "G1 Step D: Use /grill-me first for any ambiguity"
+      - "G2 Step D: Use /grill-me for any Tier-4 gap"
+      - "G3 Step D: Use /grill-me on co-load precedence"
+
+  /browser:
+    command: "/browser"
+    surface: hermes_cli
+    description: "Open CDP browser connection for UI testing and web interaction"
+    model_tier: strong_coding
+    vibe_spectrum: structured_assisted_to_agentic
+    notes: "Enables agent to test UI, verify visual output, interact with web pages"
+    related_skill: computer-use
+
+  /schedule:
+    command: "/cron"
+    surface: hermes_cli
+    description: "Manage cron jobs — scheduled task execution and delivery"
+    model_tier: fast_flash
+    vibe_spectrum: agentic_engineering
+    notes: "Durable scheduler; cronjob tool is the programmatic interface"
+    subcommands: [list, create, edit, pause, resume, run, remove, status]
+    cli_equivalent: "hermes cron <verb>"
+
+# ---------------------------------------------------------------------------
+# Hooks (lifecycle intercepts)
+# ---------------------------------------------------------------------------
+hooks:
+  pre_tool:
+    kind: deterministic
+    layer: L0_hooks
+    description: "Deterministic code that runs before a tool call"
+    enforced_by: constraint_harness
+    g5_mapping: "OTEL span start on tool/delegate spans"
+
+  post_file_edit:
+    kind: deterministic
+    layer: L0_hooks
+    description: "Runs after a file edit — syntax check, lint, format"
+    enforced_by: constraint_harness
+    g5_mapping: "trajectory Observation capture"
+
+  pre_commit:
+    kind: deterministic
+    layer: L0_hooks
+    description: "Runs before a git commit — secret scan, structural test"
+    enforced_by: constraint_harness
+    g5_mapping: "checkpoint protocol (git checkpoint ref)"
+
+  approval_bypass:
+    kind: toggle
+    layer: L0_hooks
+    command: "/yolo"
+    description: "Toggle approval bypass — VIBE CODING MODE"
+    warning: "Must be confined to prototype dunes; never active on production paths"
+    g5_mapping: "circuit breaker disabled in yolo; trust score not enforced"
+
+# ---------------------------------------------------------------------------
+# IDE extensions
+# ---------------------------------------------------------------------------
+ide_extensions:
+  vscode:
+    protocol: ACP
+    command: "hermes acp"
+    status: available
+    features: [inline_completion, chat_panel, file_edit, terminal_access]
+
+  zed:
+    protocol: ACP
+    command: "hermes acp"
+    status: available
+    features: [inline_completion, chat_panel, file_edit]
+
+  jetbrains:
+    protocol: ACP
+    command: "hermes acp"
+    status: available
+    features: [inline_completion, chat_panel, file_edit, terminal_access]
+
+# ---------------------------------------------------------------------------
+# Skills hub inventory (observed: 93 SKILL.md files in wsl-runtime profile)
+# ---------------------------------------------------------------------------
+skills_hub:
+  profile_path: "/mnt/c/Users/carlo/AppData/Local/hermes/profiles/wsl-runtime/skills/"
+  total_skills: 93
+  categories:
+    - autonomous-ai-agents (claude-code, codex, hermes-agent, opencode)
+    - antigravity-cli
+    - creative (architecture-diagram, ascii-art, comfyui, p5js, excalidraw, etc.)
+    - data-science (jupyter-live-kernel)
+    - github (codebase-inspection, github-auth, code-review, issues, pr-workflow, repo-management)
+    - hermes-desktop-plugins
+    - hermes-themes
+    - media (gif-search, youtube-content, songsee, heartmula)
+    - mlops (huggingface-hub, llama-cpp, segment-anything-model, weights-and-biases)
+    - note-taking (obsidian)
+    - productivity (airtable, docx, google-workspace, notion, pdf, powerpoint, xlsx, etc.)
+    - research (arxiv, blogwatcher, llm-wiki, polymarket)
+    - smart-home (openhue)
+    - software-development (plan, spike, TDD, systematic-debugging, simplify-code, etc.)
+  g6_relevant_skills:
+    - antigravity-cli
+    - autonomous-ai-agents/claude-code
+    - autonomous-ai-agents/codex
+    - autonomous-ai-agents/hermes-agent
+    - autonomous-ai-agents/opencode
+    - software-development/plan
+    - software-development/spike
+    - software-development/test-driven-development
+    - software-development/systematic-debugging
+    - software-development/simplify-code
+    - software-development/requesting-code-review
+    - software-development/hermes-agent-skill-authoring
+
+# ---------------------------------------------------------------------------
+# Durable systems (from hermes-agent skill)
+# ---------------------------------------------------------------------------
+durable_systems:
+  delegation:
+    tool: delegate_task
+    kind: subagent_spawn
+    durability: process_local
+    max_concurrent_children: 3
+    max_spawn_depth: 1
+    roles: [leaf, orchestrator]
+    notes: "Not durable; if parent exits, children lost. Use cronjob for durable work."
+
+  cron:
+    tool: cronjob
+    kind: scheduled_jobs
+    durability: durable
+    cli: "hermes cron <verb>"
+    slash: "/cron"
+    features: [skills_preload, model_override, script_pre_run, context_chaining, workdir, multi_platform_delivery]
+    invariants:
+      - "3-minute hard interrupt per run"
+      - ".tick.lock prevents duplicate ticks"
+      - "skip_memory=True by default"
+      - "cron deliveries framed with header/footer"
+
+  curator:
+    tool: hermes_curator
+    kind: skill_lifecycle
+    durability: durable
+    cli: "hermes curator <verb>"
+    slash: "/curator"
+    scope: "only touches skills with created_by: agent provenance"
+    max_destructive: archive
+    pinned_exempt: true
+
+# ---------------------------------------------------------------------------
+# Procurement summary
+# ---------------------------------------------------------------------------
+procurement_summary:
+  tier_1_native:
+    - "Hermes CLI (installed, active)"
+    - "Hermes desktop app (installed)"
+    - "Hermes ACP server (available)"
+    - "Hermes dashboard (available)"
+    - "Hermes proxy (available)"
+    - "93 skills in profile hub"
+  tier_2_vetted_mcp:
+    - "Context7 MCP (configured, stdio, @upstash/context7-mcp@3.2.4)"
+  tier_3_custom_mcp:
+    - "None currently"
+  tier_4_adhoc:
+    - "Antigravity CLI (agy) — not installed; procurement needed for full hybrid surface"
+    - "Google Agents CLI — not installed; referenced in WP-S1 for production agent lifecycle"
+  gaps:
+    - "agy binary not in WSL2 PATH"
+    - "No /grill-me command in Hermes (BLUE Meta-Prompt convention, not Hermes native)"
+    - "Hooks directory empty (no lifecycle intercepts wired)"
+    - "No IDE extension installed (ACP server available but not connected)"

@@ -1,0 +1,274 @@
+# G6 — Vibe Environment Configuration
+# Status: DRAFT_PRE_GATE
+# Upstream: G5 APPROVED · eval-v1.0.0
+# BLUE resume: G6_VIBE_ENV_LOCKED_v1
+# Overlay: OPTION_2_STANDARD
+# Primary surface: Hermes CLI + Antigravity hybrid
+
+version: "1.0.0"
+domain: G6
+kind: vibe_environment_config
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: eval-v1.0.0
+blue_resume_token: G6_VIBE_ENV_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# Workspace mode — the production-vs-prototype boundary
+# ---------------------------------------------------------------------------
+workspace_mode:
+  default: structured_assisted
+  # Options: vibe_coding | structured_assisted | agentic_engineering
+  # vibe_coding = prototype dune (yolo, no eval gates, disposable)
+  # structured_assisted = specs + human review at checkpoints
+  # agentic_engineering = full SDD + eval gates + CI/CD + observability
+
+  prototype_dune:
+    enabled: true
+    activation:
+      - "/yolo toggle on"
+      - explicit_branch: "prototype/* or dune/*"
+      - no_production_secrets: true
+      - no_production_db_access: true
+      - time_box: "single session"
+    model_tier: fast_flash_or_strong_coding
+    eval_gates: disabled
+    circuit_breaker: disabled
+    checkpoint_protocol: optional
+    trajectory_emission: optional
+    notes: "Disposable code; no audit trail required; code is throwaway"
+
+  production_path:
+    enabled: true
+    activation:
+      - specs_exist_before_codegen: true
+      - bdd_scenarios_in_specs: true
+      - eval_gates_active: true
+      - circuit_breaker_active: true
+      - checkpoint_protocol_mandatory: true
+      - trajectory_emission_mandatory: true
+      - pii_scrubbing_mandatory: true
+    model_tier: dynamic_by_task
+    sdd_required: true
+    notes: "Spec-Driven Development; code is disposable but spec is durable"
+
+# ---------------------------------------------------------------------------
+# Transition triggers (declarative — enforcement deferred to G8/G10)
+# ---------------------------------------------------------------------------
+transition_triggers:
+  - id: TT-01
+    name: stakes_escalation
+    from: vibe_coding
+    to: structured_assisted
+    condition: "Code affects users, data, or financial systems"
+    source: "WP-S1 p.13"
+
+  - id: TT-02
+    name: team_scale_gt_one
+    from: structured_assisted
+    to: agentic_engineering
+    condition: "Multiple developers need shared specs"
+    source: "WP-S5 p.6"
+
+  - id: TT-03
+    name: codebase_longevity_gt_sprint
+    from: vibe_coding
+    to: structured_assisted
+    condition: "Codebase persists beyond one sprint"
+    source: "WP-S1 p.41"
+
+  - id: TT-04
+    name: verification_gap
+    from: any
+    to: agentic_engineering
+    condition: "No automated tests or evaluations exist"
+    source: "WP-S1 p.14"
+
+  - id: TT-05
+    name: production_deployment
+    from: structured_assisted
+    to: agentic_engineering
+    condition: "Code deployed to production serving real users"
+    source: "WP-F5 pp.12-13"
+
+  - id: TT-06
+    name: agent_as_product
+    from: any
+    to: agentic_engineering
+    condition: "Building agents that serve real users at scale"
+    source: "WP-S1 p.37"
+
+  - id: TT-07
+    name: regulatory_compliance
+    from: any
+    to: agentic_engineering
+    condition: "Regulatory or compliance requirement active"
+    source: "WP-S5 p.8, WP-F5 p.9"
+
+  - id: TT-08
+    name: bug_to_code_ratio_rising
+    from: vibe_coding
+    to: structured_assisted
+    condition: "AI-generated bug rate exceeds human review capacity"
+    source: "WP-S5 p.5"
+
+  - id: TT-09
+    name: context_fragmentation
+    from: any
+    to: agentic_engineering
+    condition: "Agent losing plot from outdated file snapshots"
+    source: "WP-S5 p.8"
+
+# ---------------------------------------------------------------------------
+# Surface posture
+# ---------------------------------------------------------------------------
+surface_posture:
+  primary: hermes_cli
+  secondary: antigravity_cli
+  tertiary: hermes_desktop
+  ide_integration: hermes_acp
+  cloud_sandbox: serverless_agent_engine
+  cloud_status: DECLARED_NOT_WIRED
+
+  routing:
+    - task: "architecture_spec_synthesis"
+      surface: hermes_cli
+      model_tier: premium_frontier
+    - task: "scaffolding_declarative_configs"
+      surface: hermes_cli
+      model_tier: strong_coding
+    - task: "code_generation_feature_impl"
+      surface: antigravity_cli
+      model_tier: strong_coding
+    - task: "test_generation_from_bdd"
+      surface: antigravity_cli
+      model_tier: strong_coding
+    - task: "verification_lint_syntax"
+      surface: hermes_cli
+      model_tier: fast_flash
+    - task: "mechanical_commits"
+      surface: hermes_cli
+      model_tier: fast_flash
+    - task: "prototype_vibe_dune"
+      surface: antigravity_cli
+      model_tier: fast_flash_or_strong_coding
+    - task: "debugging_root_cause"
+      surface: hermes_cli
+      model_tier: premium_frontier
+    - task: "scheduled_watchdog"
+      surface: cronjob
+      model_tier: fast_flash
+    - task: "research_synthesis"
+      surface: delegate_task
+      model_tier: premium_frontier
+
+# ---------------------------------------------------------------------------
+# SDD (Spec-Driven Development) configuration
+# ---------------------------------------------------------------------------
+sdd:
+  enabled: true
+  spec_format: "hybrid_markdown_yaml"
+  spec_location: "specs/"
+  bdd_syntax: gherkin
+  bdd_location: ".gherkin/"
+  instruction_placement:
+    chat_interface: "ephemeral, session-specific, high-level orchestration"
+    specs_folder: "persistent, version-controlled, technical design + BDD + API contracts"
+    agent_skills: "reusable, trigger-based, progressive disclosure L1-L3"
+    agents_md: "static, always-on, core identity + constraints + routing"
+  token_economics:
+    yaml_for_nesting_depth_gt_3: true
+    markdown_for_narrative: true
+    eliminate_repetitive_gherkin: true
+    shared_backgrounds: true
+    rationale: "YAML 51.9% parsing accuracy vs JSON 43.1% vs XML 33.8% for deep nesting (WP-S5 p.7)"
+
+# ---------------------------------------------------------------------------
+# G5 evaluation integration
+# ---------------------------------------------------------------------------
+g5_integration:
+  trajectory_schema: "Mission → Scene → Thought → Action → Observation → Verdict"
+  trajectory_emission:
+    vibe_coding: optional
+    structured_assisted: recommended
+    agentic_engineering: mandatory
+  trust_score:
+    vibe_coding: not_enforced
+    structured_assisted: advisory
+    agentic_engineering: enforced
+  thresholds:
+    five_pct_auto_flag: agentic_engineering_only
+    fifteen_pct_hitl_review: agentic_engineering_only
+  circuit_breaker:
+    vibe_coding: disabled
+    structured_assisted: advisory
+    agentic_engineering: active_15_fm_triggers
+  checkpoint_protocol:
+    vibe_coding: optional
+    structured_assisted: recommended
+    agentic_engineering: mandatory
+  pii_scrubbing:
+    vibe_coding: optional
+    structured_assisted: recommended
+    agentic_engineering: mandatory
+  llm_as_judge:
+    vibe_coding: not_applicable
+    structured_assisted: optional
+    agentic_engineering: enforced_different_model_family
+  agbom:
+    vibe_coding: not_applicable
+    structured_assisted: optional
+    agentic_engineering: mandatory_drift_detection
+
+# ---------------------------------------------------------------------------
+# Hooks configuration (declarative — wiring deferred)
+# ---------------------------------------------------------------------------
+hooks:
+  pre_tool:
+    enabled: true
+    kind: deterministic
+    layer: L0_hooks
+    actions: [syntax_check, permission_verify]
+    status: DECLARED_NOT_WIRED
+  post_file_edit:
+    enabled: true
+    kind: deterministic
+    layer: L0_hooks
+    actions: [lint, format, type_check]
+    status: DECLARED_NOT_WIRED
+  pre_commit:
+    enabled: true
+    kind: deterministic
+    layer: L0_hooks
+    actions: [secret_scan, structural_test, checkpoint_ref]
+    status: DECLARED_NOT_WIRED
+  approval_bypass:
+    enabled: true
+    kind: toggle
+    command: "/yolo"
+    confined_to: prototype_dune
+    warning: "Never active on production paths"
+    status: WIRED (Hermes native /yolo)
+
+# ---------------------------------------------------------------------------
+# Constraint inheritance
+# ---------------------------------------------------------------------------
+constraints_inherited:
+  - C-FS-01  # filesystem sandbox
+  - C-FS-02  # path guards
+  - C-LIB-01 # library whitelist
+  - C-LIB-02 # no unknown packages
+  - C-ARCH-01 # architecture conformance
+  - C-ARCH-02 # no silent codegen drift
+  - C-ARCH-03 # spec over vibes
+  - C-ARCH-04 # declarative artifacts only (until domain gate)
+  - C-CODE-01 # syntactic correctness
+  - C-CODE-02 # no secrets
+  - C-CODE-03 # no host windows python
+  - C-SEC-01  # OWASP top-10
+  - C-SEC-02  # untrusted local network
+  - C-SEC-03  # no exposed ports without HITL
+  - C-LOOP-01 # fail-fast
+  - C-LOOP-02 # no brute-force loops
+  - C-MODEL-01 # dynamic routing only
+  - C-HITL-01 # hard stop at gates

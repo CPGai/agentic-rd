@@ -378,13 +378,45 @@ domains:
       - scripts/verify_g5_evaluation.py green
       - tests/test_g5_evaluation.py green
     next_domain: G6
-    next_resume_token_expected: G6_VIBE_SPEC_APPROVED_v1
+    next_resume_token_expected: G6_VIBE_ENV_LOCKED_v1
   G6:
     id: D_G6
     name: vibe_coding_spec_harness
-    state: READY_FOR_DOMAIN
+    state: APPROVED
+    locked: true
+    locked_at: "2026-07-24"
+    tag: vibecoding-v1.0.0
     requires: [G1_HARNESS_APPROVED_v1]
     primary_harness_touch: [H_CONSTRAINT, H_EVAL]
+    resume_token: G6_VIBE_ENV_LOCKED_v1
+    recommended: OPTION_2_STANDARD
+    selected: OPTION_2_STANDARD
+    granted: true
+    granted_at: "2026-07-24"
+    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    artifacts:
+      - specs/g6_vibe/VIBECODING_SPECTRUM.md
+      - specs/g6_vibe/SURFACE_CAPABILITY_MATRIX.yaml
+      - specs/g6_vibe/vibe_environment.yaml
+      - specs/g6_vibe/slash_command_mappings.yaml
+      - specs/g6_vibe/AGENTS_INHERITANCE_RULES.md
+      - specs/g6_vibe/G6_MIGRATION_CONTEXT.md
+      - scripts/verify_g6_vibe.py
+      - tests/test_g6_vibe.py
+    required_telemetry:
+      - spectrum_transition_triggers_9
+      - surface_capability_matrix_surfaces_6
+      - vibe_environment_workspace_modes_2
+      - g5_integration_7_keys
+      - constraints_inherited_18
+      - structural_test_intents_8
+      - scripts/verify_g6_vibe.py green
+      - tests/test_g6_vibe.py green
+    verification:
+      unittest_suite: "93/93 OK (test_g6_vibe.py)"
+      pack_verifier: "203/203 OK (verify_g6_vibe.py)"
+    next_domain: G7
+    next_resume_token_expected: G7_SELF_IMPROVE_BOUNDED
   G7:
     id: D_G7
     name: self_improvement

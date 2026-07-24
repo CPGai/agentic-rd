@@ -1,0 +1,304 @@
+# G6 — Slash Command Mappings
+# Status: DRAFT_PRE_GATE
+# Upstream: G5 APPROVED · eval-v1.0.0
+# BLUE resume: G6_VIBE_ENV_LOCKED_v1
+# Overlay: OPTION_2_STANDARD
+# Maps BLUE §G6 slash commands to Hermes-native surfaces and model tiers
+
+version: "1.0.0"
+domain: G6
+kind: slash_command_mappings
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: eval-v1.0.0
+blue_resume_token: G6_VIBE_ENV_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# BLUE-specified slash commands (from BLUE §G6 L351)
+# ---------------------------------------------------------------------------
+blue_commands:
+
+  /goal:
+    id: CMD_GOAL
+    blue_reference: "BLUE §G1 L52, §G6 L351"
+    hermes_native: true
+    hermes_command: "/goal [text|sub]"
+    cli_equivalent: "N/A (in-session only)"
+    description: "Set a standing goal Hermes works on across turns until achieved"
+    subcommands: [status, pause, resume, clear]
+    model_tier: varies_by_goal
+    vibe_spectrum: structured_assisted_to_agentic
+    conductor_mode: true
+    orchestrator_mode: true
+    production_path: true
+    prototype_dune: true
+    notes: "Primary mechanism for Orchestrator-mode async delegation. Goal persists across turns."
+    g5_integration:
+      trajectory_emission: true
+      trust_score: advisory
+    usage_examples:
+      - "/goal Scaffold project constitution from HARNESS_SPEC.md"
+      - "/goal Scaffold MCP broker from TOOL_REGISTRY.md"
+      - "/goal status"
+
+  /grill-me:
+    id: CMD_GRILL_ME
+    blue_reference: "BLUE §G1 L58, §G2 L141, §G3 L223, §G6 L351"
+    hermes_native: false
+    status: BLUE_META_PROMPT_CONVENTION
+    description: "Use for any ambiguity before proceeding with codegen — enforces spec-first discipline"
+    model_tier: premium_frontier
+    vibe_spectrum: agentic_engineering
+    conductor_mode: false
+    orchestrator_mode: true
+    production_path: true
+    prototype_dune: false
+    notes: "Not a Hermes-native command. BLUE Meta-Prompt convention that instructs the agent to interrogate ambiguity before codegen. Implemented as a prompt pattern, not a slash command."
+    implementation_pattern: "Before any codegen step, the agent must surface ambiguities and request clarification. This is enforced by AGENTS.md §2 (Glass-box: explanation precedes execution)."
+    g5_integration:
+      trajectory_emission: true
+      trust_score: enforced
+    usage_in_blue:
+      - "G1 Step D: Use /grill-me first for any ambiguity. No agent logic code."
+      - "G2 Step D: Use /grill-me for any Tier-4 gap. No implementation code."
+      - "G3 Step D: Use /grill-me on co-load precedence. No executable logic."
+    mapping_to_hermes: "Use /steer to inject ambiguity-check mid-loop, or rely on AGENTS.md Glass-box rule"
+
+  /browser:
+    id: CMD_BROWSER
+    blue_reference: "BLUE §G6 L351"
+    hermes_native: true
+    hermes_command: "/browser"
+    description: "Open CDP browser connection for UI testing and web interaction"
+    model_tier: strong_coding
+    vibe_spectrum: structured_assisted_to_agentic
+    conductor_mode: true
+    orchestrator_mode: true
+    production_path: true
+    prototype_dune: true
+    related_skill: computer-use
+    notes: "Enables agent to test UI, verify visual output, interact with web pages. Uses Chrome DevTools Protocol."
+    g5_integration:
+      trajectory_emission: true
+      trust_score: advisory
+    usage_examples:
+      - "/browser (opens CDP connection)"
+      - "Then agent can navigate, click, screenshot, verify UI state"
+
+  /schedule:
+    id: CMD_SCHEDULE
+    blue_reference: "BLUE §G6 L351"
+    hermes_native: true
+    hermes_command: "/cron"
+    cli_equivalent: "hermes cron <verb>"
+    description: "Manage cron jobs — scheduled task execution and multi-platform delivery"
+    model_tier: fast_flash
+    vibe_spectrum: agentic_engineering
+    conductor_mode: false
+    orchestrator_mode: true
+    production_path: true
+    prototype_dune: false
+    subcommands: [list, create, edit, pause, resume, run, remove, status]
+    features:
+      - "skills_preload: load ordered skills before prompt"
+      - "model_override: pin model per job"
+      - "script_pre_run: collect data before agent runs"
+      - "no_agent: script-only watchdog (silent on empty output)"
+      - "context_from: chain job outputs"
+      - "workdir: run in specific directory with AGENTS.md loaded"
+      - "multi_platform_delivery: deliver to any connected channel"
+    invariants:
+      - "3-minute hard interrupt per run"
+      - ".tick.lock prevents duplicate ticks"
+      - "skip_memory=True by default"
+      - "cron deliveries framed with header/footer"
+    notes: "Durable scheduler; survives process restart. Primary tool for Orchestrator-mode async monitoring."
+    g5_integration:
+      trajectory_emission: true
+      trust_score: enforced
+    usage_examples:
+      - "/cron create 30m  # every 30 minutes"
+      - "/cron list"
+      - "/cron pause <id>"
+      - "hermes cron create '0 9 * * *'  # daily at 9am"
+
+# ---------------------------------------------------------------------------
+# Hermes-native slash commands mapped to vibe spectrum
+# ---------------------------------------------------------------------------
+hermes_native_commands:
+
+  session_control:
+    /new:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Fresh session — clears context window"
+    /clear:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Clear screen + new session (CLI)"
+    /retry:
+      vibe_spectrum: all
+      production_path: true
+    /undo:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Remove last exchange — critical for vibe correction"
+    /compress:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Manually compress context — G3 session lifecycle"
+    /stop:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Kill background processes"
+    /rollback:
+      vibe_spectrum: agentic_engineering
+      production_path: true
+      notes: "Restore filesystem checkpoint — G5 checkpoint protocol"
+    /background:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Run prompt in background — Orchestrator mode"
+    /steer:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Inject message after next tool call without interrupting"
+    /agents:
+      vibe_spectrum: agentic_engineering
+      production_path: true
+      notes: "Show active agents and running tasks — G4 topology"
+
+  configuration:
+    /model:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Show or change model — dynamic routing (C-MODEL-01)"
+    /reasoning:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Set reasoning level (none|minimal|low|medium|high|xhigh|max|ultra)"
+    /yolo:
+      vibe_spectrum: vibe_coding
+      production_path: false
+      prototype_dune: true
+      warning: "Approval bypass — VIBE CODING MODE. Confine to prototype dunes."
+      notes: "Toggles approval bypass. When on, no command approvals requested."
+    /fast:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Toggle priority/fast processing"
+
+  tools_skills:
+    /skills:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Search/install skills — G3 progressive disclosure"
+    /skill:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Load a skill into session"
+    /reload-skills:
+      vibe_spectrum: all
+      production_path: true
+    /reload-mcp:
+      vibe_spectrum: all
+      production_path: true
+      notes: "Reload MCP servers — G2 tool registry"
+    /tools:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Manage tools — G2"
+    /curator:
+      vibe_spectrum: agentic_engineering
+      production_path: true
+      notes: "Background skill maintenance — skill lifecycle"
+
+  gateway:
+    /approve:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Approve a pending command (gateway)"
+    /deny:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Deny a pending command (gateway)"
+
+  utility:
+    /branch:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Branch the current session — explore alternatives"
+    /handoff:
+      vibe_spectrum: agentic_engineering
+      production_path: true
+      notes: "Hand live session off to a messaging platform"
+    /browser:
+      vibe_spectrum: structured_assisted_to_agentic
+      production_path: true
+      notes: "Open CDP browser connection (BLUE /browser)"
+
+# ---------------------------------------------------------------------------
+# Antigravity CLI in-session slash commands (when available)
+# ---------------------------------------------------------------------------
+antigravity_in_session:
+  /config:
+    surface: agy_tui
+    notes: "Antigravity configuration"
+  /permissions:
+    surface: agy_tui
+    notes: "Permission management"
+  /skills:
+    surface: agy_tui
+    notes: "Antigravity skill management"
+  /agents:
+    surface: agy_tui
+    notes: "Antigravity agent management"
+  status: DECLARED_NOT_WIRED
+  procurement_note: "agy binary not in WSL2 PATH; install for full hybrid surface"
+
+# ---------------------------------------------------------------------------
+# Command-to-surface routing matrix
+# ---------------------------------------------------------------------------
+routing_matrix:
+  - command: "/goal"
+    surface: hermes_cli
+    model_tier: varies_by_goal
+    production_path: true
+  - command: "/grill-me"
+    surface: hermes_cli
+    model_tier: premium_frontier
+    production_path: true
+    implementation: prompt_pattern
+  - command: "/browser"
+    surface: hermes_cli
+    model_tier: strong_coding
+    production_path: true
+  - command: "/schedule (/cron)"
+    surface: hermes_cli
+    model_tier: fast_flash
+    production_path: true
+  - command: "/yolo"
+    surface: hermes_cli
+    model_tier: fast_flash
+    production_path: false
+    prototype_dune: true
+  - command: "/rollback"
+    surface: hermes_cli
+    model_tier: fast_flash
+    production_path: true
+  - command: "/agents"
+    surface: hermes_cli
+    model_tier: fast_flash
+    production_path: true
+  - command: "/compress"
+    surface: hermes_cli
+    model_tier: fast_flash
+    production_path: true
+  - command: "/steer"
+    surface: hermes_cli
+    model_tier: varies
+    production_path: true
+  - command: "/branch"
+    surface: hermes_cli
+    model_tier: fast_flash
+    production_path: true
