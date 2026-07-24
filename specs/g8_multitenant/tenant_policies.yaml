@@ -1,0 +1,526 @@
+# tenant_policies.yaml
+# G8 — Declarative Policy Enforcement Rules (Per-Tenant)
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: self-improvement-v1.0.0 (G7 LOCKED)
+# BLUE resume: G8_MULTITENANT_APPROVED_v1
+# Tier: Strong Coding (Step D)
+#
+# This file defines the compiled policy rules for each tenant.
+# The Hybrid Policy Server loads these at tenant registration time.
+# Rules are evaluated deterministically; the LLM never interprets policy.
+# Fail-closed: if no rule matches, the default decision is deny.
+
+version: "1.0.0-draft"
+domain: G8
+kind: tenant_policies
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: self-improvement-v1.0.0
+blue_resume_token: G8_MULTITENANT_APPROVED_v1
+
+# ---------------------------------------------------------------------------
+# Global System-Wide Rules (apply to ALL tenants; no tenant can relax)
+# These encode G7 Hard Bounds (HB-01 to HB-10) as policy rules.
+# ---------------------------------------------------------------------------
+system_wide_rules:
+  - id: SYS-01
+    description: "HB-01: L4 AgentCreator is disabled"
+    condition: "improvement.type == L4_enablement"
+    decision: deny
+    reason_code: "L4_DISABLED_SYSTEM_WIDE"
+    source: "G7 HB-01"
+
+  - id: SYS-02
+    description: "HB-02: No constraint catalog self-modification"
+    condition: "cap == constraint.modify"
+    decision: deny
+    reason_code: "CONSTRAINT_SELF_MOD_FORBIDDEN"
+    source: "G7 HB-02"
+
+  - id: SYS-03
+    description: "HB-03: No circuit breaker bypass"
+    condition: "cap == circuit_breaker.reset"
+    decision: hitl
+    reason_code: "CIRCUIT_BREAKER_RESET_REQUIRES_HITL"
+    source: "G7 HB-03"
+
+  - id: SYS-04
+    description: "HB-05: No secret/credential generation"
+    condition: "cap == secret.gen"
+    decision: deny
+    reason_code: "SECRET_GENERATION_FORBIDDEN"
+    source: "G7 HB-05"
+
+  - id: SYS-05
+    description: "HB-06: No cross-profile writes"
+    condition: "cap == fs.write, path.startswith(/profiles/)"
+    decision: deny
+    reason_code: "CROSS_PROFILE_WRITE_FORBIDDEN"
+    source: "G7 HB-06"
+
+  - id: SYS-06
+    description: "HB-07: No host-Windows Python execution"
+    condition: "cap == shell.exec, interpreter == host_python"
+    decision: deny
+    reason_code: "WSL2_MANDATE_VIOLATION"
+    source: "G7 HB-07"
+
+  - id: SYS-07
+    description: "HB-09: No G6 transition trigger relaxation"
+    condition: "cap == transition_trigger.disable"
+    decision: deny
+    reason_code: "TRIGGER_RELAXATION_FORBIDDEN"
+    source: "G7 HB-09"
+
+  - id: SYS-08
+    description: "C-MT-02: Policy server is non-delegatable"
+    condition: "always"
+    decision: "evaluate_policy_server"
+    reason_code: "POLICY_SERVER_NON_DELEGATABLE"
+    source: "G8 C-MT-02"
+
+  - id: SYS-09
+    description: "C-MT-06: SPIFFE SVID required for all tool calls"
+    condition: "svid == null"
+    decision: deny
+    reason_code: "SVID_REQUIRED"
+    source: "G8 C-MT-06"
+
+  - id: SYS-10
+    description: "C-MT-07: Authorization envelope required"
+    condition: "envelope == null"
+    decision: deny
+    reason_code: "ENVELOPE_REQUIRED"
+    source: "G8 C-MT-07"
+
+# ---------------------------------------------------------------------------
+# Tenant: t-internal-dev (RT-1, ISO-1)
+# ---------------------------------------------------------------------------
+tenants:
+  - tenant_id: "t-internal-dev"
+    risk_tier: RT-1
+    isolation_tier: ISO-1
+    description: "Internal development team — low-risk PII"
+    registered_by: "human_systems_architect"
+    registration_date: "2026-07-24"
+
+    capabilities_allowed:
+      - fs.read:tenant_scope
+      - fs.write:tenant_scope
+      - net.egress:policy_proxied
+      - shell.exec:wsl2_routed
+      - mcp.call:T1_T2_allowlist
+      - a2a.delegate:card_option2
+      - memory.read:tenant_scope
+      - memory.write:tenant_scope
+      - skill.gen:tenant_scope
+      - budget.spend:tenant_ceiling
+
+    structural_rules:
+      - id: R-ID-S01
+        condition: "tool.risk_tier in [T1, T2]"
+        decision: allow
+      - id: R-ID-S02
+        condition: "tool.risk_tier == T3"
+        decision: hitl
+        reason_code: "T3_REQUIRES_HITL"
+      - id: R-ID-S03
+        condition: "tool.risk_tier == T4"
+        decision: deny
+        reason_code: "T4_FORBIDDEN_RT1"
+      - id: R-ID-S04
+        condition: "cap == fs.write, path.startswith(specs/tenants/t-internal-dev/)"
+        decision: allow
+      - id: R-ID-S05
+        condition: "cap == fs.write, path.startswith(AGENTS.md)"
+        decision: deny
+        reason_code: "SHARED_SPEC_IMMUTABLE"
+      - id: R-ID-S06
+        condition: "cap == fs.write, path.startswith(HARNESS_SPEC.md)"
+        decision: deny
+        reason_code: "SHARED_SPEC_IMMUTABLE"
+      - id: R-ID-S07
+        condition: "cap == mcp.call, mcp.server in [context7]"
+        decision: allow
+      - id: R-ID-S08
+        condition: "cap == mcp.call, mcp.server not_in [context7]"
+        decision: deny
+        reason_code: "MCP_SERVER_NOT_ALLOWLISTED"
+
+    semantic_rules:
+      - id: R-ID-SEM01
+        condition: "contains_pii(output) == true"
+        decision: deny
+        reason_code: "PII_DETECTED"
+        filter: "regex"
+      - id: R-ID-SEM02
+        condition: "contains_secret(output) == true"
+        decision: deny
+        reason_code: "SECRET_DETECTED"
+
+    budget_rules:
+      - id: R-ID-B01
+        condition: "session.tokens_used > 500000"
+        decision: hitl
+        reason_code: "TOKEN_CEILING_APPROACHED"
+      - id: R-ID-B02
+        condition: "session.cost_usd > 10.00"
+        decision: deny
+        reason_code: "COST_CEILING_EXCEEDED"
+      - id: R-ID-B03
+        condition: "loop.proposals_this_session > 10"
+        decision: hitl
+        reason_code: "LOOP_BUDGET_EXCEEDED"
+
+    improvement_rules:
+      - id: R-ID-I01
+        condition: "improvement.severity == S1"
+        decision: deny
+        reason_code: "S1_FREEZE"
+      - id: R-ID-I02
+        condition: "improvement.severity == S2"
+        decision: hitl
+        reason_code: "S2_REQUIRES_HITL"
+      - id: R-ID-I03
+        condition: "improvement.severity in [S3, S4], improvement.scope == token_level"
+        decision: allow
+      - id: R-ID-I04
+        condition: "improvement.severity in [S3, S4], improvement.scope == behavioral"
+        decision: hitl
+        reason_code: "BEHAVIORAL_CHANGE_REQUIRES_HITL"
+
+    circuit_breaker:
+      trip_threshold: 0.50
+      warning_threshold: 0.70
+      fm_triggers: "all 15 from G4 FAILURE_MODE_MATRIX"
+      per_tenant_isolated: true
+
+  # ---------------------------------------------------------------------------
+  # Tenant: t-product-team (RT-2, ISO-1)
+  # ---------------------------------------------------------------------------
+  - tenant_id: "t-product-team"
+    risk_tier: RT-2
+    isolation_tier: ISO-1
+    description: "Product team — standard PII handling"
+    registered_by: "human_systems_architect"
+    registration_date: "2026-07-24"
+
+    capabilities_allowed:
+      - fs.read:tenant_scope
+      - fs.write:tenant_scope
+      - net.egress:policy_proxied
+      - shell.exec:wsl2_routed
+      - mcp.call:T1_T2_allowlist
+      - a2a.delegate:card_option2
+      - memory.read:tenant_scope
+      - memory.write:tenant_scope
+      - skill.gen:tenant_scope
+      - budget.spend:tenant_ceiling
+
+    structural_rules:
+      - id: R-PT-S01
+        condition: "tool.risk_tier in [T1, T2]"
+        decision: allow
+      - id: R-PT-S02
+        condition: "tool.risk_tier == T3"
+        decision: hitl
+      - id: R-PT-S03
+        condition: "tool.risk_tier == T4"
+        decision: deny
+      - id: R-PT-S04
+        condition: "cap == fs.write, path.startswith(specs/tenants/t-product-team/)"
+        decision: allow
+      - id: R-PT-S05
+        condition: "cap == fs.write, path.startswith(AGENTS.md)"
+        decision: deny
+      - id: R-PT-S06
+        condition: "cap == fs.write, path.startswith(HARNESS_SPEC.md)"
+        decision: deny
+      - id: R-PT-S07
+        condition: "cap == mcp.call, mcp.server in [context7]"
+        decision: allow
+      - id: R-PT-S08
+        condition: "cap == mcp.call, mcp.server not_in [context7]"
+        decision: deny
+
+    semantic_rules:
+      - id: R-PT-SEM01
+        condition: "contains_pii(output) == true"
+        decision: deny
+        filter: "regex + ner"
+      - id: R-PT-SEM02
+        condition: "contains_secret(output) == true"
+        decision: deny
+      - id: R-PT-SEM03
+        condition: "contains_pii(output) == false, llm_advisory.pii_detected == true"
+        decision: hitl
+        reason_code: "LLM_ADVISORY_PII_FLAGGED"
+
+    budget_rules:
+      - id: R-PT-B01
+        condition: "session.tokens_used > 1000000"
+        decision: hitl
+      - id: R-PT-B02
+        condition: "session.cost_usd > 25.00"
+        decision: deny
+      - id: R-PT-B03
+        condition: "loop.proposals_this_session > 10"
+        decision: hitl
+
+    improvement_rules:
+      - id: R-PT-I01
+        condition: "improvement.severity == S1"
+        decision: deny
+      - id: R-PT-I02
+        condition: "improvement.severity == S2"
+        decision: hitl
+      - id: R-PT-I03
+        condition: "improvement.severity in [S3, S4], improvement.scope == token_level"
+        decision: allow
+      - id: R-PT-I04
+        condition: "improvement.severity in [S3, S4], improvement.scope == behavioral"
+        decision: hitl
+
+    circuit_breaker:
+      trip_threshold: 0.50
+      warning_threshold: 0.70
+      fm_triggers: "all 15 from G4 FAILURE_MODE_MATRIX"
+      per_tenant_isolated: true
+
+  # ---------------------------------------------------------------------------
+  # Tenant: t-financial-services (RT-3, ISO-2)
+  # ---------------------------------------------------------------------------
+  - tenant_id: "t-financial-services"
+    risk_tier: RT-3
+    isolation_tier: ISO-2
+    description: "Financial services — regulated, enhanced PII redaction"
+    registered_by: "human_systems_architect"
+    registration_date: "2026-07-24"
+    dpa_required: true
+    audit_retention_days: 90
+
+    capabilities_allowed:
+      - fs.read:tenant_scope
+      - fs.write:tenant_scope
+      - net.egress:policy_proxied
+      - shell.exec:wsl2_routed
+      - mcp.call:T1_T2_allowlist
+      - a2a.delegate:card_option2
+      - memory.read:tenant_scope
+      - memory.write:tenant_scope
+      - budget.spend:tenant_ceiling
+      # skill.gen disabled for RT-3
+
+    structural_rules:
+      - id: R-FS-S01
+        condition: "tool.risk_tier in [T1, T2]"
+        decision: allow
+      - id: R-FS-S02
+        condition: "tool.risk_tier == T3"
+        decision: hitl
+      - id: R-FS-S03
+        condition: "tool.risk_tier == T4"
+        decision: deny
+      - id: R-FS-S04
+        condition: "cap == fs.write, path.startswith(specs/tenants/t-financial-services/)"
+        decision: allow
+      - id: R-FS-S05
+        condition: "cap == fs.write, path.startswith(AGENTS.md)"
+        decision: deny
+      - id: R-FS-S06
+        condition: "cap == fs.write, path.startswith(HARNESS_SPEC.md)"
+        decision: deny
+      - id: R-FS-S07
+        condition: "cap == skill.gen"
+        decision: deny
+        reason_code: "SKILL_GEN_DISABLED_RT3"
+      - id: R-FS-S08
+        condition: "cap == mcp.call, mcp.server in [context7]"
+        decision: allow
+
+    semantic_rules:
+      - id: R-FS-SEM01
+        condition: "contains_pii(output) == true"
+        decision: deny
+        filter: "regex + ner + llm_advisory"
+      - id: R-FS-SEM02
+        condition: "contains_secret(output) == true"
+        decision: deny
+      - id: R-FS-SEM03
+        condition: "contains_pii(output) == false, llm_advisory.pii_detected == true"
+        decision: hitl
+      - id: R-FS-SEM04
+        condition: "matches(output, .*\\b\\d{16}\\b.*)"
+        decision: deny
+        reason_code: "POTENTIAL_CREDIT_CARD"
+
+    budget_rules:
+      - id: R-FS-B01
+        condition: "session.tokens_used > 500000"
+        decision: hitl
+      - id: R-FS-B02
+        condition: "session.cost_usd > 15.00"
+        decision: deny
+      - id: R-FS-B03
+        condition: "loop.proposals_this_session > 10"
+        decision: hitl
+
+    improvement_rules:
+      - id: R-FS-I01
+        condition: "improvement.severity == S1"
+        decision: deny
+      - id: R-FS-I02
+        condition: "improvement.severity == S2"
+        decision: hitl
+      - id: R-FS-I03
+        condition: "improvement.severity in [S3, S4]"
+        decision: hitl
+        reason_code: "RT3_ALL_IMPROVEMENTS_REQUIRE_HITL"
+
+    circuit_breaker:
+      trip_threshold: 0.70
+      warning_threshold: 0.85
+      fm_triggers: "all 15 + tenant-specific additional triggers"
+      per_tenant_isolated: true
+      enhanced: true
+
+  # ---------------------------------------------------------------------------
+  # Tenant: t-healthcare-legal (RT-4, ISO-3)
+  # ---------------------------------------------------------------------------
+  - tenant_id: "t-healthcare-legal"
+    risk_tier: RT-4
+    isolation_tier: ISO-3
+    description: "Healthcare/legal — high-risk, full PII redaction + legal hold"
+    registered_by: "human_systems_architect"
+    registration_date: "2026-07-24"
+    dpa_required: true
+    audit_retention_days: 365
+    legal_hold: true
+
+    capabilities_allowed:
+      - fs.read:tenant_scope
+      - fs.write:tenant_scope
+      - net.egress:policy_proxied
+      - shell.exec:wsl2_routed
+      - mcp.call:T1_T2_allowlist
+      - memory.read:tenant_scope
+      - memory.write:tenant_scope
+      - budget.spend:tenant_ceiling
+      # a2a.delegate disabled for RT-4
+      # skill.gen disabled for RT-4
+
+    structural_rules:
+      - id: R-HL-S01
+        condition: "tool.risk_tier in [T1, T2]"
+        decision: allow
+      - id: R-HL-S02
+        condition: "tool.risk_tier == T3"
+        decision: hitl
+      - id: R-HL-S03
+        condition: "tool.risk_tier == T4"
+        decision: deny
+      - id: R-HL-S04
+        condition: "cap == fs.write, path.startswith(specs/tenants/t-healthcare-legal/)"
+        decision: allow
+      - id: R-HL-S05
+        condition: "cap == fs.write, path.startswith(AGENTS.md)"
+        decision: deny
+      - id: R-HL-S06
+        condition: "cap == fs.write, path.startswith(HARNESS_SPEC.md)"
+        decision: deny
+      - id: R-HL-S07
+        condition: "cap == skill.gen"
+        decision: deny
+        reason_code: "SKILL_GEN_DISABLED_RT4"
+      - id: R-HL-S08
+        condition: "cap == a2a.delegate"
+        decision: deny
+        reason_code: "A2A_DELEGATE_DISABLED_RT4"
+      - id: R-HL-S09
+        condition: "cap == mcp.call, mcp.server in [context7]"
+        decision: allow
+
+    semantic_rules:
+      - id: R-HL-SEM01
+        condition: "contains_pii(output) == true"
+        decision: deny
+        filter: "regex + ner + llm_advisory + human_review"
+      - id: R-HL-SEM02
+        condition: "contains_secret(output) == true"
+        decision: deny
+      - id: R-HL-SEM03
+        condition: "contains_pii(output) == false, llm_advisory.pii_detected == true"
+        decision: hitl
+      - id: R-HL-SEM04
+        condition: "contains_pii(output) == false, llm_advisory.pii_detected == false"
+        decision: hitl
+        reason_code: "RT4_ALL_OUTPUTS_REQUIRE_HUMAN_REVIEW"
+
+    budget_rules:
+      - id: R-HL-B01
+        condition: "session.tokens_used > 300000"
+        decision: hitl
+      - id: R-HL-B02
+        condition: "session.cost_usd > 10.00"
+        decision: deny
+      - id: R-HL-B03
+        condition: "loop.proposals_this_session > 10"
+        decision: hitl
+
+    improvement_rules:
+      - id: R-HL-I01
+        condition: "improvement.severity == S1"
+        decision: deny
+        reason_code: "S1_FREEZE_RT4"
+      - id: R-HL-I02
+        condition: "improvement.severity == S2"
+        decision: hitl
+      - id: R-HL-I03
+        condition: "improvement.severity in [S3, S4]"
+        decision: hitl
+        reason_code: "RT4_ALL_IMPROVEMENTS_REQUIRE_HITL"
+
+    circuit_breaker:
+      trip_threshold: 0.80
+      warning_threshold: 0.90
+      fm_triggers: "all 15 + tenant-specific + PII-specific triggers"
+      per_tenant_isolated: true
+      maximum: true
+
+# ---------------------------------------------------------------------------
+# Default Policy (fail-closed)
+# ---------------------------------------------------------------------------
+default_policy:
+  unmatched_decision: deny
+  reason_code: "NO_RULE_MATCHED_FAIL_CLOSED"
+  description: "If no rule matches, deny the request. No implicit allow."
+
+# ---------------------------------------------------------------------------
+# Cross-Tenant Isolation Guarantees
+# ---------------------------------------------------------------------------
+cross_tenant_guarantees:
+  - guarantee_id: CTG-01
+    description: "No tenant can read another tenant's filesystem"
+    enforcement: "mount namespace + path prefix check"
+    control_id: "C-MT-01"
+  - guarantee_id: CTG-02
+    description: "No tenant can assume another tenant's identity"
+    enforcement: "SPIFFE SVID tenant_id validation"
+    control_id: "C-MT-06"
+  - guarantee_id: CTG-03
+    description: "No tenant's circuit breaker trip affects another tenant"
+    enforcement: "per-tenant circuit breaker state"
+    control_id: "C-MT-03"
+  - guarantee_id: CTG-04
+    description: "No tenant's trust score affects another tenant"
+    enforcement: "per-tenant trust score"
+    control_id: "C-MT-04"
+  - guarantee_id: CTG-05
+    description: "No tenant's improvement loop budget is shared"
+    enforcement: "per-tenant loop budget counter"
+    control_id: "C-MT-05"
+  - guarantee_id: CTG-06
+    description: "No tenant can modify shared specs (AGENTS.md, HARNESS_SPEC.md)"
+    enforcement: "path-based deny rules for all tenants"
+    source: "G7 HB-06"

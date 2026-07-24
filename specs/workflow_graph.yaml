@@ -439,10 +439,43 @@ domains:
   G8:
     id: D_G8
     name: multitenant_policy
-    state: READY_FOR_DOMAIN
+    state: APPROVED
+    locked: true
+    locked_at: "2026-07-24"
+    tag: multitenant-v1.0.0
     requires: [G1_HARNESS_APPROVED_v1]
     primary_harness_touch: [H_CONSTRAINT]
-    resume_token_expected: G8_MULTITENANT_APPROVED_v1
+    resume_token: G8_MULTITENANT_APPROVED_v1
+    recommended: OPTION_2_STANDARD
+    selected: OPTION_2_STANDARD
+    granted: true
+    granted_at: "2026-07-24"
+    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    artifacts:
+      - specs/g8_multitenant/MULTI_TENANT_SECURITY_ARCHITECTURE.md
+      - specs/g8_multitenant/CAPABILITY_DISCOVERY.yaml
+      - specs/g8_multitenant/POLICY_DSL_SPEC.md
+      - specs/g8_multitenant/tenant_policies.yaml
+      - specs/g8_multitenant/sandbox_templates.yaml
+      - specs/g8_multitenant/authorization_envelopes.yaml
+      - specs/g8_multitenant/observability_pipelines.yaml
+      - specs/g8_multitenant/G8_MIGRATION_CONTEXT.md
+      - scripts/verify_g8_multitenant.py
+      - tests/test_g8_multitenant.py
+    required_telemetry:
+      - cross_tenant_breach_count_must_be_0
+      - pii_redaction_coverage_100pct
+      - spiffe_svid_validation_100pct
+      - per_tenant_circuit_breaker_independence
+      - scripts/verify_g8_multitenant.py green
+      - tests/test_g8_multitenant.py green
+    verification:
+      unittest_suite: "40/40 OK (test_g8_multitenant.py)"
+      pack_verifier: "215/215 OK (verify_g8_multitenant.py)"
+      cross_tenant_breach_count: 0
+      attack_vectors_simulated: 10
+    next_domain: G9
+    next_resume_token_expected: G9_RESEARCH_FLEET_LOCKED_v1
   G9:
     id: D_G9
     name: autonomous_research_loops

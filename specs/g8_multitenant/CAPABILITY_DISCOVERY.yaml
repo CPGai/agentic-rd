@@ -1,0 +1,391 @@
+# CAPABILITY_DISCOVERY.yaml
+# G8 — Sandbox Runtime Inventory & Isolation Primitive Sourcing Report
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: self-improvement-v1.0.0 (G7 LOCKED)
+# BLUE resume: G8_MULTITENANT_APPROVED_v1
+# Tier: Fast Flash (Step B)
+
+version: "1.0.0-draft"
+domain: G8
+kind: capability_discovery
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: self-improvement-v1.0.0
+blue_resume_token: G8_MULTITENANT_APPROVED_v1
+
+# ---------------------------------------------------------------------------
+# 1. Sandbox Runtime Inventory
+#    Isolation runtimes researched for multi-tenant deployment
+# ---------------------------------------------------------------------------
+sandbox_runtimes:
+  - id: SR-01
+    name: "Docker Containers"
+    vendor: "Docker Inc / OCI"
+    isolation_model: "Linux namespaces + cgroups + seccomp"
+    isolation_tier: ISO-1
+    kernel_sharing: "shared host kernel"
+    syscall_filter: "seccomp profile (default + custom)"
+    network_isolation: "per-container network namespace"
+    filesystem_isolation: "per-container mount namespace + overlayfs"
+    startup_time_ms: "~500-2000"
+    memory_overhead_mb: "~10-50"
+    cpu_overhead: "minimal (cgroup limits)"
+    maturity: "production"
+    availability: "WSL2 Docker Desktop / native dockerd"
+    use_for_tiers: [RT-1, RT-2]
+    option_2_eligible: true
+    risks:
+      - "Kernel exploits affect all containers (shared kernel)"
+      - "Container escape via misconfigured capabilities"
+    mitigations:
+      - "Drop all Linux capabilities by default"
+      - "Custom seccomp profile blocking high-risk syscalls"
+      - "Read-only root filesystem"
+      - "No privileged mode"
+
+  - id: SR-02
+    name: "gVisor (Google)"
+    vendor: "Google"
+    isolation_model: "User-space kernel interceptor (sentry)"
+    isolation_tier: ISO-2
+    kernel_sharing: "host kernel filtered through gVisor sentry"
+    syscall_filter: "gVisor implements a subset of Linux syscalls"
+    network_isolation: "gVisor netstack or host netstack"
+    filesystem_isolation: "gVisor gofer process (9p protocol)"
+    startup_time_ms: "~1000-3000"
+    memory_overhead_mb: "~30-100"
+    cpu_overhead: "5-15% (syscall interception)"
+    maturity: "production (GKE, GCE)"
+    availability: "runsc runtime; install on WSL2 kernel 5.10+"
+    use_for_tiers: [RT-3]
+    option_2_eligible: true
+    risks:
+      - "Performance overhead for syscall-heavy workloads"
+      - "Not all syscalls implemented (compatibility gaps)"
+      - "Gofer process for filesystem adds latency"
+    mitigations:
+      - "Use for regulated tenants where security > performance"
+      - "Test compatibility before deployment"
+      - "gVisor netstack for network isolation"
+
+  - id: SR-03
+    name: "Firecracker (AWS)"
+    vendor: "Amazon Web Services"
+    isolation_model: "KVM hypervisor + minimal microVM kernel"
+    isolation_tier: ISO-3
+    kernel_sharing: "dedicated guest kernel per microVM"
+    syscall_filter: "N/A (full kernel isolation)"
+    network_isolation: "per-microVM TAP device + virtio-net"
+    filesystem_isolation: "per-microVM block device (virtio-block)"
+    startup_time_ms: "~125 (cold start)"
+    memory_overhead_mb: "~5 (minimal VM)"
+    cpu_overhead: "minimal (KVM virtualization)"
+    maturity: "production (AWS Lambda, Fargate)"
+    availability: "firecracker-containerd; requires KVM (nested virt)"
+    use_for_tiers: [RT-4]
+    option_2_eligible: true
+    risks:
+      - "Requires KVM support (nested virtualization in WSL2)"
+      - "Only Linux guest (no Windows)"
+      - "Block device management complexity"
+    mitigations:
+      - "Use for high-risk regulated tenants only"
+      - "firecracker-containerd for orchestration"
+      - "Snapshot-based fast cold start"
+
+  - id: SR-04
+    name: "GKE Agent Sandbox (Google)"
+    vendor: "Google Cloud"
+    isolation_model: "gVisor + GKE workload identity + network policy"
+    isolation_tier: ISO-2
+    kernel_sharing: "shared GKE node kernel through gVisor"
+    syscall_filter: "gVisor sentry + GKE Pod Security Standards"
+    network_isolation: "GKE Network Policy + VPC firewall"
+    filesystem_isolation: "gVisor gofer + GKE PersistentVolume isolation"
+    startup_time_ms: "~2000-5000 (Pod schedule)"
+    memory_overhead_mb: "~50-150"
+    cpu_overhead: "5-15% (gVisor) + orchestration"
+    maturity: "production (GKE Autopilot)"
+    availability: "GKE cluster required; not local WSL2"
+    use_for_tiers: [RT-3]
+    option_2_eligible: true
+    risks:
+      - "Cloud dependency (not local substrate)"
+      - "GKE-specific configuration overhead"
+    mitigations:
+      - "Use for cloud-deployed regulated tenants"
+      - "Workload Identity + Network Policy for defense-in-depth"
+
+  - id: SR-05
+    name: "Kata Containers"
+    vendor: "Open Infrastructure Foundation"
+    isolation_model: "lightweight VM per container (QEMU/Cloud Hypervisor)"
+    isolation_tier: ISO-3
+    kernel_sharing: "dedicated guest kernel per container"
+    syscall_filter: "N/A (full kernel isolation)"
+    network_isolation: "per-VM network namespace"
+    filesystem_isolation: "per-VM block device"
+    startup_time_ms: "~500-2000"
+    memory_overhead_mb: "~30-100"
+    cpu_overhead: "minimal (KVM virtualization)"
+    maturity: "production (OpenShift, AKS)"
+    availability: "kata-runtime; requires KVM"
+    use_for_tiers: [RT-4]
+    option_2_eligible: true
+    risks:
+      - "Requires KVM support"
+      - "QEMU overhead higher than Firecracker"
+    mitigations:
+      - "Cloud Hypervisor backend for lower overhead"
+      - "Alternative to Firecracker when OCI compatibility needed"
+
+# ---------------------------------------------------------------------------
+# 2. Isolation Primitive Sourcing
+# ---------------------------------------------------------------------------
+isolation_primitives:
+  - primitive: "Linux namespaces (PID, NET, MNT, UTS, IPC, USER)"
+    source: "Linux kernel 4.6+"
+    used_by: [SR-01, SR-02]
+    wsl2_available: true
+    notes: "Foundation for ISO-1 logical isolation"
+
+  - primitive: "cgroups v2"
+    source: "Linux kernel 4.5+"
+    used_by: [SR-01, SR-02, SR-05]
+    wsl2_available: true
+    notes: "Resource limits per tenant (CPU, memory, IO)"
+
+  - primitive: "seccomp-bpf"
+    source: "Linux kernel 3.5+"
+    used_by: [SR-01]
+    wsl2_available: true
+    notes: "Syscall filtering for Docker containers"
+
+  - primitive: "gVisor sentry (runsc)"
+    source: "Google github.com/google/gvisor"
+    used_by: [SR-02, SR-04]
+    wsl2_available: "partial (requires kernel 5.10+, may need config)"
+    notes: "User-space kernel interceptor for ISO-2"
+
+  - primitive: "KVM hypervisor"
+    source: "Linux kernel KVM module"
+    used_by: [SR-03, SR-05]
+    wsl2_available: "requires nested virtualization enabled"
+    notes: "Hardware-assisted isolation for ISO-3"
+
+  - primitive: "Firecracker VMM"
+    source: "AWS github.com/firecracker-microvm/firecracker"
+    used_by: [SR-03]
+    wsl2_available: "requires KVM + nested virt"
+    notes: "Minimal microVM for RT-4 tenants"
+
+  - primitive: "SPIFFE/SPIRE"
+    source: "CNCF SPIFFE project"
+    used_by: "all tiers (identity layer)"
+    wsl2_available: "SPIRE server + agent installable"
+    notes: "Workload identity for per-tenant agent authentication"
+
+  - primitive: "OpenTelemetry Collector"
+    source: "CNCF OpenTelemetry"
+    used_by: "all tiers (observability layer)"
+    wsl2_available: "otelcol-contrib binary"
+    notes: "PII-redacted trace/log/metric export pipeline"
+
+# ---------------------------------------------------------------------------
+# 3. PII Redaction Middleware Inventory
+# ---------------------------------------------------------------------------
+pii_redaction_middleware:
+  - id: PII-01
+    name: "Deterministic Regex PII Filter"
+    type: "deterministic"
+    description: "Pattern-based PII detection (SSN, credit card, email, phone, API keys)"
+    coverage: "high precision, medium recall"
+    latency_us: "~100-500"
+    deployable: true
+    option_2_eligible: true
+    non_delegatable: true
+    notes: "Always-on first pass; LLM never bypasses"
+
+  - id: PII-02
+    name: "NER-based PII Detector"
+    type: "deterministic + model"
+    description: "Named Entity Recognition model for context-aware PII detection"
+    coverage: "medium precision, high recall"
+    latency_ms: "~5-20"
+    deployable: true
+    option_2_eligible: true
+    non_delegatable: true
+    notes: "Second pass; catches regex-missed PII (names, addresses)"
+
+  - id: PII-03
+    name: "LLM Advisory PII Check"
+    type: "LLM-assisted advisory"
+    description: "LLM evaluates whether output contains PII; advisory only"
+    coverage: "contextual understanding of implicit PII"
+    latency_ms: "~100-500"
+    deployable: true
+    option_2_eligible: true
+    non_delegatable: true
+    notes: "Advisory only; deterministic filter always applies regardless of LLM verdict"
+
+  - id: PII-04
+    name: "Presidio (Microsoft)"
+    type: "deterministic + model"
+    description: "Open-source PII detection and redaction library"
+    coverage: "configurable NER + regex + custom recognizers"
+    latency_ms: "~1-10"
+    deployable: true
+    option_2_eligible: true
+    non_delegatable: true
+    notes: "Production-grade PII redaction; per-tenant configurable recognizers"
+
+  - id: PII-05
+    name: "Google DLP API"
+    type: "cloud service"
+    description: "Cloud-based DLP inspection and redaction"
+    coverage: "high precision + high recall"
+    latency_ms: "~100-500 (network)"
+    deployable: "cloud-only"
+    option_2_eligible: "RT-3/RT-4 only"
+    non_delegatable: true
+    notes: "Cloud egress required; not for local WSL2 substrate"
+
+# ---------------------------------------------------------------------------
+# 4. SPIFFE/SPIRE Sourcing
+# ---------------------------------------------------------------------------
+spiffe_sourcing:
+  spire_server:
+    source: "github.com/spiffe/spire"
+    deployment: "per-trust-domain SPIRE server"
+    wsl2_deployable: true
+    notes: "Issues SVIDs per tenant agent"
+
+  spire_agent:
+    source: "github.com/spiffe/spire"
+    deployment: "per-sandbox workload attestation"
+    wsl2_deployable: true
+    notes: "Attests agent workload; requests SVIDs"
+
+  trust_domain: "agentic-rd.local"
+  rotation_interval: "15min (SVID TTL)"
+  revocation: "trust bundle rotation (immediate)"
+
+# ---------------------------------------------------------------------------
+# 5. Existing Workspace Capability Audit
+# ---------------------------------------------------------------------------
+workspace_capabilities:
+  docker:
+    available: "to be probed at Step E"
+    notes: "WSL2 Docker Desktop or native dockerd"
+
+  wsl2_substrate:
+    available: true
+    kernel_version: "to be probed"
+    kvm_support: "to be probed (nested virt flag)"
+    notes: "Primary substrate for all isolation tiers"
+
+  honcho:
+    available: true
+    deployment: "Docker Compose (honcho-api-1, deriver, pgvector, redis)"
+    multi_tenant_ready: false
+    notes: "Current AUTH_USE_AUTH=false — G8 must address per-tenant auth"
+
+  hermes_profile:
+    profile: "wsl-runtime"
+    multi_tenant_ready: false
+    notes: "Single-profile; G8 must define tenant-scoped profile isolation"
+
+  mcp_servers:
+    context7: "configured (stdio, npx @upstash/context7-mcp)"
+    multi_tenant_ready: false
+    notes: "Per-tenant MCP allowlist must be defined"
+
+# ---------------------------------------------------------------------------
+# 6. Procurement Summary (T1-T4)
+# ---------------------------------------------------------------------------
+procurement_summary:
+  T1_native:
+    - "Docker/namespaces (ISO-1) — already available in WSL2"
+    - "cgroups v2 — kernel feature"
+    - "seccomp-bpf — kernel feature"
+    - "OpenTelemetry Collector — CNCF binary"
+
+  T2_vetted_external:
+    - "gVisor (runsc) — Google open source, CNCF-adjacent"
+    - "SPIFFE/SPIRE — CNCF graduated"
+    - "Presidio — Microsoft open source PII redaction"
+    - "Firecracker — AWS open source"
+    - "Kata Containers — Open Infrastructure Foundation"
+
+  T3_custom:
+    - "Tenant policy DSL interpreter — custom (Step C)"
+    - "Per-tenant Honcho namespace configuration — custom"
+    - "Authorization envelope codec — custom"
+
+  T4_adhoc:
+    - "Cloud DLP API integration — RT-3/RT-4 only, cloud egress"
+    - "GKE Agent Sandbox — cloud-only, not local substrate"
+
+  gaps:
+    - "KVM/nested virt support in WSL2 unconfirmed — Firecracker/Kata may not be deployable locally"
+    - "Honcho multi-tenant auth not implemented (AUTH_USE_AUTH=false)"
+    - "Hermes profile is single-tenant — no per-tenant profile isolation exists"
+    - "No per-tenant skill namespace in current skills directory structure"
+
+# ---------------------------------------------------------------------------
+# 7. Phase -> Source Mapping
+# ---------------------------------------------------------------------------
+phase_mapping:
+  tenant_registration:
+    sources: [SPIRE_SERVER, TENANT_POLICIES_YAML]
+    tier: T1_T2
+
+  sandbox_provisioning:
+    sources: [DOCKER_ISO1, GVISOOR_ISO2, FIRECRACKER_ISO3]
+    tier: T1_T2
+
+  identity_attestation:
+    sources: [SPIRE_AGENT_SERVER]
+    tier: T2
+
+  policy_enforcement:
+    sources: [HYBRID_POLICY_SERVER, TENANT_POLICIES_YAML]
+    tier: T3
+
+  pii_redaction:
+    sources: [REGEX_FILTER_T1, NER_PRESIDIO_T2, LLM_ADVISORY_T2]
+    tier: T1_T2
+
+  observability_export:
+    sources: [OTEL_COLLECTOR, PII_REDACTION_PIPELINE]
+    tier: T1_T2
+
+  cross_tenant_audit:
+    sources: [POLICY_SERVER_AUDIT_LOG, OTEL_TRACES, IMPROVEMENT_LEDGER]
+    tier: T1_T2
+
+# ---------------------------------------------------------------------------
+# 8. Option Matrix Cross-Reference
+# ---------------------------------------------------------------------------
+option_matrix:
+  OPTION_1_CONSERVATIVE:
+    sandbox_runtimes: [SR-01]
+    isolation_tiers: [ISO-1]
+    pii_middleware: [PII-01]
+    spiffe: "not required (single-tenant)"
+    notes: "Minimal surface; blocks multi-tenant"
+
+  OPTION_2_STANDARD:
+    sandbox_runtimes: [SR-01, SR-02, SR-03]
+    isolation_tiers: [ISO-1, ISO-2, ISO-3]
+    pii_middleware: [PII-01, PII-02, PII-03, PII-04]
+    spiffe: "required (per-tenant SVID)"
+    notes: "Logical + regulated isolation; central policy server"
+
+  OPTION_3_CREATIVE:
+    sandbox_runtimes: [SR-03, SR-05]
+    isolation_tiers: [ISO-3]
+    pii_middleware: [PII-01, PII-02, PII-03, PII-04, PII-05]
+    spiffe: "required (per-agent trust domain)"
+    notes: "Full physical isolation; Firecracker per agent; maximum overhead"

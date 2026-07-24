@@ -1,0 +1,357 @@
+# authorization_envelopes.yaml
+# G8 — Identity, Scope, and Token Envelopes
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: self-improvement-v1.0.0 (G7 LOCKED)
+# BLUE resume: G8_MULTITENANT_APPROVED_v1
+# Tier: Strong Coding (Step D)
+#
+# Defines the authorization envelope schema, SPIFFE identity mapping,
+# capability model, and JIT token downscoping configuration.
+# Every tool call (MCP, A2A, shell, filesystem) is wrapped in an envelope.
+
+version: "1.0.0-draft"
+domain: G8
+kind: authorization_envelopes
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: self-improvement-v1.0.0
+blue_resume_token: G8_MULTITENANT_APPROVED_v1
+
+# ---------------------------------------------------------------------------
+# 1. SPIFFE Identity Configuration
+# ---------------------------------------------------------------------------
+spiffe:
+  trust_domain: "agentic-rd.local"
+  spire_server:
+    deployment: "per-trust-domain"
+    bind_address: "unix:///run/spire/agent.sock"
+    rotation_interval: "15m"
+    notes: "Issues SVIDs per tenant agent via Workload API"
+  
+  spire_agent:
+    attestation: "unix"
+    workload_api_socket: "unix:///run/spire/workload.sock"
+    notes: "Attests agent workload; requests SVIDs"
+
+  svid_format: "JWT-SVID"
+  svid_ttl: "15m"
+  svid_claims:
+    - claim: "iss"
+      value: "spiffe://agentic-rd.local"
+      immutable: true
+    - claim: "sub"
+      value: "spiffe://agentic-rd.local/tenant/${tenant_id}/agent/${agent_id}"
+      immutable: true
+    - claim: "tenant_id"
+      value: "${tenant_id}"
+      immutable: true
+    - claim: "agent_id"
+      value: "${agent_id}"
+      immutable: true
+    - claim: "exp"
+      value: "now + 15m"
+      immutable: true
+
+  revocation:
+    method: "trust_bundle_rotation"
+    propagation: "immediate"
+    scope: "per_tenant_or_per_agent"
+
+# ---------------------------------------------------------------------------
+# 2. Authorization Envelope Schema
+# ---------------------------------------------------------------------------
+envelope_schema:
+  required_fields:
+    - name: "envelope_id"
+      type: "ULID"
+      description: "Unique identifier per tool call"
+      immutable: true
+    - name: "tenant_id"
+      type: "string"
+      description: "SPIFFE tenant scope"
+      immutable: true
+      validation: "must match svid.tenant_id"
+    - name: "agent_id"
+      type: "string"
+      description: "SPIFFE agent scope"
+      immutable: true
+      validation: "must match svid.sub agent_id"
+    - name: "trace_id"
+      type: "W3C traceparent"
+      description: "OTEL correlation ID"
+      immutable: true
+    - name: "span_id"
+      type: "W3C span_id"
+      description: "This call's span ID"
+      immutable: true
+    - name: "svid"
+      type: "SPIFFE_SVID (JWT)"
+      description: "Workload identity proof"
+      immutable: true
+      validation: "must be valid and unexpired"
+    - name: "caps"
+      type: "list[Capability]"
+      description: "Downscoped capability set"
+      mutable: "set at downscope time"
+    - name: "tool_call"
+      type: "ToolCallDescriptor"
+      description: "Tool name, args hash, class"
+      immutable: true
+    - name: "risk_tier"
+      type: "enum T1|T2|T3|T4"
+      description: "Procurement risk tier"
+      immutable: true
+    - name: "policy_decision"
+      type: "enum allow|deny|hitl|rewrite_caps"
+      description: "Policy server verdict"
+      immutable: true
+    - name: "reason_code"
+      type: "string"
+      description: "Machine-readable denial reason"
+      immutable: true
+    - name: "rule_ids"
+      type: "list[string]"
+      description: "Policy rules that fired"
+      immutable: true
+    - name: "ts"
+      type: "ISO8601"
+      description: "Decision timestamp"
+      immutable: true
+    - name: "exp"
+      type: "ISO8601"
+      description: "Token expiry"
+      immutable: true
+
+  optional_fields:
+    - name: "caps_delta"
+      type: "object"
+      description: "Capability changes from rewrite_caps"
+    - name: "parent_trace_id"
+      type: "W3C traceparent"
+      description: "Parent trace for hierarchical delegation"
+    - name: "card_id"
+      type: "string"
+      description: "Agent Card ID for A2A delegation"
+
+# ---------------------------------------------------------------------------
+# 3. Capability Model
+# ---------------------------------------------------------------------------
+capabilities:
+  - class: "fs"
+    operations:
+      - id: "fs.read"
+        scope: "tenant_scope"
+        description: "Read within tenant's mounted namespace"
+        risk_tier_min: T1
+      - id: "fs.write"
+        scope: "tenant_scope"
+        description: "Write within tenant's mounted namespace"
+        risk_tier_min: T1
+      - id: "fs.read.shared"
+        scope: "shared_read_only"
+        description: "Read from shared specs (redacted)"
+        risk_tier_min: T1
+
+  - class: "net"
+    operations:
+      - id: "net.egress"
+        scope: "policy_proxied"
+        description: "Network egress through policy server only"
+        risk_tier_min: T1
+      - id: "net.internal"
+        scope: "tenant_net"
+        description: "Internal tenant network namespace"
+        risk_tier_min: T1
+
+  - class: "shell"
+    operations:
+      - id: "shell.exec"
+        scope: "wsl2_routed"
+        description: "Shell execution in WSL2 substrate"
+        risk_tier_min: T1
+
+  - class: "mcp"
+    operations:
+      - id: "mcp.call"
+        scope: "T1_T2_allowlist"
+        description: "MCP tool calls within T1/T2 allowlist"
+        risk_tier_min: T1
+
+  - class: "a2a"
+    operations:
+      - id: "a2a.delegate"
+        scope: "card_option2"
+        description: "A2A delegation per agent card constraints"
+        risk_tier_min: T1
+        risk_tier_max: "RT-3 (disabled for RT-4)"
+
+  - class: "memory"
+    operations:
+      - id: "memory.read"
+        scope: "tenant_scope"
+        description: "Read from tenant's isolated memory store"
+        risk_tier_min: T1
+      - id: "memory.write"
+        scope: "tenant_scope"
+        description: "Write to tenant's isolated memory store"
+        risk_tier_min: T1
+
+  - class: "skill"
+    operations:
+      - id: "skill.gen"
+        scope: "tenant_scope"
+        description: "Generate skills in tenant's namespace"
+        risk_tier_min: T1
+        risk_tier_max: "RT-2 (disabled for RT-3/RT-4)"
+
+  - class: "budget"
+    operations:
+      - id: "budget.spend"
+        scope: "tenant_ceiling"
+        description: "Spend up to tenant's token/cost ceiling"
+        risk_tier_min: T1
+
+# ---------------------------------------------------------------------------
+# 4. JIT Token Downscoping Configuration
+# ---------------------------------------------------------------------------
+jit_downscoping:
+  enabled: true
+  per_call: true
+  non_reusable: true
+  max_ttl: "15m"
+  hard_cap_ttl: "15m"
+
+  downscope_pipeline:
+    - step: 1
+      name: "SVID Verify"
+      description: "Validate SPIFFE SVID against trust bundle"
+      deterministic: true
+      on_fail: "deny (reason: SVID_INVALID)"
+    - step: 2
+      name: "Tenant Lookup"
+      description: "Resolve tenant_id to tenant policy and risk tier"
+      deterministic: true
+      on_fail: "deny (reason: TENANT_NOT_FOUND)"
+    - step: 3
+      name: "Capability Intersection"
+      description: "Compute requested caps AND tenant_allowed AND role_permitted"
+      deterministic: true
+      on_fail: "deny (reason: CAP_NOT_PERMITTED)"
+      formula: "scoped_caps = requested_caps intersection tenant_allowed_caps intersection role_permitted_caps"
+    - step: 4
+      name: "Structural Role Check"
+      description: "Verify agent role permits the action under tenant policy"
+      deterministic: true
+      on_fail: "deny (reason: ROLE_NOT_PERMITTED)"
+    - step: 5
+      name: "Semantic PII Safety Check"
+      description: "Deterministic PII filter + LLM advisory"
+      deterministic: "filter is deterministic; LLM is advisory"
+      on_fail: "deny or hitl depending on filter vs advisory"
+    - step: 6
+      name: "Risk Tier Gate"
+      description: "T1/T2 allow; T3 HITL; T4 deny (OPTION_2)"
+      deterministic: true
+      on_fail: "deny or hitl depending on tier"
+    - step: 7
+      name: "Issue Scoped Token"
+      description: "Create per-call token with scoped_caps and TTL"
+      deterministic: true
+      output: "AuthorizationEnvelope with allow or rewrite_caps"
+
+  zero_ambient_authority: true
+  notes: "No agent carries a persistent credential. Every action is individually authorized."
+
+# ---------------------------------------------------------------------------
+# 5. Envelope Validation Pipeline (matches MULTI_TENANT_SECURITY_ARCHITECTURE.md §4.3)
+# ---------------------------------------------------------------------------
+validation_pipeline:
+  - step: 1
+    name: "SVID Verify"
+    component: "SPIFFE trust bundle validator"
+    deterministic: true
+    latency_budget_us: 500
+  - step: 2
+    name: "Tenant Lookup"
+    component: "Tenant policy cache"
+    deterministic: true
+    latency_budget_us: 100
+  - step: 3
+    name: "Capability Intersect"
+    component: "Capability engine"
+    deterministic: true
+    latency_budget_us: 200
+  - step: 4
+    name: "Structural Role Check"
+    component: "RBAC engine"
+    deterministic: true
+    latency_budget_us: 500
+  - step: 5
+    name: "Semantic PII Safety Check"
+    component: "PII filter + LLM advisory"
+    deterministic: "filter only; LLM advisory"
+    latency_budget_ms: 20
+  - step: 6
+    name: "Risk Tier Gate"
+    component: "Risk tier classifier"
+    deterministic: true
+    latency_budget_us: 100
+
+# ---------------------------------------------------------------------------
+# 6. Token Lifecycle
+# ---------------------------------------------------------------------------
+token_lifecycle:
+  provision:
+    action: "Tenant registration creates SPIFFE trust bundle"
+    actor: "human_systems_architect"
+    per_tenant: true
+
+  attest:
+    action: "Agent startup requests SVID via Workload API"
+    actor: "spire_agent"
+    ttl: "15m"
+    rotation: "automatic"
+
+  authorize:
+    action: "Policy server validates SVID + tenant_id + capability scope"
+    actor: "hybrid_policy_server"
+    per_request: true
+    jit: true
+
+  execute:
+    action: "Agent uses scoped token for single tool call"
+    actor: "agent"
+    non_reusable: true
+    single_call: true
+
+  revoke:
+    action: "Trust bundle rotation invalidates SVID"
+    actor: "spire_server"
+    propagation: "immediate"
+    scope: "per_tenant_or_per_agent"
+
+# ---------------------------------------------------------------------------
+# 7. Cross-Tenant Identity Guarantees
+# ---------------------------------------------------------------------------
+identity_guarantees:
+  - guarantee_id: IG-01
+    description: "SVID tenant_id is immutable and verified per request"
+    enforcement: "JWT claim validation in policy server"
+    control_id: "C-MT-06"
+  
+  - guarantee_id: IG-02
+    description: "No agent can assume another tenant's identity"
+    enforcement: "SPIFFE trust bundle per tenant; cross-tenant SVID rejection"
+    control_id: "C-MT-02"
+  
+  - guarantee_id: IG-03
+    description: "Zero ambient authority — no persistent credentials"
+    enforcement: "JIT downscope per call; 15min hard cap TTL"
+    source: "WP-S4 zero ambient authority"
+  
+  - guarantee_id: IG-04
+    description: "Confused deputy prevention — user-ambient delegation forbidden as final authz"
+    enforcement: "Require agentic identity; forbid user-ambient delegation"
+    control_id: "LLM06-08"
+    source: "G4 POLICY_INTERCEPT_SPEC.yaml"

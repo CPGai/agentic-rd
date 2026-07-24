@@ -1,0 +1,456 @@
+# sandbox_templates.yaml
+# G8 — Container & MicroVM Isolation Manifests
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: self-improvement-v1.0.0 (G7 LOCKED)
+# BLUE resume: G8_MULTITENANT_APPROVED_v1
+# Tier: Strong Coding (Step D)
+#
+# Declarative templates for provisioning sandboxes per isolation tier.
+# These are manifests (Docker Compose, gVisor runtime config, Firecracker
+# microVM config) — not executable code. The policy server selects a template
+# based on tenant risk tier at provisioning time.
+
+version: "1.0.0-draft"
+domain: G8
+kind: sandbox_templates
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: self-improvement-v1.0.0
+blue_resume_token: G8_MULTITENANT_APPROVED_v1
+
+# ---------------------------------------------------------------------------
+# 1. ISO-1: Docker Container Template (RT-1, RT-2)
+# ---------------------------------------------------------------------------
+templates:
+  - id: TPL-ISO1-DOCKER
+    name: "Docker Container — Logical Isolation"
+    isolation_tier: ISO-1
+    risk_tiers: [RT-1, RT-2]
+    runtime: "docker"
+    status: DECLARED_NOT_WIRED
+
+    container_spec:
+      image: "agent-runtime:latest"
+      hostname: "tenant-${tenant_id}"
+      read_only: true
+      cap_drop: ["ALL"]
+      cap_add: []
+      security_opt:
+        - "no-new-privileges:true"
+      seccomp_profile: "agent-seccomp.json"
+      user: "1000:1000"
+      tmpfs:
+        - "/tmp:size=256m,mode=1777"
+      networks:
+        - "tenant-${tenant_id}-net"
+      volumes:
+        - "tenant-${tenant_id}-data:/data:rw"
+        - "shared-specs:/specs:ro"
+      environment:
+        - "TENANT_ID=${tenant_id}"
+        - "WSL2_SUBSTRATE=true"
+        - "PYTHONPATH=/data"
+      deploy:
+        resources:
+          limits:
+            cpus: "2"
+            memory: "2g"
+          reservations:
+            cpus: "0.5"
+            memory: "512m"
+      restart_policy:
+        condition: "none"
+        max_attempts: 0
+      labels:
+        tenant_id: "${tenant_id}"
+        isolation_tier: "ISO-1"
+        risk_tier: "${risk_tier}"
+
+    network_spec:
+      driver: "bridge"
+      internal: true
+      labels:
+        tenant_id: "${tenant_id}"
+      ipam:
+        config:
+          - subnet: "auto"
+      egress_policy: "deny_all_except_policy_server"
+
+    filesystem_spec:
+      writable_paths:
+        - "/data"
+        - "/tmp"
+      read_only_paths:
+        - "/specs"
+      deny_paths:
+        - "/proc/1/*"
+        - "/sys/*"
+        - "/etc/shadow"
+        - "/etc/passwd"
+      shared_volumes:
+        - name: "shared-specs"
+          mount: "/specs"
+          mode: "ro"
+          redact: true
+          redact_patterns:
+            - "API_KEY"
+            - "TOKEN"
+            - "SECRET"
+            - "PASSWORD"
+
+    seccomp_profile:
+      default_action: "SCMP_ACT_ERRNO"
+      syscalls_allowed:
+        - "read"
+        - "write"
+        - "open"
+        - "openat"
+        - "close"
+        - "stat"
+        - "fstat"
+        - "lstat"
+        - "poll"
+        - "lseek"
+        - "mmap"
+        - "mprotect"
+        - "munmap"
+        - "brk"
+        - "rt_sigaction"
+        - "rt_sigprocmask"
+        - "rt_sigreturn"
+        - "ioctl"
+        - "pread64"
+        - "pwrite64"
+        - "readv"
+        - "writev"
+        - "access"
+        - "pipe"
+        - "select"
+        - "sched_yield"
+        - "mremap"
+        - "msync"
+        - "mincore"
+        - "madvise"
+        - "shmget"
+        - "shmat"
+        - "shmctl"
+        - "dup"
+        - "dup2"
+        - "pause"
+        - "nanosleep"
+        - "getitimer"
+        - "alarm"
+        - "setitimer"
+        - "getpid"
+        - "sendfile"
+        - "socket"
+        - "connect"
+        - "accept"
+        - "sendto"
+        - "recvfrom"
+        - "sendmsg"
+        - "recvmsg"
+        - "shutdown"
+        - "bind"
+        - "listen"
+        - "getsockname"
+        - "getpeername"
+        - "socketpair"
+        - "setsockopt"
+        - "getsockopt"
+        - "clone"
+        - "fork"
+        - "execve"
+        - "exit"
+        - "wait4"
+        - "kill"
+        - "uname"
+        - "fcntl"
+        - "flock"
+        - "fsync"
+        - "fdatasync"
+        - "truncate"
+        - "ftruncate"
+        - "getdents"
+        - "getcwd"
+        - "chdir"
+        - "fchdir"
+        - "rename"
+        - "mkdir"
+        - "rmdir"
+        - "creat"
+        - "link"
+        - "unlink"
+        - "symlink"
+        - "readlink"
+        - "chmod"
+        - "fchmod"
+        - "chown"
+        - "fchown"
+        - "lchown"
+        - "umask"
+        - "gettimeofday"
+        - "getrlimit"
+        - "getrusage"
+        - "sysinfo"
+        - "times"
+        - "ptrace"
+        - "getuid"
+        - "getgid"
+        - "setuid"
+        - "setgid"
+        - "geteuid"
+        - "getegid"
+      syscalls_denied:
+        - "mount"
+        - "umount"
+        - "reboot"
+        - "settimeofday"
+        - "sethostname"
+        - "setdomainname"
+        - "init_module"
+        - "finit_module"
+        - "delete_module"
+        - "kexec_load"
+        - "perf_event_open"
+        - "fanotify_init"
+        - "lookup_dcookie"
+        - "pciconfig_read"
+        - "pciconfig_write"
+        - "swapon"
+        - "swapoff"
+        - "bpf"
+
+  # ---------------------------------------------------------------------------
+  # 2. ISO-2: gVisor Template (RT-3)
+  # ---------------------------------------------------------------------------
+  - id: TPL-ISO2-GVISOR
+    name: "gVisor Sandboxed Container — Syscall Filter Isolation"
+    isolation_tier: ISO-2
+    risk_tiers: [RT-3]
+    runtime: "runsc"
+    status: DECLARED_NOT_WIRED
+
+    container_spec:
+      image: "agent-runtime:latest"
+      hostname: "tenant-${tenant_id}"
+      runtime: "runsc"
+      read_only: true
+      cap_drop: ["ALL"]
+      security_opt:
+        - "no-new-privileges:true"
+      user: "1000:1000"
+      tmpfs:
+        - "/tmp:size=256m,mode=1777"
+      networks:
+        - "tenant-${tenant_id}-net"
+      volumes:
+        - "tenant-${tenant_id}-data:/data:rw"
+        - "shared-specs:/specs:ro"
+      environment:
+        - "TENANT_ID=${tenant_id}"
+        - "WSL2_SUBSTRATE=true"
+        - "GVISOR_ISOLATION=true"
+      deploy:
+        resources:
+          limits:
+            cpus: "2"
+            memory: "4g"
+          reservations:
+            cpus: "0.5"
+            memory: "1g"
+      labels:
+        tenant_id: "${tenant_id}"
+        isolation_tier: "ISO-2"
+        risk_tier: "RT-3"
+
+    gvisor_runtime_config:
+      platform: "ptrace"
+      network: "gvisor"
+      fs_gofer: true
+      gofer_concurrency: "8"
+      overlay: true
+      host_uds: "none"
+      host_fifo: "none"
+      profile: false
+      strace: false
+      log_level: "warning"
+
+    network_spec:
+      driver: "bridge"
+      internal: true
+      egress_policy: "deny_all_except_policy_server"
+      gvisor_netstack: true
+
+    filesystem_spec:
+      writable_paths:
+        - "/data"
+        - "/tmp"
+      read_only_paths:
+        - "/specs"
+      gofer_mount: true
+      redact: true
+      redact_patterns:
+        - "API_KEY"
+        - "TOKEN"
+        - "SECRET"
+        - "PASSWORD"
+        - "SSN"
+        - "CREDIT_CARD"
+        - "PHI"
+
+  # ---------------------------------------------------------------------------
+  # 3. ISO-3: Firecracker MicroVM Template (RT-4)
+  # ---------------------------------------------------------------------------
+  - id: TPL-ISO3-FIRECRACKER
+    name: "Firecracker MicroVM — Hypervisor Isolation"
+    isolation_tier: ISO-3
+    risk_tiers: [RT-4]
+    runtime: "firecracker-containerd"
+    status: DECLARED_NOT_WIRED
+
+    microvm_spec:
+      vcpu_count: 2
+      mem_size_mib: 2048
+      kernel_image_path: "/var/lib/firecracker/vmlinux"
+      rootfs_path: "/var/lib/firecracker/rootfs-${tenant_id}.ext4"
+      boot_args: "console=ttyS0 reboot=k panic=1 pci=off nomodules random.trust_cpu=on"
+      hostname: "tenant-${tenant_id}"
+
+    network_spec:
+      driver: "bridge"
+      internal: true
+      egress_policy: "deny_all_except_policy_server"
+      tap_device: "fc-${tenant_id}-tap"
+      ip_range: "auto-assigned"
+      virtio_net: true
+      network_namespace: "tenant-${tenant_id}-ns"
+
+    filesystem_spec:
+      block_device: "virtio-block"
+      rootfs_format: "ext4"
+      writable_paths:
+        - "/data"
+        - "/tmp"
+      read_only_paths:
+        - "/specs"
+      shared_volumes:
+        - name: "shared-specs"
+          mount: "/specs"
+          mode: "ro"
+          redact: true
+          redact_patterns:
+            - "API_KEY"
+            - "TOKEN"
+            - "SECRET"
+            - "PASSWORD"
+            - "SSN"
+            - "CREDIT_CARD"
+            - "PHI"
+            - "MEDICAL_RECORD"
+
+    security_spec:
+      seccomp_filter: true
+      jit_compiler: false
+      cpu_template: "C3"
+      rate_limiter:
+        bandwidth_rate: "1Gbps"
+        ops_rate: "1000 ops/s"
+      no_device_passthrough: true
+
+    metadata_spec:
+      tenant_id: "${tenant_id}"
+      isolation_tier: "ISO-3"
+      risk_tier: "RT-4"
+      legal_hold: true
+      audit_retention_days: 365
+      dpa_required: true
+
+  # ---------------------------------------------------------------------------
+  # 4. ISO-3 Alternative: Kata Containers Template (RT-4)
+  # ---------------------------------------------------------------------------
+  - id: TPL-ISO3-KATA
+    name: "Kata Container — Lightweight VM Isolation"
+    isolation_tier: ISO-3
+    risk_tiers: [RT-4]
+    runtime: "kata-runtime"
+    status: DECLARED_NOT_WIRED
+
+    container_spec:
+      image: "agent-runtime:latest"
+      hostname: "tenant-${tenant_id}"
+      runtime: "kata-runtime"
+      read_only: true
+      cap_drop: ["ALL"]
+      security_opt:
+        - "no-new-privileges:true"
+      user: "1000:1000"
+      networks:
+        - "tenant-${tenant_id}-net"
+      volumes:
+        - "tenant-${tenant_id}-data:/data:rw"
+        - "shared-specs:/specs:ro"
+      labels:
+        tenant_id: "${tenant_id}"
+        isolation_tier: "ISO-3"
+        risk_tier: "RT-4"
+
+    kata_runtime_config:
+      hypervisor: "cloud-hypervisor"
+      default_vcpus: 2
+      default_memory: "2048"
+      enable_debug: false
+      hotplug_timeout: "5s"
+
+    network_spec:
+      driver: "bridge"
+      internal: true
+      egress_policy: "deny_all_except_policy_server"
+      network_namespace: "tenant-${tenant_id}-ns"
+
+# ---------------------------------------------------------------------------
+# 5. Template Selection Matrix
+# ---------------------------------------------------------------------------
+template_selection:
+  RT-1: TPL-ISO1-DOCKER
+  RT-2: TPL-ISO1-DOCKER
+  RT-3: TPL-ISO2-GVISOR
+  RT-4: TPL-ISO3-FIRECRACKER
+  RT-4_ALT: TPL-ISO3-KATA
+
+# ---------------------------------------------------------------------------
+# 6. Shared Volume Redaction Configuration
+# ---------------------------------------------------------------------------
+shared_volume_redaction:
+  volume_name: "shared-specs"
+  mount_path: "/specs"
+  mode: "read_only"
+  redaction_engine: "deterministic_regex"
+  always_on: true
+  llm_advisory: false
+  patterns:
+    - pattern_id: "REDACT-01"
+      name: "API Keys"
+      regex: "(?i)(api[_-]?key)\\s*[=:]\\s*\\S{20,}"
+      replacement: "[REDACTED]"
+    - pattern_id: "REDACT-02"
+      name: "Bearer Tokens"
+      regex: "(?i)bearer\\s+\\S{20,}"
+      replacement: "[REDACTED]"
+    - pattern_id: "REDACT-03"
+      name: "Generic Secrets"
+      regex: "(?i)(secret|password|token)\\s*[=:]\\s*\\S{20,}"
+      replacement: "[REDACTED]"
+      exclusions:
+        - "G8_MULTITENANT_APPROVED_v1"
+        - "G7_IMPROVEMENT_BOUNDS_v1"
+        - "RESUME_TOKEN"
+    - pattern_id: "REDACT-04"
+      name: "Credit Card Numbers"
+      regex: "\\b\\d{13,19}\\b"
+      replacement: "[REDACTED]"
+    - pattern_id: "REDACT-05"
+      name: "SSN"
+      regex: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+      replacement: "[REDACTED]"
