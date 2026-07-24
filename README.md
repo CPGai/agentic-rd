@@ -1,7 +1,7 @@
 # Agentic R&D & Implementation Blueprint
 
 **Dual-Course Synthesis** (Nov 2025 → June 2026)  
-**Domain Status:** G1–G6 `APPROVED` — `OPTION_2_STANDARD` / `G1_HARNESS_APPROVED_v1` / `G2_TOOL_REGISTRY_LOCKED_v1` / `G3_CONTEXT_LAYER_LOCKED_v1` / `G4_TOPOLOGY_APPROVED_v1` / `G5_EVAL_FRAMEWORK_APPROVED_v1` / `G6_VIBE_ENV_LOCKED_v1` ✅ · G7 `READY`
+**Domain Status:** G1–G7 `APPROVED` — `OPTION_2_STANDARD` / `G1_HARNESS_APPROVED_v1` / `G2_TOOL_REGISTRY_LOCKED_v1` / `G3_CONTEXT_LAYER_LOCKED_v1` / `G4_TOPOLOGY_APPROVED_v1` / `G5_EVAL_FRAMEWORK_APPROVED_v1` / `G6_VIBE_ENV_LOCKED_v1` / `G7_IMPROVEMENT_BOUNDS_v1` ✅ · G8 `READY`
 
 A formally-specified **Three-Harness Factory Model** for autonomous agentic systems, synthesizing the Google AI Agents Whitepaper Series (WP-F1–F5, Nov 2025) and Google Vibe Coding / Agentic Engineering Series (WP-S1–S5, June 2026) into a single, auditable architectural constitution spanning 10 domains (G1–G10).
 
@@ -37,7 +37,7 @@ The project's architectural constitution is triangulated across three binding ar
 | **G4** | Multi-Agent Orchestration | All three | ✅ COMPLETED (`orchestration-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G5** | Evaluation & Observability | Evaluation | ✅ COMPLETED (`eval-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G6** | Vibe Coding → Spec Harness | Constraint, Evaluation | ✅ COMPLETED (`vibecoding-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G7** | Self-Improvement (L4 gated) | Evaluation, Constraint | Ready |
+| **G7** | Self-Improvement (L4 gated) | Evaluation, Constraint | ✅ COMPLETED (`self-improvement-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G8** | Multi-Tenant & Policy | Constraint | Ready |
 | **G9** | Autonomous Research Loops | Context, Evaluation | Ready |
 | **G10** | Production AgentOps | All three | Ready |

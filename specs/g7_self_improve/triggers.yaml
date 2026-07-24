@@ -1,0 +1,334 @@
+# G7 — Improvement Loop Triggers (Step D)
+# Event bindings for autonomous detection
+# Status: DRAFT_PRE_GATE
+# Upstream: vibecoding-v1.0.0 (G6 LOCKED)
+# BLUE resume: G7_IMPROVEMENT_BOUNDS_v1
+
+version: "1.0.0-draft"
+domain: G7
+kind: improvement_triggers
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: vibecoding-v1.0.0
+blue_resume_token: G7_IMPROVEMENT_BOUNDS_v1
+
+# ---------------------------------------------------------------------------
+# 1. G5 Trajectory-Based Triggers
+# ---------------------------------------------------------------------------
+trajectory_triggers:
+  - id: TRJ-01
+    name: trajectory_verdict_fail
+    source: "G5 trajectory record verdict field"
+    condition: "verdict == fail"
+    severity: S3
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "Agent cycle ended in failure verdict"
+
+  - id: TRJ-02
+    name: trajectory_verdict_escalate_hitl
+    source: "G5 trajectory record verdict field"
+    condition: "verdict == escalate_HITL"
+    severity: S2
+    improvement_type: IT-04
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "Agent cycle escalated to HITL"
+
+  - id: TRJ-03
+    name: repeated_tool_call_errors
+    source: "Trajectory action/observation fields"
+    condition: "same_tool_error_count >= 3 within sliding_window_10"
+    severity: S3
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "Same tool failing repeatedly — prompt or skill gap"
+
+  - id: TRJ-04
+    name: flat_fix_curve
+    source: "C-LOOP-02 fix attempt tracking"
+    condition: "fix_attempts >= 3 without resolution"
+    severity: S2
+    improvement_type: IT-03
+    operator: PIVOT
+    cooldown_cycles: 5
+    description: "Fix curve is flat — current approach not converging"
+
+# ---------------------------------------------------------------------------
+# 2. G5 Trust Score Triggers
+# ---------------------------------------------------------------------------
+trust_score_triggers:
+  - id: TS-01
+    name: trust_score_warning
+    source: "G5 CIRCUIT_BREAKER_RULES.yaml threshold"
+    condition: "trust_score < 0.85"
+    severity: S3
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "5% degradation from initial trust"
+
+  - id: TS-02
+    name: trust_score_hitl_review
+    source: "G5 CIRCUIT_BREAKER_RULES.yaml threshold"
+    condition: "trust_score < 0.70"
+    severity: S2
+    improvement_type: IT-04
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "15% degradation — HITL review required"
+
+  - id: TS-03
+    name: trust_score_tripped
+    source: "G5 CIRCUIT_BREAKER_RULES.yaml threshold"
+    condition: "trust_score < 0.50"
+    severity: S1
+    improvement_type: IT-07
+    operator: DRAFT
+    cooldown_cycles: 0  # no cooldown — immediate
+    description: "Circuit breaker tripped — freeze + HITL"
+
+  - id: TS-04
+    name: immediate_trip_secret
+    source: "G5 PEN-03 (CRITICAL)"
+    condition: "secret_detected == true"
+    severity: S1
+    improvement_type: IT-07
+    operator: DRAFT
+    cooldown_cycles: 0
+    description: "Secret detected — immediate trip"
+
+  - id: TS-05
+    name: immediate_trip_pii
+    source: "G5 PEN-06 (CRITICAL)"
+    condition: "pii_leakage_detected == true"
+    severity: S1
+    improvement_type: IT-07
+    operator: DRAFT
+    cooldown_cycles: 0
+    description: "PII detected — immediate trip"
+
+  - id: TS-06
+    name: immediate_trip_budget
+    source: "G5 PEN-08 (CRITICAL)"
+    condition: "budget_ceiling_breach == true"
+    severity: S1
+    improvement_type: IT-07
+    operator: DRAFT
+    cooldown_cycles: 0
+    description: "Budget ceiling breached — immediate trip"
+
+# ---------------------------------------------------------------------------
+# 3. G5 Evaluation Triggers
+# ---------------------------------------------------------------------------
+evaluation_triggers:
+  - id: EVAL-01
+    name: llm_judge_score_below_threshold
+    source: "G5 LLM-as-Judge rubric"
+    condition: "judge_score < 3 on any dimension (1-5 scale)"
+    severity: S2
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "LLM-as-Judge scored below acceptable threshold"
+
+  - id: EVAL-02
+    name: hallucination_detected
+    source: "G5 LLM-as-Judge hallucination dimension"
+    condition: "hallucination == true"
+    severity: S2
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "Hallucination detected in agent output"
+
+  - id: EVAL-03
+    name: intent_drift_signal
+    source: "G5 Agent-as-Judge AgBOM comparison"
+    condition: "agbom_drift == true OR intent_drift == true"
+    severity: S2
+    improvement_type: IT-04
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "Agent sub-goals diverging from original mission"
+
+  - id: EVAL-04
+    name: trajectory_adherence_drop
+    source: "G5 Agent-as-Judge trajectory rubric"
+    condition: "adherence_score < 3 (1-5 scale)"
+    severity: S3
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "Agent not following ideal trajectory"
+
+  - id: EVAL-05
+    name: degradation_5pct
+    source: "G5 5% threshold"
+    condition: "task_success_rate_drop >= 5%"
+    severity: S3
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "5% degradation — auto-flag"
+
+  - id: EVAL-06
+    name: degradation_15pct
+    source: "G5 15% threshold"
+    condition: "task_success_rate_drop >= 15%"
+    severity: S2
+    improvement_type: IT-04
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "15% degradation — HITL review required"
+
+  - id: EVAL-07
+    name: red_team_bypass
+    source: "G5 Red Team injection suite"
+    condition: "red_team_bypass == true"
+    severity: S1
+    improvement_type: IT-07
+    operator: DRAFT
+    cooldown_cycles: 0
+    description: "Red Team found a bypass — security critical"
+
+# ---------------------------------------------------------------------------
+# 4. G4 Failure Mode Triggers
+# ---------------------------------------------------------------------------
+failure_mode_triggers:
+  - id: FM-TRG-01
+    name: fm_timeout
+    source: "G4 FM-TIMEOUT"
+    condition: "fm_occurrence == true"
+    severity: S3
+    improvement_type: IT-05
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "Task or leaf exceeded timeout cap"
+
+  - id: FM-TRG-02
+    name: fm_region_collision
+    source: "G4 FM-REGION-COLLISION"
+    condition: "fm_occurrence == true"
+    severity: S3
+    improvement_type: IT-05
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "Two leaves wrote same path"
+
+  - id: FM-TRG-03
+    name: fm_critic_loop
+    source: "G4 FM-CRITIC-LOOP"
+    condition: "fm_occurrence == true"
+    severity: S3
+    improvement_type: IT-01
+    operator: PIVOT
+    cooldown_cycles: 3
+    description: "Iterative refinement loop not converging"
+
+  - id: FM-TRG-04
+    name: fm_nesting_violation
+    source: "G4 FM-NESTING-VIOLATION"
+    condition: "fm_occurrence == true"
+    severity: S2
+    improvement_type: IT-05
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "Leaf attempted nested orchestration"
+
+  - id: FM-TRG-05
+    name: fm_goto_leak
+    source: "G4 FM-GOTO-LEAK"
+    condition: "fm_occurrence == true"
+    severity: S2
+    improvement_type: IT-05
+    operator: DRAFT
+    cooldown_cycles: 3
+    description: "Unbounded agent wrapped as tool"
+
+# ---------------------------------------------------------------------------
+# 5. Pattern-Based Triggers
+# ---------------------------------------------------------------------------
+pattern_triggers:
+  - id: PAT-01
+    name: thrashing_detection
+    source: "Improvement loop monitor"
+    condition: "same_signal_improved >= 3 OR oscillation_pattern_detected"
+    severity: S2
+    improvement_type: IT-04
+    operator: PIVOT
+    cooldown_cycles: 5
+    description: "Thrashing — freeze auto-integration"
+
+  - id: PAT-02
+    name: regression_after_integration
+    source: "Post-integration monitor"
+    condition: "new_degradation_within_5_cycles == true"
+    severity: S2
+    improvement_type: IT-04
+    operator: REFINE
+    cooldown_cycles: 3
+    description: "Improvement caused regression — rollback"
+
+  - id: PAT-03
+    name: loop_budget_exceeded
+    source: "Loop counter"
+    condition: "total_proposals > 10"
+    severity: S2
+    improvement_type: IT-04
+    operator: DRAFT
+    cooldown_cycles: 0  # pause loop
+    description: "Loop budget exceeded — HITL to continue"
+
+  - id: PAT-04
+    name: s4_trend_persistence
+    source: "S4 monitor"
+    condition: "s4_signal_persists >= 3 cycles"
+    severity: S3
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 2
+    description: "S4 signal escalated to S3 due to persistence"
+
+# ---------------------------------------------------------------------------
+# 6. Human Feedback Triggers
+# ---------------------------------------------------------------------------
+human_triggers:
+  - id: HUM-01
+    name: explicit_steer
+    source: "/steer command or review UI"
+    condition: "human_feedback_received == true"
+    severity: S2
+    improvement_type: IT-01
+    operator: DRAFT
+    cooldown_cycles: 0
+    description: "Human provided explicit steering feedback"
+
+  - id: HUM-02
+    name: hitl_reviewer_suggestion
+    source: "HITL review queue"
+    condition: "reviewer_suggests_different_direction == true"
+    severity: S2
+    improvement_type: IT-04
+    operator: PIVOT
+    cooldown_cycles: 0
+    description: "HITL reviewer suggests pivoting direction"
+
+# ---------------------------------------------------------------------------
+# 7. Trigger Cooldown & Dedup Rules
+# ---------------------------------------------------------------------------
+cooldown_rules:
+  global_cooldown_cycles: 2  # minimum cycles between same-trigger firings
+  dedup_window: 5  # same trigger+condition within 5 cycles = suppress
+  escalation_override: true  # S1 triggers bypass cooldown
+  budget_pause: true  # PAT-03 pauses all triggers until HITL resumes
+
+# ---------------------------------------------------------------------------
+# 8. Trigger → Severity Escalation
+# ---------------------------------------------------------------------------
+escalation_rules:
+  repeat_escalation: "same_trigger_fired >= 3 within 10 cycles → severity +1"
+  cross_trigger_escalation: "2+ triggers fire simultaneously for same root cause → severity +1"
+  s1_immediate: "S1 triggers bypass all cooldowns and dedup"

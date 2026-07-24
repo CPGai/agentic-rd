@@ -1,0 +1,270 @@
+# G7 — Oversight Boundaries (Step D)
+# Explicit rules governing HITL gates vs autonomous execution
+# Status: DRAFT_PRE_GATE
+# Upstream: vibecoding-v1.0.0 (G6 LOCKED)
+# BLUE resume: G7_IMPROVEMENT_BOUNDS_v1
+
+version: "1.0.0-draft"
+domain: G7
+kind: oversight_boundaries
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: vibecoding-v1.0.0
+blue_resume_token: G7_IMPROVEMENT_BOUNDS_v1
+
+# ---------------------------------------------------------------------------
+# 1. Autonomy Zones
+# ---------------------------------------------------------------------------
+autonomy_zones:
+  - zone: AUTONOMOUS
+    severity_range: [S4]
+    description: "Agent acts without human approval; logs only"
+    allowed_operations:
+      - "Log improvement signal"
+      - "Monitor trend persistence"
+      - "Record memory fact (IT-10)"
+    hitl_required: false
+    post_action: "Log to improvement ledger"
+
+  - zone: ADVISORY
+    severity_range: [S3]
+    description: "Agent auto-integrates low-severity improvements; queues behavioral for review"
+    allowed_operations:
+      - "Auto-integrate prompt refinement (IT-01, token-level only)"
+      - "Auto-integrate skill acquisition (IT-02, T1/T2 existing)"
+      - "Auto-integrate memory fact (IT-10)"
+      - "Queue improvement proposal for HITL if behavioral"
+    hitl_required: "Only for behavioral changes (S3→S2 escalation)"
+    post_action: "Log + telemetry; HITL review if behavioral"
+
+  - zone: HUMAN_GATED
+    severity_range: [S2]
+    description: "Agent proposes improvements; human reviews before integration"
+    allowed_operations:
+      - "Draft improvement proposal (DRAFT operator)"
+      - "Validate in prototype dune"
+      - "Present proposal to HITL review queue"
+    forbidden_operations:
+      - "Auto-integrate into production"
+      - "Modify specs without approval"
+      - "Commit generated skills to production"
+    hitl_required: true
+    post_action: "HITL decision logged; approved → IMPROVE; rejected → DEBUG or discard"
+
+  - zone: RESTRICTED
+    severity_range: [S1]
+    description: "Freeze + HITL; agent cannot act without explicit human direction"
+    allowed_operations:
+      - "Freeze autonomous execution"
+      - "Preserve forensic data"
+      - "Present forensic report to human"
+    forbidden_operations:
+      - "Any improvement action"
+      - "Any file mutation"
+      - "Any tool execution"
+    hitl_required: true
+    post_action: "Human directs next action (PIVOT, REFINE, or abort)"
+
+# ---------------------------------------------------------------------------
+# 2. HITL Gate Matrix
+# ---------------------------------------------------------------------------
+hitl_gates:
+  - gate_id: HG-01
+    name: pre_integration_gate
+    trigger: "S2 improvement proposal ready for integration"
+    improvement_types: [IT-03, IT-04, IT-05]
+    human_action: "Review proposal; approve/reject/request changes"
+    timeout: "No auto-approve — waits indefinitely"
+    on_approve: "IMPROVE operator proceeds"
+    on_reject: "DEBUG operator; root cause analysis"
+    on_timeout: "Proposal remains queued; no auto-action"
+
+  - gate_id: HG-02
+    name: pre_production_skill_gate
+    trigger: "T3 skill validated in dune; ready for production"
+    improvement_types: [IT-03]
+    human_action: "Review SKILL.md; verify quality gates; approve/reject"
+    quality_gates_required:
+      - structural_conformance
+      - progressive_disclosure
+      - trigger_correctness
+      - no_hallucinated_apis
+      - generalization_gap_test
+      - secret_scan
+      - eval_benchmark
+    on_approve: "Skill committed to production skills/ directory"
+    on_reject: "Skill discarded or returned to dune for revision"
+
+  - gate_id: HG-03
+    name: circuit_breaker_trip_gate
+    trigger: "S1 — circuit breaker tripped"
+    improvement_types: [IT-07]
+    human_action: "Review forensic report; direct PIVOT or REFINE; approve recovery"
+    timeout: "No auto-recovery — waits indefinitely"
+    on_approve: "Human-directed action; trust score reset to 1.0 (QS-HEALTHY)"
+    on_reject: "Session locked (QS-LOCKED); must restart"
+
+  - gate_id: HG-04
+    name: loop_budget_gate
+    trigger: "Improvement proposals > 10 per session"
+    improvement_types: [IT-04]
+    human_action: "Review improvement ledger; approve continuation or pause"
+    on_approve: "Loop resumes with extended budget"
+    on_reject: "Loop paused for remainder of session"
+
+  - gate_id: HG-05
+    name: l4_enablement_gate
+    trigger: "G7 HITL gate — resume token decision"
+    improvement_types: [IT-09]
+    human_action: "Grant or deny G7_IMPROVEMENT_BOUNDS_v1"
+    on_approve: "L4 capabilities per §7.2 of architecture; AgentCreator still disabled"
+    on_reject: "L4 fully disabled; improvement loop at S3/S4 autonomy only"
+    notes: "This is the primary G7 domain gate"
+
+  - gate_id: HG-06
+    name: constitution_tightening_gate
+    trigger: "Agent proposes new constraint or AGENTS.md tightening"
+    improvement_types: [IT-07]
+    human_action: "Review proposed constraint; edit AGENTS.md manually if approved"
+    on_approve: "Human applies the edit; agent does not touch AGENTS.md"
+    on_reject: "Proposal discarded"
+    notes: "Agent may never directly edit AGENTS.md or HARNESS_SPEC.md"
+
+# ---------------------------------------------------------------------------
+# 3. Forbidden Actions (Under All Conditions)
+# ---------------------------------------------------------------------------
+forbidden_actions:
+  - id: FA-01
+    action: "Enable L4 AgentCreator"
+    bound: HB-01
+    exception: "None — requires separate explicit enablement beyond G7 token"
+
+  - id: FA-02
+    action: "Modify CIRCUIT_BREAKER_RULES.yaml"
+    bound: HB-03
+    exception: "None — G5 is locked; requires G5 gate reopen"
+
+  - id: FA-03
+    action: "Bypass circuit breaker trust score"
+    bound: HB-03
+    exception: "None — trust score is inviolable"
+
+  - id: FA-04
+    action: "Mutate production code without SDD"
+    bound: HB-04
+    exception: "None — SDD is mandatory on production path"
+
+  - id: FA-05
+    action: "Generate or store secrets/credentials"
+    bound: HB-05
+    exception: "None — zero tolerance"
+
+  - id: FA-06
+    action: "Write to another Hermes profile"
+    bound: HB-06
+    exception: "None — cross-profile guard enforced"
+
+  - id: FA-07
+    action: "Execute Python or install packages on Windows host"
+    bound: HB-07
+    exception: "None — WSL2 mandatory"
+
+  - id: FA-08
+    action: "Exceed loop budget without HITL"
+    bound: HB-08
+    exception: "HITL may extend budget (HG-04)"
+
+  - id: FA-09
+    action: "Directly edit AGENTS.md or HARNESS_SPEC.md"
+    bound: HB-02
+    exception: "None — human must edit; agent proposes only"
+
+  - id: FA-10
+    action: "Auto-merge S1/S2 improvements"
+    bound: HB-10
+    exception: "None — explicit human approval required"
+
+# ---------------------------------------------------------------------------
+# 4. Workspace Mode Overrides
+# ---------------------------------------------------------------------------
+workspace_mode_overrides:
+  vibe_coding:
+    autonomy_shift: "All zones shift +1 toward autonomous"
+    s2_treated_as: S3
+    s1_treated_as: S2
+    circuit_breaker: disabled
+    sdd_required: false
+    notes: "Prototype dune — relaxed but not unbounded"
+
+  structured_assisted:
+    autonomy_shift: "No shift — nominal OPTION_2 rules"
+    circuit_breaker: advisory
+    sdd_required: true
+    notes: "Default workspace mode"
+
+  agentic_engineering:
+    autonomy_shift: "All zones shift -1 toward restricted"
+    s3_treated_as: S2
+    circuit_breaker: active_15_fm_triggers
+    sdd_required: true
+    notes: "Full production enforcement"
+
+# ---------------------------------------------------------------------------
+# 5. Improvement Ledger Schema
+# ---------------------------------------------------------------------------
+improvement_ledger:
+  description: "Persistent record of all improvement proposals and outcomes"
+  fields:
+    - proposal_id: "ulid"
+    - session_id: "string"
+    - timestamp: "iso8601"
+    - trigger_id: "reference to triggers.yaml trigger"
+    - severity: "S1|S2|S3|S4"
+    - improvement_type: "IT-01 through IT-10"
+    - operator: "DRAFT|DEBUG|IMPROVE|PIVOT|REFINE"
+    - status: "proposed|validating|approved|rejected|integrated|rolled_back"
+    - validation_result: "pass|fail|held_out_pass|regression"
+    - hitl_decision: "approved|rejected|changes_requested|null"
+    - post_integration_telemetry: "object"
+    - rollback_triggered: "boolean"
+    - notes: "string"
+  retention: "permanent (git-tracked in specs/g7_self_improve/ledger.yaml)"
+
+# ---------------------------------------------------------------------------
+# 6. Telemetry Hooks for Oversight
+# ---------------------------------------------------------------------------
+oversight_telemetry:
+  - metric: detection_accuracy
+    source: "DETECT phase"
+    description: "Percentage of detected gaps that were real improvement opportunities"
+    threshold: ">= 80%"
+
+  - metric: false_positive_rate
+    source: "VALIDATE phase"
+    description: "Percentage of proposals that failed validation"
+    threshold: "<= 20%"
+
+  - metric: thrashing_events
+    source: "Loop monitor"
+    description: "Count of thrashing patterns detected"
+    threshold: "<= 2 per session"
+
+  - metric: degradation_count
+    source: "MEASURE phase"
+    description: "Count of post-integration regressions"
+    threshold: "0 (zero tolerance)"
+
+  - metric: hitl_approval_rate
+    source: "HITL queue"
+    description: "Percentage of HITL-reviewed proposals approved"
+    threshold: ">= 50%"
+
+  - metric: auto_integration_success_rate
+    source: "S3/S4 auto-integration"
+    description: "Percentage of auto-integrated improvements not rolled back"
+    threshold: ">= 90%"
+
+  - metric: loop_budget_utilization
+    source: "Loop counter"
+    description: "Improvement proposals used / budget cap"
+    threshold: "<= 100% (pause at cap)"

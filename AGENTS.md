@@ -108,7 +108,7 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 | **G4** Multi-Agent | — | `G4_TOPOLOGY_APPROVED_v1` | **OPTION_2_STANDARD (IN_PROGRESS)** |
 | **G5** Eval & Observability | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ GRANTED (alias `G5_EVAL_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
 | **G6** Vibe→Spec harness | `G6_VIBE_ENV_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G7** Self-improvement | L4 / mutation bounds | domain token | Conservative until proven |
+| **G7** Self-improvement | `G7_IMPROVEMENT_BOUNDS_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G8** Multi-tenant / policy | Isolation + policy server | `G8_MULTITENANT_APPROVED_v1` | OPTION_2_STANDARD |
 | **G9** Research loops | Synthesis & ethics release | `G9_RESEARCH_FLEET_LOCKED_v1` | OPTION_2_STANDARD |
 | **G10** Production AgentOps | Canary + final release | `G10_PRODUCTION_DEPLOY_v1` | OPTION_2_STANDARD |
@@ -162,7 +162,8 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 - G4 is `APPROVED` (`G4_TOPOLOGY_APPROVED_v1` ✅ GRANTED); L3 enabled
 - G5 is `APPROVED` (`G5_EVAL_FRAMEWORK_APPROVED_v1`); G6+ may proceed under OPTION_2_STANDARD overlays — still stop at each domain's own HITL gate
 - G6 is `APPROVED` (`G6_VIBE_ENV_LOCKED_v1`); G7 may proceed under OPTION_2_STANDARD overlays — still stop at G7's own HITL gate
-- Do not enable L4 AgentCreator
+- G7 is `APPROVED` (`G7_IMPROVEMENT_BOUNDS_v1`); G8 may proceed under OPTION_2_STANDARD overlays — still stop at G8's own HITL gate
+- Do not enable L4 AgentCreator (G7 token grants bounded self-improvement loop; L4 AgentCreator requires separate explicit enablement beyond G7)
 - Do not treat a green demo as a green eval
 - Do not expand static context past the § envelope in `HARNESS_SPEC.md` without progressive disclosure
 - Do not invent whitepaper citations; anchor to WP-F1 / WP-S1 / BLUE paths under `specs/references/`

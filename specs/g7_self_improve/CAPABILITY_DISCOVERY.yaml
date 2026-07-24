@@ -1,0 +1,359 @@
+# G7 — Capability Discovery Report (Step B)
+# Model Tier: Fast Flash
+# Status: DRAFT_PRE_GATE
+# Upstream: vibecoding-v1.0.0 (G6 LOCKED)
+# BLUE resume: G7_IMPROVEMENT_BOUNDS_v1
+
+version: "1.0.0-draft"
+domain: G7
+kind: capability_discovery_report
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: vibecoding-v1.0.0
+blue_resume_token: G7_IMPROVEMENT_BOUNDS_v1
+
+# ---------------------------------------------------------------------------
+# 1. Skills Inventory Audit
+# ---------------------------------------------------------------------------
+skills_inventory:
+  profile_path: "/mnt/c/Users/carlo/AppData/Local/hermes/profiles/wsl-runtime/skills/"
+  workspace_path: "/home/carlospg/workspace/agentic-rd/skills/"
+  profile_skill_count: 93
+  workspace_skill_count: 5
+  total_unique_skills: 93  # workspace skills are mirrors of profile
+
+  workspace_skills:
+    - name: wsl2-execution-routing
+      category: software-development
+      role: "WSL2 substrate routing for all shell/Python"
+      g7_phase: VALIDATE
+    - name: agentic-rd-g-domain-runbook
+      category: software-development
+      role: "G-domain A-F execution with HITL gates"
+      g7_phase: INTEGRATE
+    - name: session-memory-honcho
+      category: software-development
+      role: "Honcho memory provider integration"
+      g7_phase: MEASURE
+    - name: hermes-mcp-server-setup
+      category: software-development
+      role: "MCP server add/configure/test"
+      g7_phase: ACQUIRE
+    - name: context-assembly-g3
+      category: software-development
+      role: "G3 context assembly and co-load"
+      g7_phase: ACQUIRE
+
+# ---------------------------------------------------------------------------
+# 2. Self-Improvement Relevant Skills (T1 — Already Available)
+# ---------------------------------------------------------------------------
+self_improvement_skills:
+  - name: systematic-debugging
+    category: software-development
+    version: "1.1.0"
+    g7_phase: DETECT
+    role: "4-phase root cause debugging: understand bugs before fixing"
+    self_improve_mechanism: "Root cause identification feeds DETECT phase; prevents symptom patching"
+    autonomy_level: "assists human/agent in diagnosis"
+    notes: "Iron Law: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST"
+
+  - name: requesting-code-review
+    category: software-development
+    version: "2.0.0"
+    g7_phase: VALIDATE
+    role: "Pre-commit review: security scan, quality gates, auto-fix loop"
+    self_improve_mechanism: "Independent reviewer subagent validates changes before integration"
+    autonomy_level: "automated verification; auto-fix loop for trivial issues"
+    notes: "Core principle: No agent should verify its own work"
+
+  - name: test-driven-development
+    category: software-development
+    version: "1.1.0"
+    g7_phase: VALIDATE
+    role: "TDD: enforce RED-GREEN-REFACTOR, tests before code"
+    self_improve_mechanism: "Tests validate that improvements do not regress"
+    autonomy_level: "automated test execution"
+    notes: "Related to systematic-debugging"
+
+  - name: simplify-code
+    category: software-development
+    version: "1.0.0"
+    g7_phase: IMPROVE
+    role: "Parallel 3-agent cleanup of recent code changes"
+    self_improve_mechanism: "Three narrow reviewers (reuse, quality, efficiency) find improvement opportunities"
+    autonomy_level: "automated review; fixes applied after aggregation"
+    notes: "Uses delegate_task for parallel subagents"
+
+  - name: plan
+    category: software-development
+    version: "2.0.0"
+    g7_phase: ACQUIRE
+    role: "Plan mode: write actionable markdown plan, no execution"
+    self_improve_mechanism: "DRAFT phase: improvement proposals are plans before codegen"
+    autonomy_level: "advisory — plan only, no execution"
+    notes: "Aligns with SDD: spec-first approach"
+
+  - name: spike
+    category: software-development
+    version: "1.0.0"
+    g7_phase: VALIDATE
+    role: "Throwaway experiments to validate an idea before build"
+    self_improve_mechanism: "Prototype dune validation: test improvement feasibility before integration"
+    autonomy_level: "prototype dune only; disposable"
+    notes: "Maps to G6 prototype_dune concept"
+
+  - name: hermes-agent-skill-authoring
+    category: software-development
+    version: "1.1.0"
+    g7_phase: ACQUIRE
+    role: "Author in-repo SKILL.md: frontmatter, validator, structure"
+    self_improve_mechanism: "T3 skill generation: provides template and quality standards for generated skills"
+    autonomy_level: "assists agent in skill creation; does not auto-commit"
+    notes: "Key enabler for autonomous skill acquisition"
+
+  - name: adversarial-ux-test
+    category: qa
+    version: "1.0.0"
+    g7_phase: DETECT
+    role: "Roleplay difficult user, find UX pain points, create actionable tickets"
+    self_improve_mechanism: "Finds friction that technical QA misses; feeds DETECT phase"
+    autonomy_level: "automated testing; pragmatism filter separates real issues from noise"
+    notes: "Related to G5 Red Team"
+
+  - name: dogfood
+    category: qa
+    version: "1.0.0"
+    g7_phase: DETECT
+    role: "Exploratory QA of web apps: find bugs, evidence, reports"
+    self_improve_mechanism: "Systematic exploratory testing surfaces failure patterns"
+    autonomy_level: "automated testing"
+    notes: "Uses browser toolset"
+
+  - name: github-code-review
+    category: github
+    version: "1.1.0"
+    g7_phase: VALIDATE
+    role: "Review PRs: diffs, inline comments via gh or REST"
+    self_improve_mechanism: "PR-level validation of proposed improvements"
+    autonomy_level: "advisory — comments, not auto-merge"
+    notes: "Feeds HITL review queue"
+
+# ---------------------------------------------------------------------------
+# 3. Hermes Native Learning Loop Support
+# ---------------------------------------------------------------------------
+hermes_native_mechanisms:
+  - mechanism: skill_manage
+    tool: skill_manage
+    g7_phase: ACQUIRE
+    role: "Create, patch, edit, delete skills programmatically"
+    self_improve_use: "T3 skill generation: agent drafts new SKILL.md via skill_manage(action=create)"
+    autonomy_level: "agent can draft; HITL for production integration"
+    notes: "Generated skills go to profile skills/ directory"
+
+  - mechanism: memory
+    tool: memory
+    g7_phase: MEASURE
+    role: "Persistent memory across sessions (facts, preferences, corrections)"
+    self_improve_use: "Records what was learned from improvement cycles; prevents repeating failed approaches"
+    autonomy_level: "agent can add/replace/remove memories"
+    notes: "Injected into every future turn — compact and high-signal"
+
+  - mechanism: honcho_conclude
+    tool: honcho_conclude
+    g7_phase: MEASURE
+    role: "Persistent derived facts about a peer that feeds long-term profile"
+    self_improve_use: "Records stable preferences and corrections learned during improvement cycles"
+    autonomy_level: "agent can create conclusions"
+    notes: "Honcho self-heals contradictions over time"
+
+  - mechanism: honcho_search
+    tool: honcho_search
+    g7_phase: DETECT
+    role: "Hybrid semantic + keyword search over peer message history"
+    self_improve_use: "Recall past failure patterns and resolutions for DETECT phase"
+    autonomy_level: "read-only retrieval"
+    notes: "Cheaper than honcho_reasoning"
+
+  - mechanism: honcho_reasoning
+    tool: honcho_reasoning
+    g7_phase: DETECT
+    role: "Synthesized answers about a peer via LLM reasoning"
+    self_improve_use: "Deep pattern analysis for complex failure detection"
+    autonomy_level: "read-only retrieval"
+    notes: "Most expensive Honcho call; use sparingly"
+
+  - mechanism: session_search
+    tool: session_search
+    g7_phase: DETECT
+    role: "FTS5 search over local session DB"
+    self_improve_use: "Find past conversations about similar failures; recall resolutions"
+    autonomy_level: "read-only retrieval"
+    notes: "No LLM calls — returns raw messages"
+
+  - mechanism: delegate_task
+    tool: delegate_task
+    g7_phase: VALIDATE
+    role: "Spawn subagents for isolated task execution"
+    self_improve_use: "Independent validation of improvement proposals; fresh context review"
+    autonomy_level: "agent can spawn up to 3 concurrent children"
+    notes: "max_spawn_depth=1 (leaves cannot delegate)"
+
+  - mechanism: cronjob
+    tool: cronjob
+    g7_phase: MEASURE
+    role: "Scheduled recurring jobs"
+    self_improve_use: "Periodic monitoring: degradation checks, thrashing detection, regression window scans"
+    autonomy_level: "agent can create; jobs run autonomously"
+    notes: "Can attach skills to cron jobs for scheduled improvement cycles"
+
+  - mechanism: todo
+    tool: todo
+    g7_phase: ACQUIRE
+    role: "Task list management for multi-step work"
+    self_improve_use: "Tracks improvement proposal state through DRAFT-DEBUG-IMPROVE-PIVOT-REFINE cycle"
+    autonomy_level: "agent-managed"
+    notes: "Internal tracking only; not persistent"
+
+# ---------------------------------------------------------------------------
+# 4. agentskills.io Pattern Analysis
+# ---------------------------------------------------------------------------
+agentskills_io_patterns:
+  format: "progressive-disclosure L1-L2-L3"
+  l1_metadata_budget: "50 tokens for frontmatter"
+  l2_body: "on trigger match"
+  l3_references: "on demand (references/assets/scripts)"
+  co_load_limit: "5-15 skills per session (G3 rule)"
+
+  applicable_patterns:
+    - pattern: "Trigger-based activation"
+      description: "Skill loads only when its trigger condition matches the current task"
+      g7_use: "Generated skills must have non-ambiguous triggers matching detected gap classes"
+      source: "WP-S3"
+
+    - pattern: "Progressive disclosure"
+      description: "L1 always loaded; L2 on trigger; L3 on demand"
+      g7_use: "Generated skills follow L1-L2-L3 structure; token economics enforced"
+      source: "WP-S3"
+
+    - pattern: "Sandboxed execution"
+      description: "Skills that execute code run in isolated sandbox"
+      g7_use: "T3 skill validation runs in prototype dune (G6 sandbox)"
+      source: "WP-S1"
+
+    - pattern: "Composable skills"
+      description: "Skills can reference and depend on other skills"
+      g7_use: "Generated skills declare related_skills in frontmatter"
+      source: "agentskills.io"
+
+# ---------------------------------------------------------------------------
+# 5. Honcho Memory Provider Status
+# ---------------------------------------------------------------------------
+honcho_status:
+  health: "ok"
+  endpoint: "localhost:8000"
+  auth: false
+  deriver_model: "deepseek/deepseek-v4-flash via OpenRouter"
+  session_strategy: "per-directory"
+  recall_mode: "hybrid"
+  g7_use: "Long-term memory of improvement outcomes; prevents repeating failed approaches"
+  residual_risk: "AUTH_USE_AUTH=false is MED residual (G8 concern)"
+
+# ---------------------------------------------------------------------------
+# 6. MCP Server Inventory (Self-Improvement Relevant)
+# ---------------------------------------------------------------------------
+mcp_servers:
+  - server_id: context7
+    tier: T2
+    package: "@upstash/context7-mcp"
+    version: "3.2.4"
+    tools:
+      - resolve_library_id
+      - query_docs
+    g7_use: "ACQUIRE phase: query for library/framework documentation when generating skills"
+    notes: "Can validate that APIs referenced in generated skills actually exist"
+
+# ---------------------------------------------------------------------------
+# 7. Procurement Summary
+# ---------------------------------------------------------------------------
+procurement_summary:
+  t1_native_skills:
+    count: 10
+    status: "Available — covers DETECT (systematic-debugging, adversarial-ux-test, dogfood), VALIDATE (requesting-code-review, TDD, spike), IMPROVE (simplify-code), ACQUIRE (plan, skill-authoring)"
+    gaps:
+      - "No skill for automated failure pattern detection from trajectory telemetry"
+      - "No skill for generalization-gap testing"
+      - "No skill for thrashing detection"
+      - "No skill for improvement proposal generation (DRAFT operator)"
+
+  t2_vetted_mcp:
+    count: 1
+    status: "context7 available for API validation"
+    gaps:
+      - "No MCP for automated benchmark execution"
+      - "No MCP for trajectory analysis"
+
+  t3_custom_generation:
+    status: "Available via skill_manage(action=create) + hermes-agent-skill-authoring"
+    template_available: true
+    gaps:
+      - "No automated quality gate for generated skills"
+      - "No eval harness integration for generated skills"
+
+  t4_ad_hoc:
+    status: "Prototype dune only; denied in production"
+
+# ---------------------------------------------------------------------------
+# 8. Acquisition Source → G7 Phase Mapping
+# ---------------------------------------------------------------------------
+phase_mapping:
+  DETECT:
+    sources:
+      - "G5 trajectory telemetry (verdict=fail/escalate_HITL)"
+      - "G5 trust score thresholds (0.85/0.70/0.50)"
+      - "G5 LLM-as-Judge scores"
+      - "G5 Agent-as-Judge intent drift"
+      - "G4 failure mode triggers (15 FMs)"
+      - "systematic-debugging skill (root cause)"
+      - "adversarial-ux-test skill (UX friction)"
+      - "dogfood skill (exploratory QA)"
+      - "honcho_search (past pattern recall)"
+      - "session_search (past failure recall)"
+    coverage: "STRONG — multiple detection sources"
+
+  ACQUIRE:
+    sources:
+      - "T1: Load existing skill from profile (93 available)"
+      - "T1: plan skill (draft improvement proposal)"
+      - "T1: hermes-agent-skill-authoring (skill creation template)"
+      - "T2: context7 MCP (validate APIs in generated skills)"
+      - "T3: skill_manage(action=create) for new skill generation"
+      - "Hermes memory tool (record what was learned)"
+    coverage: "STRONG — T1/T2/T3 all available"
+
+  VALIDATE:
+    sources:
+      - "T1: requesting-code-review skill (independent review)"
+      - "T1: test-driven-development skill (regression tests)"
+      - "T1: spike skill (throwaway validation)"
+      - "delegate_task (fresh-context subagent validation)"
+      - "G5 EVAL_DATASET_BENCHMARKS.json (18 scenarios)"
+      - "G5 circuit breaker (trip during validation = rollback)"
+    coverage: "STRONG — multiple validation mechanisms"
+
+  INTEGRATE:
+    sources:
+      - "T1: agentic-rd-g-domain-runbook (HITL gate process)"
+      - "G6 SDD pattern (spec → review → codegen → eval → HITL)"
+      - "G5 checkpoint protocol (rollback if regression)"
+      - "skill_manage(action=patch) for skill updates"
+    coverage: "ADEQUATE — SDD process is declarative; codegen automation deferred"
+
+  MEASURE:
+    sources:
+      - "G5 trust score monitoring (continuous)"
+      - "G5 AgBOM drift detection (continuous)"
+      - "honcho_conclude (persist improvement outcomes)"
+      - "memory tool (record lessons learned)"
+      - "cronjob (scheduled monitoring)"
+      - "G5 flywheel feedback (step 5 → G7)"
+    coverage: "STRONG — continuous monitoring + persistent memory"

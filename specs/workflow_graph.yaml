@@ -101,7 +101,7 @@ taxonomy:
       min_harnesses: [context_harness, constraint_harness, evaluation_harness, meta_evaluation]
       developer_mode: orchestrator
       topology: dynamic_with_agent_creator
-      requires_gate: G7_SELF_IMPROVE_BOUNDED  # placeholder until G7 pack locks exact token
+      requires_gate: G7_IMPROVEMENT_BOUNDS_v1  # placeholder until G7 pack locks exact token
       enabled: false
 
 # ---------------------------------------------------------------------------
@@ -416,14 +416,26 @@ domains:
       unittest_suite: "93/93 OK (test_g6_vibe.py)"
       pack_verifier: "203/203 OK (verify_g6_vibe.py)"
     next_domain: G7
-    next_resume_token_expected: G7_SELF_IMPROVE_BOUNDED
+    next_resume_token_expected: G7_IMPROVEMENT_BOUNDS_v1
   G7:
     id: D_G7
     name: self_improvement
-    state: READY_FOR_DOMAIN
+    state: APPROVED
+    locked: true
+    tag: self-improvement-v1.0.0
+    resume_token: G7_IMPROVEMENT_BOUNDS_v1
+    overlay: OPTION_2_STANDARD
     requires: [G1_HARNESS_APPROVED_v1, G5]
     primary_harness_touch: [H_EVAL, H_CONSTRAINT]
     enables_level: L4
+    l4_agentcreator: false  # G7 grants bounded loop; AgentCreator needs separate enablement
+    verification:
+      unittest: "python -m unittest tests.test_g7_self_improve -v"
+      verifier: "python3 scripts/verify_g7_self_improve.py"
+      unittest_count: 15
+      verifier_checks: 179
+      dry_run_cycles: 10
+      secret_scan: 0
   G8:
     id: D_G8
     name: multitenant_policy
@@ -466,7 +478,7 @@ agents:
     id: A_CREATOR
     level: L4
     enabled: false
-    requires_gate: G7_SELF_IMPROVE_BOUNDED
+    requires_gate: G7_IMPROVEMENT_BOUNDS_v1
 
 # ---------------------------------------------------------------------------
 # Edges
@@ -526,10 +538,10 @@ edges:
   - { id: E202, from: A_SPECIALIST, to: H_EVAL, kind: deterministic, label: specialist_trajectory_score, gated_by: G4_TOPOLOGY_APPROVED_v1 }
 
   # L4 enablement (post G7)
-  - { id: E300, from: D_G7, to: A_CREATOR, kind: hitl, label: enable_L4_creator, gated_by: G7_SELF_IMPROVE_BOUNDED }
-  - { id: E301, from: A_ROOT, to: A_CREATOR, kind: dynamic, label: request_capability_expansion, gated_by: G7_SELF_IMPROVE_BOUNDED }
-  - { id: E302, from: A_CREATOR, to: H_EVAL, kind: deterministic, label: meta_evaluate_new_capability, gated_by: G7_SELF_IMPROVE_BOUNDED }
-  - { id: E303, from: A_CREATOR, to: HUMAN, kind: hitl, label: approve_new_agent_or_tool, gated_by: G7_SELF_IMPROVE_BOUNDED }
+  - { id: E300, from: D_G7, to: A_CREATOR, kind: hitl, label: enable_L4_creator, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
+  - { id: E301, from: A_ROOT, to: A_CREATOR, kind: dynamic, label: request_capability_expansion, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
+  - { id: E302, from: A_CREATOR, to: H_EVAL, kind: deterministic, label: meta_evaluate_new_capability, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
+  - { id: E303, from: A_CREATOR, to: HUMAN, kind: hitl, label: approve_new_agent_or_tool, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
 
 # ---------------------------------------------------------------------------
 # Option overlays (G1 decision) — structural consequences
