@@ -1,7 +1,7 @@
 # Agentic R&D & Implementation Blueprint
 
 **Dual-Course Synthesis** (Nov 2025 → June 2026)  
-**Domain Status:** G1 `APPROVED` — `OPTION_2_STANDARD` / `G1_HARNESS_APPROVED_v1`
+**Domain Status:** G1/G2 `APPROVED` — `OPTION_2_STANDARD` / `G2_TOOL_REGISTRY_LOCKED_v1`
 
 A formally-specified **Three-Harness Factory Model** for autonomous agentic systems, synthesizing the Google AI Agents Whitepaper Series (WP-F1–F5, Nov 2025) and Google Vibe Coding / Agentic Engineering Series (WP-S1–S5, June 2026) into a single, auditable architectural constitution spanning 10 domains (G1–G10).
 
@@ -32,7 +32,7 @@ The project's architectural constitution is triangulated across three binding ar
 | Domain | Focus | Harness Emphasis | Status |
 |---|---|---|---|
 | **G1** | Agent Foundations & Architecture | 🏛️ All three | ✅ `APPROVED` |
-| **G2** | Tool Use & MCP | Constraint, Context | Ready |
+| **G2** | Tool Use & MCP | Constraint, Context | ✅ `APPROVED` |
 | **G3** | Context Engineering / Sessions / Memory | Context | Ready |
 | **G4** | Multi-Agent Orchestration | All three | Ready |
 | **G5** | Evaluation & Observability | Evaluation | Ready |
@@ -117,16 +117,14 @@ Every strategic domain gate (G1–G10) surfaces a `HARD_STOP` decision matrix an
 
 ---
 
-## G1 Gate Decision (Active)
+## G1 & G2 Gate Decisions (Active)
 
-| Field | Value |
-|---|---|
-| **Decision** | `OPTION_2_STANDARD` |
-| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ |
-| **Default Agent Level** | L2 (Strategic Problem-Solver) |
-| **L3** | Enabled only after G4 gate |
-| **L4** | Disabled until G7 gate |
-| **Overlay** | Three-harness Factory + full audit trail |
+| Field | G1 Foundations | G2 Tools & MCP |
+|---|---|---|
+| **Decision** | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` |
+| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ |
+| **Default Agent Level** | L2 (Strategic Problem-Solver) | L2 (Strategic Problem-Solver) |
+| **Harness / Substrate** | Three-harness Factory + full audit trail | Security Broker Proxy + NPM Pins + Loopback Boundary |
 
 ---
 
