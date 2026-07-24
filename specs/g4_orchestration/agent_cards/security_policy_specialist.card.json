@@ -1,0 +1,45 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.leaf.security_review",
+  "name": "security-policy-specialist",
+  "version": "1.0.0-draft",
+  "description": "Reviews plans and diffs for OWASP, confused-deputy, sandbox boundary, secret leakage, and policy intercept alignment. Advisory + block recommendations; cannot self-approve payments.",
+  "url": "local://hermes/s_sec",
+  "provider": { "organization": "agentic-rd", "registry": "private" },
+  "capabilities": [
+    { "id": "review.security_diff", "description": "Static review of declarative and code diffs" },
+    { "id": "review.agent_card", "description": "Validate card security and risk_tier fields" },
+    { "id": "review.mandate", "description": "Check AP2 mandate envelopes against policy" }
+  ],
+  "skills": [
+    { "name": "requesting-code-review", "level": "L2_on_trigger", "risk_tier": "T1", "agentskills_io": true }
+  ],
+  "defaultInputModes": ["text/plain", "application/json", "text/x-diff"],
+  "defaultOutputModes": ["application/json"],
+  "interaction": {
+    "multiTurn": true,
+    "streaming": false,
+    "taskOriented": true,
+    "supportsAgentToolShim": true,
+    "agentToolName": "run_security_specialist"
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["parent_task_token"],
+    "dataClasses": ["security_findings", "internal_specs"],
+    "residency": "wsl2_workspace",
+    "readOnlyDefault": true
+  },
+  "risk_tier": "T2",
+  "policy": {
+    "requiredInterceptClasses": ["security_review"],
+    "canIssueDenyRecommend": true,
+    "canIssueAllowFinal": false
+  },
+  "ap2": { "advertised": true, "role": "mandate_auditor", "liveSettle": false },
+  "x402": { "advertised": false, "enabled": false },
+  "lifecycle": "schema_only",
+  "option_2": { "enabled": true, "leafDefault": true }
+}

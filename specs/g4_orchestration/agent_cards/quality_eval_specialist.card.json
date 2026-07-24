@@ -1,0 +1,44 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.leaf.quality_eval",
+  "name": "quality-eval-specialist",
+  "version": "1.0.0-draft",
+  "description": "Runs structural verifiers and packages trajectory/eval evidence for G5. Does not claim CI green from ad-hoc scripts without labeling.",
+  "url": "local://hermes/s_eval",
+  "provider": { "organization": "agentic-rd", "registry": "private" },
+  "capabilities": [
+    { "id": "verify.structural_pack", "description": "YAML parse + required key/section checks" },
+    { "id": "verify.secret_scan", "description": "Coarse secret/placeholder scan on artifacts" },
+    { "id": "trajectory.package", "description": "Emit Mission→Verdict fields for Evaluation harness" }
+  ],
+  "skills": [
+    { "name": "systematic-debugging", "level": "L2_on_trigger", "risk_tier": "T1", "agentskills_io": true }
+  ],
+  "defaultInputModes": ["application/json", "text/plain"],
+  "defaultOutputModes": ["application/json"],
+  "interaction": {
+    "multiTurn": false,
+    "streaming": false,
+    "taskOriented": true,
+    "supportsAgentToolShim": true,
+    "agentToolName": "run_quality_eval_specialist"
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["parent_task_token"],
+    "dataClasses": ["telemetry", "eval_scores"],
+    "residency": "wsl2_workspace",
+    "readOnlyDefault": true
+  },
+  "risk_tier": "T1",
+  "policy": {
+    "requiredInterceptClasses": ["shell_readonly"],
+    "denyClasses": ["payments", "network_egress_unbrokered"]
+  },
+  "ap2": { "advertised": false, "liveSettle": false },
+  "x402": { "advertised": false, "enabled": false },
+  "lifecycle": "schema_only",
+  "option_2": { "enabled": true, "leafDefault": true }
+}

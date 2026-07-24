@@ -1,0 +1,341 @@
+# FAILURE_MODE_MATRIX.yaml
+# G4 — Multi-agent failure modes, detection, recovery (declarative)
+# BLUE Step E signals: timeout, region collision, spending-limit exceed
+# Status: DRAFT_PRE_GATE — structural recovery tests deferred to post-token Step E
+
+version: "1.0.0-draft"
+domain: G4
+overlay: OPTION_2_STANDARD
+resume_token_expected: G4_TOPOLOGY_APPROVED_v1
+companion:
+  - MULTI_AGENT_TOPOLOGY.md
+  - workflow_graph.yaml
+  - POLICY_INTERCEPT_SPEC.yaml
+  - GHERKIN_DECOMPOSITION_TEMPLATES.md
+
+severity_scale: [LOW, MED, HIGH, CRITICAL]
+
+defaults:
+  fail_fast: true
+  brute_force_retries: false
+  max_auto_retries: 1
+  lro_threshold_ms: 10000
+  parallel_max: 3
+  spawn_depth_max: 1
+
+# ---------------------------------------------------------------------------
+# Failure modes
+# ---------------------------------------------------------------------------
+failure_modes:
+  - id: FM-TIMEOUT
+    name: Task or leaf timeout
+    blue_signal: timeout
+    severity: HIGH
+    symptoms:
+      - heartbeat_missing
+      - wall_clock_gt_caps_timeout_ms
+      - lro_without_async_ticket
+    detection:
+      - root_watchdog_timer
+      - leaf_progress_silence
+    recovery:
+      automatic:
+        - cancel_task
+        - mark_TIMED_OUT
+        - release_jit_caps
+      hitl_if:
+        - task_marked_critical
+      forbidden:
+        - infinite_retry_loop
+    recovery_declared: true
+    gherkin_tag: "@fail:timeout"
+
+  - id: FM-REGION-COLLISION
+    name: Regional / workspace write collision
+    blue_signal: region_collision
+    severity: HIGH
+    symptoms:
+      - two_leaves_write_same_path
+      - git_index_lock_contention
+      - divergent_patches_on_shared_artifact
+    detection:
+      - path_lease_registry
+      - join_time_diff_conflict
+    recovery:
+      automatic:
+        - fail_later_writer
+        - preserve_first_lease_holder
+        - surface_conflict_paths
+      hitl_if:
+        - both_writers_critical
+      design_controls:
+        - partition_allowlists_per_card
+        - serialize_via_SEQ_FACTORY_LINE_when_shared_specs
+    recovery_declared: true
+    gherkin_tag: "@fail:region_collision"
+
+  - id: FM-BUDGET-CEILING
+    name: Spending-limit / budget ceiling breach
+    blue_signal: spending_limit_exceed
+    severity: CRITICAL
+    symptoms:
+      - capture_gt_mandate
+      - session_token_budget_exhausted
+      - tool_call_count_cap_exceeded
+      - denial_of_wallet_burn_rate
+    detection:
+      - ap2_ceiling_compare
+      - policy_budget_class
+      - circuit_breaker_token_burn
+    recovery:
+      automatic:
+        - deny_capture
+        - ledger_reject
+        - freeze_payment_class
+        - trip_circuit_breaker_if_burn
+      hitl:
+        - mandate_raise_requires_new_signature
+      forbidden:
+        - silent_ceiling_rewrite_by_leaf
+    recovery_declared: true
+    gherkin_tag: "@fail:budget"
+
+  - id: FM-CARD-INVALID
+    name: Agent Card schema or allowlist failure
+    severity: MED
+    symptoms:
+      - missing_required_fields
+      - unknown_card_id
+      - option_2_enabled_false_on_live_path
+    detection:
+      - CARD_RESOLVE
+      - SECURITY_EVAL
+    recovery:
+      automatic:
+        - DENY_TERMINAL
+        - no_leaf_invoke
+    recovery_declared: true
+
+  - id: FM-POLICY-DENY
+    name: Policy intercept deny
+    severity: MED
+    symptoms:
+      - decision_deny
+      - reason_code_set
+    detection:
+      - POLICY_SEAT
+    recovery:
+      automatic:
+        - halt_edge
+        - emit_telemetry
+      hitl_if:
+        - reason_code_in_reviewable_set
+    recovery_declared: true
+
+  - id: FM-NESTING-VIOLATION
+    name: Spawn depth / nested orchestrator attempt
+    severity: HIGH
+    symptoms:
+      - leaf_calls_delegate_task
+      - depth_gt_max_spawn_depth
+    detection:
+      - deterministic_spawn_depth_enforce
+      - leaf_tool_strip
+    recovery:
+      automatic:
+        - deny_nested_call
+        - force_leaf_role
+      hitl_if:
+        - architect_requests_depth_increase
+    recovery_declared: true
+
+  - id: FM-CONCURRENCY-CAP
+    name: Parallel fan-out exceeds cap
+    severity: MED
+    symptoms:
+      - concurrent_children_gt_3
+    detection:
+      - concurrent_children_cap
+    recovery:
+      automatic:
+        - queue_or_deny_overflow
+        - never_silent_extra_spawn
+    recovery_declared: true
+
+  - id: FM-GOTO-LEAK
+    name: Unbounded agent wrapped as tool (WP-S2 GOTO)
+    severity: HIGH
+    symptoms:
+      - multi_turn_agent_in_mcp_tool_shape
+      - control_flow_never_returns
+    detection:
+      - card.supportsAgentToolShim_false_but_shim_used
+      - NEEDS_INPUT_without_a2a_state
+    recovery:
+      automatic:
+        - convert_path_to_a2a_task_or_deny
+        - isolate_state_machine
+    recovery_declared: true
+
+  - id: FM-PARTIAL-JOIN
+    name: Fan-in partial failure
+    severity: MED
+    symptoms:
+      - join_group_not_all_success
+    detection:
+      - D_JOIN
+    recovery:
+      automatic:
+        - mark_aggregate_partial_failure
+        - drop_failed_slices_if_policy_quorum_allows  # default false OPTION_2
+      default_option_2_join: all_success
+      hitl_if:
+        - critical_mission
+    recovery_declared: true
+
+  - id: FM-SESSION-TRANSLATION
+    name: Nested multi-agent session event mistranslation
+    severity: MED
+    owner_residual_from: G3
+    symptoms:
+      - child_events_pollute_parent_memory as facts
+      - missing_parent_trace_id
+    detection:
+      - trajectory_schema_validate
+      - memory_advisory_only_check
+    recovery:
+      automatic:
+        - roll_up_as_observation_only
+        - reject_memory_override_of_constraints
+    recovery_declared: true
+
+  - id: FM-TRUST-DECAY
+    name: Intent drift / trust score collapse (WP-S4)
+    severity: HIGH
+    symptoms:
+      - subgoals_diverge_from_mission
+      - unauthorized_tool_spike
+    detection:
+      - vibe_trajectory_analytics_declared
+      - circuit_breaker
+    recovery:
+      automatic:
+        - trip_circuit_breaker
+        - freeze_tools
+        - checkpoint_notice
+      hitl: required_for_resume
+    recovery_declared: true
+
+  - id: FM-REMOTE-A2A-OUTAGE
+    name: Remote specialist unavailable
+    severity: MED
+    symptoms:
+      - endpoint_unreachable
+      - registry_stale
+    detection:
+      - handshake_CARD_RESOLVE_or_RUNNING_transport_error
+    recovery:
+      automatic:
+        - FAIL_or_TIMED_OUT
+        - fallback_only_if_declared_alternate_card
+      option_2_default: remote_disabled
+    recovery_declared: true
+
+  - id: FM-PAYMENT-HOLD-STALL
+    name: x402/AP2 hold without settlement path
+    severity: HIGH
+    symptoms:
+      - PAYMENT_HOLD_prolonged
+      - unpaid_402_retry_storm
+    detection:
+      - state_machine_dwell_timer
+    recovery:
+      automatic:
+        - cancel_after_hold_ttl
+        - deny_token_burn_retries
+      hitl: mandate_or_abort
+    recovery_declared: true
+
+  - id: FM-CRITIC-LOOP
+    name: Iterative refinement non-convergence
+    severity: MED
+    symptoms:
+      - loop_iterations_gt_max
+      - critic_score_flat
+    detection:
+      - LOOP_REFINE_max_iterations
+      - flat_fix_curve_signal
+    recovery:
+      automatic:
+        - exit_loop_fail_or_escalate
+      hitl_if:
+        - mission_critical_quality
+      forbidden:
+        - unbounded_generator_critic
+    recovery_declared: true
+
+  - id: FM-SECRET-LEAK
+    name: Secret or credential material in artifacts/traces
+    severity: CRITICAL
+    symptoms:
+      - secret_scan_hit
+    detection:
+      - quality_eval_secret_scan
+      - policy_workspace_write
+    recovery:
+      automatic:
+        - deny_write_or_redact
+        - fail_task
+        - escalate_HITL
+    recovery_declared: true
+
+# ---------------------------------------------------------------------------
+# BLUE-required trio coverage
+# ---------------------------------------------------------------------------
+blue_required_coverage:
+  timeout: FM-TIMEOUT
+  region_collision: FM-REGION-COLLISION
+  spending_limit_exceed: FM-BUDGET-CEILING
+
+# ---------------------------------------------------------------------------
+# Counts (telemetry for HITL payload)
+# ---------------------------------------------------------------------------
+telemetry:
+  failure_mode_count: 15
+  with_declared_recovery: 15
+  without_recovery: 0
+  critical_count: 3
+  ap2_related:
+    - FM-BUDGET-CEILING
+    - FM-PAYMENT-HOLD-STALL
+
+# ---------------------------------------------------------------------------
+# Option overlay deltas
+# ---------------------------------------------------------------------------
+option_deltas:
+  OPTION_1_CONSERVATIVE:
+    disable_modes_need: []
+    notes: Prefer SEQ only — reduces FM-REGION-COLLISION and FM-CONCURRENCY-CAP likelihood
+    ap2_path: force_deny_reduces_FM-BUDGET-CEILING_to_unreachable
+  OPTION_2_STANDARD:
+    notes: Full matrix applies; remote outage low likelihood because remote default off
+  OPTION_3_CREATIVE:
+    added_risk:
+      - swarm_split_brain
+      - unrestricted_micro_economy_cascade
+    requires_strong_evaluation: true
+
+# ---------------------------------------------------------------------------
+# Structural test intents (Step E deferred)
+# ---------------------------------------------------------------------------
+structural_tests_deferred:
+  - id: ST-G4-FM-01
+    assert: every failure_modes[].id unique
+  - id: ST-G4-FM-02
+    assert: blue_required_coverage keys present
+  - id: ST-G4-FM-03
+    assert: recovery_declared true for all modes
+  - id: ST-G4-FM-04
+    assert: FM-BUDGET-CEILING severity CRITICAL
+  - id: ST-G4-FM-05
+    assert: no forbidden infinite retry in timeout recovery

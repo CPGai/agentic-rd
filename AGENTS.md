@@ -29,7 +29,7 @@ You are an execution engine inside a **Factory Model** (WP-S1): the human System
 - **Conductor** — real-time pair direction; fine-grained control
 - **Orchestrator** — async goals, multi-agent delegation, review at gates
 
-**Default agent level:** **L2** (Strategic Problem-Solver). **L3** after G4 approval. **L4** forbidden until G7 resume token.
+**Default agent level:** **L2** (Strategic Problem-Solver). **L3** enabled after G4 approval (`G4_TOPOLOGY_APPROVED_v1` ✅ GRANTED). **L4** forbidden until G7 resume token.
 
 ---
 
@@ -105,7 +105,7 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 | **G1** Foundations & Harness | Constitution adoption | `G1_HARNESS_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G2** Tools & MCP | Registry + disclosure + broker | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
 | **G3** Context / Skills / Memory | Co-load precedence + budgets | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G4** Multi-Agent | Topology + AP2 bounds | `G4_TOPOLOGY_APPROVED_v1` | OPTION_2_STANDARD |
+| **G4** Multi-Agent | Topology + AP2 bounds | `G4_TOPOLOGY_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G5** Eval & Observability | Trust posture + thresholds | domain token | OPTION_2_STANDARD |
 | **G6** Vibe→Spec harness | Production vs prototype boundary | domain token | OPTION_2_STANDARD |
 | **G7** Self-improvement | L4 / mutation bounds | domain token | Conservative until proven |
@@ -159,6 +159,7 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 ## 9. Explicit Non-Actions
 
 - G1 is `APPROVED` (`G1_HARNESS_APPROVED_v1`); G2–G10 may start under OPTION_2_STANDARD overlays — still stop at each domain's own HITL gate
+- G4 is `APPROVED` (`G4_TOPOLOGY_APPROVED_v1` · `orchestration-v1.0.0`); L3 multi-agent topology active; L4 still forbidden
 - Do not enable L4 AgentCreator
 - Do not treat a green demo as a green eval
 - Do not expand static context past the § envelope in `HARNESS_SPEC.md` without progressive disclosure

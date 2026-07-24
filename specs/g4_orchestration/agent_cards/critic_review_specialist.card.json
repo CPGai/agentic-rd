@@ -1,0 +1,41 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.leaf.critic_review",
+  "name": "critic-review-specialist",
+  "version": "1.0.0-draft",
+  "description": "Iterative-refinement critic: scores leaf outputs against Gherkin acceptance and trajectory completeness. Never implements fixes itself.",
+  "url": "local://hermes/s_review",
+  "provider": { "organization": "agentic-rd", "registry": "private" },
+  "capabilities": [
+    { "id": "critique.gherkin_alignment", "description": "Map outputs to Scenario Then clauses" },
+    { "id": "critique.trajectory", "description": "Flag missing Mission/Scene/Verdict fields" }
+  ],
+  "skills": [],
+  "defaultInputModes": ["application/json", "application/gherkin", "text/markdown"],
+  "defaultOutputModes": ["application/json"],
+  "interaction": {
+    "multiTurn": false,
+    "streaming": false,
+    "taskOriented": true,
+    "supportsAgentToolShim": true,
+    "agentToolName": "run_critic_specialist"
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["parent_task_token"],
+    "dataClasses": ["eval_scores"],
+    "residency": "wsl2_workspace",
+    "readOnlyDefault": true
+  },
+  "risk_tier": "T1",
+  "policy": {
+    "requiredInterceptClasses": [],
+    "denyClasses": ["workspace_write", "payments", "shell"]
+  },
+  "ap2": { "advertised": false, "liveSettle": false },
+  "x402": { "advertised": false, "enabled": false },
+  "lifecycle": "schema_only",
+  "option_2": { "enabled": true, "leafDefault": true }
+}

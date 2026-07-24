@@ -1,0 +1,44 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.leaf.research",
+  "name": "research-knowledge-specialist",
+  "version": "1.0.0-draft",
+  "description": "Retrieves and cites knowledge (specs, Context7 MCP, arxiv). Returns cited digests only — no silent policy changes. Progressive disclosure aware.",
+  "url": "local://hermes/s_research",
+  "provider": { "organization": "agentic-rd", "registry": "private" },
+  "capabilities": [
+    { "id": "knowledge.retrieve", "description": "Path-scoped and MCP doc retrieval with citations" },
+    { "id": "whitepaper.cluster", "description": "Topic-cluster synthesis from immutable corpus" }
+  ],
+  "skills": [
+    { "name": "arxiv", "level": "L2_on_trigger", "risk_tier": "T2", "agentskills_io": true }
+  ],
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["application/json", "text/markdown"],
+  "interaction": {
+    "multiTurn": true,
+    "streaming": true,
+    "taskOriented": true,
+    "supportsAgentToolShim": true,
+    "agentToolName": "run_research_specialist"
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["parent_task_token"],
+    "dataClasses": ["public_docs", "internal_specs"],
+    "residency": "wsl2_workspace",
+    "mcpAllowlist": ["context7"],
+    "network": "brokered_mcp_only"
+  },
+  "risk_tier": "T2",
+  "policy": {
+    "requiredInterceptClasses": ["mcp_call", "egress"],
+    "denyClasses": ["payments", "shell_unrestricted"]
+  },
+  "ap2": { "advertised": false, "liveSettle": false },
+  "x402": { "advertised": true, "enabled": false, "notes": "Paid doc APIs may advertise 402; settle disabled OPTION_2 default" },
+  "lifecycle": "schema_only",
+  "option_2": { "enabled": true, "leafDefault": true }
+}

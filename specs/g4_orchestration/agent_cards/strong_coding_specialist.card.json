@@ -1,0 +1,49 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.leaf.strong_coder",
+  "name": "strong-coding-specialist",
+  "version": "1.0.0-draft",
+  "description": "Implements declarative YAML/Markdown/specs and structural tests under TDD/red-green. WSL2-routed shell only. No secret writes. No host-Windows Python.",
+  "url": "local://hermes/s_code",
+  "provider": { "organization": "agentic-rd", "registry": "private" },
+  "capabilities": [
+    { "id": "specs.write_declarative", "description": "Emit YAML/MD/Gherkin per task envelope" },
+    { "id": "tests.structural", "description": "Author unittest/schema skeletons" },
+    { "id": "repo.patch", "description": "Focused patches within allowlisted paths" }
+  ],
+  "skills": [
+    { "name": "test-driven-development", "level": "L2_on_trigger", "risk_tier": "T1", "agentskills_io": true },
+    { "name": "wsl2-execution-routing", "level": "L1_always", "risk_tier": "T1", "agentskills_io": true },
+    { "name": "requesting-code-review", "level": "L2_on_trigger", "risk_tier": "T1", "agentskills_io": true }
+  ],
+  "defaultInputModes": ["text/plain", "application/json", "application/gherkin"],
+  "defaultOutputModes": ["application/json", "text/x-diff"],
+  "interaction": {
+    "multiTurn": true,
+    "streaming": true,
+    "taskOriented": true,
+    "supportsAgentToolShim": true,
+    "agentToolName": "run_strong_coding_specialist",
+    "lroThresholdMs": 10000
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["parent_task_token"],
+    "dataClasses": ["source", "specs"],
+    "residency": "wsl2_workspace",
+    "fileWriteAllowlist": ["specs/**", "skills/**", "scripts/**", "tests/**", ".gherkin/**"],
+    "fileWriteDenylist": [".env", "**/*secret*", "**/credentials*"],
+    "network": "brokered_mcp_only"
+  },
+  "risk_tier": "T2",
+  "policy": {
+    "requiredInterceptClasses": ["workspace_write", "shell", "delegation"],
+    "hitlClasses": ["prod_manifest", "iam", "payment"]
+  },
+  "ap2": { "advertised": false, "liveSettle": false },
+  "x402": { "advertised": false, "enabled": false },
+  "lifecycle": "schema_only",
+  "option_2": { "enabled": true, "leafDefault": true }
+}

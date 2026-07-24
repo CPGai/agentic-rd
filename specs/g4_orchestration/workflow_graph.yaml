@@ -1,0 +1,331 @@
+# G4_orchestration domain workflow graph (ADK 2.0 multi-agent style)
+# Declarative only — not executable runtime.
+# Status: DRAFT_PRE_GATE · awaiting G4_TOPOLOGY_APPROVED_v1
+# Companion: MULTI_AGENT_TOPOLOGY.md · root specs/workflow_graph.yaml (factory SoT)
+
+version: "1.0.0-draft"
+domain: G4
+name: multi_agent_orchestration_plane
+overlay: OPTION_2_STANDARD
+resume_token_expected: G4_TOPOLOGY_APPROVED_v1
+l4_enabled: false
+primary_topology: hierarchical_coordinator_specialists
+
+metadata:
+  adk_style: true
+  notes: >
+    Models SequentialAgent / ParallelAgent / LlmAgent composition as declarative
+    nodes+edges. Implementation frameworks (ADK, Hermes delegate_task) are substrates.
+
+inherits:
+  - G1_HARNESS_APPROVED_v1
+  - G2_TOOL_REGISTRY_LOCKED_v1
+  - G3_CONTEXT_LAYER_LOCKED_v1
+  - specs/g4_orchestration/G4_MIGRATION_CONTEXT.md
+
+caps:
+  max_concurrent_children: 3
+  max_spawn_depth: 1
+  lro_threshold_ms: 10000
+  nested_orchestrator: false
+
+context_assembly_order:
+  - static
+  - skills
+  - tools
+  - knowledge
+  - memory_window
+
+# ---------------------------------------------------------------------------
+# Agents (ADK-ish roles)
+# ---------------------------------------------------------------------------
+agents:
+  A_ROOT:
+    id: A_ROOT
+    kind: LlmAgent
+    role: hierarchical_orchestrator
+    level: L2
+    card: agent_cards/root_orchestrator.card.json
+    model_policy: dynamic_matrix
+    tools_allow_classes: [T1, T2]
+    can_delegate: true
+    can_spawn_nested_orchestrator: false
+    outputs: [task_envelopes, aggregate_result, trajectory]
+
+  S_SPEC:
+    id: S_SPEC
+    kind: LlmAgent
+    role: specialist_leaf
+    level: L3_pending_gate
+    card: agent_cards/spec_gherkin_specialist.card.json
+    agent_tool_shim: run_spec_gherkin_specialist
+    can_delegate: false
+
+  S_CODE:
+    id: S_CODE
+    kind: LlmAgent
+    role: specialist_leaf
+    level: L3_pending_gate
+    card: agent_cards/strong_coding_specialist.card.json
+    agent_tool_shim: run_strong_coding_specialist
+    can_delegate: false
+
+  S_RESEARCH:
+    id: S_RESEARCH
+    kind: LlmAgent
+    role: specialist_leaf
+    level: L3_pending_gate
+    card: agent_cards/research_knowledge_specialist.card.json
+    agent_tool_shim: run_research_specialist
+    can_delegate: false
+
+  S_SEC:
+    id: S_SEC
+    kind: LlmAgent
+    role: specialist_leaf
+    level: L3_pending_gate
+    card: agent_cards/security_policy_specialist.card.json
+    agent_tool_shim: run_security_specialist
+    can_delegate: false
+
+  S_REVIEW:
+    id: S_REVIEW
+    kind: LlmAgent
+    role: critic_leaf
+    level: L3_pending_gate
+    card: agent_cards/critic_review_specialist.card.json
+    agent_tool_shim: run_critic_specialist
+    can_delegate: false
+
+  S_EVAL:
+    id: S_EVAL
+    kind: LlmAgent
+    role: quality_leaf
+    level: L3_pending_gate
+    card: agent_cards/quality_eval_specialist.card.json
+    agent_tool_shim: run_quality_eval_specialist
+    can_delegate: false
+
+  S_REMOTE_BILLING_EXAMPLE:
+    id: S_REMOTE_BILLING_EXAMPLE
+    kind: RemoteA2aAgent
+    role: example_only
+    card: agent_cards/remote_billing_example.card.json
+    enabled: false
+    option_2_live: false
+
+# ---------------------------------------------------------------------------
+# Composite patterns (declarative)
+# ---------------------------------------------------------------------------
+composites:
+  SEQ_FACTORY_LINE:
+    kind: SequentialAgent
+    description: Spec to Code to Security to Critic to Eval
+    children: [S_SPEC, S_CODE, S_SEC, S_REVIEW, S_EVAL]
+
+  PAR_RESEARCH_BUNDLE:
+    kind: ParallelAgent
+    description: Fan-out research slices then join
+    children: [S_RESEARCH]
+    join: all_success
+    max_parallel: 3
+
+  LOOP_REFINE:
+    kind: LoopAgent
+    description: Generator/critic iterative refinement
+    generator: S_CODE
+    critic: S_REVIEW
+    max_iterations: 3
+    exit_on: critic_score_gte
+    exit_threshold: 0.8
+
+# ---------------------------------------------------------------------------
+# Decision nodes (Step C)
+# ---------------------------------------------------------------------------
+decision_nodes:
+  D_INTENT_CLASSIFY:
+    owner: A_ROOT
+    mode: llm_driven
+    purpose: Map raw intent to feature set
+    escalation: hitl_on_ambiguity
+
+  D_CARD_MATCH:
+    owner: A_ROOT
+    mode: deterministic
+    purpose: Allowlist registry match on tags/capabilities
+
+  D_EDGE_KIND:
+    owner: A_ROOT
+    mode: hybrid
+    purpose: Choose deterministic vs dynamic vs hitl per task
+    rules_ref: decision_boundaries
+
+  D_POLICY:
+    owner: POLICY_SEAT
+    mode: deterministic
+    purpose: allow|deny|hitl|rewrite_caps
+
+  D_JOIN:
+    owner: A_ROOT
+    mode: deterministic
+    purpose: Fan-in barrier / partial failure policy
+
+  D_PAYMENT:
+    owner: POLICY_SEAT
+    mode: deterministic_with_hitl_ceiling
+    purpose: Mandate verification before settle
+
+  D_VERDICT:
+    owner: A_ROOT
+    mode: hybrid
+    purpose: continue|success|fail|escalate_HITL
+
+decision_boundaries:
+  deterministic:
+    - schema_validate_task_envelope
+    - registry_allowlist_lookup
+    - policy_intercept_rules
+    - timeout_watchdog
+    - join_barrier
+    - ap2_ceiling_compare
+    - secret_scan_fail_closed
+    - spawn_depth_enforce
+    - concurrent_children_cap
+  llm_driven:
+    - mission_to_gherkin_decomposition
+    - specialist_selection_among_allowlisted
+    - critique_rubric_scoring
+    - natural_language_clarification_draft
+    - aggregate_narrative_for_human
+  hitl_required:
+    - option_path_change
+    - registry_add_remote_card
+    - ap2_mandate_create_or_raise
+    - max_spawn_depth_increase
+    - enable_swarm_topology
+    - enable_live_a2ui_or_ucp
+    - l4_any
+
+# ---------------------------------------------------------------------------
+# Seats / side planes
+# ---------------------------------------------------------------------------
+seats:
+  POLICY_SEAT:
+    id: POLICY_SEAT
+    status: DECLARED_NOT_WIRED
+    spec: POLICY_INTERCEPT_SPEC.yaml
+  AP2_LEDGER:
+    id: AP2_LEDGER
+    status: SCHEMA_ONLY
+    live_settle: false
+  REGISTRY_PRIVATE:
+    id: REGISTRY_PRIVATE
+    status: FILE_MOCK
+    path: agent_cards/
+  A2UI_SURFACE:
+    id: A2UI_SURFACE
+    status: MOCK_OPTIONAL
+    live: false
+  H_EVAL:
+    id: H_EVAL
+    status: INHERIT_G1
+  HUMAN:
+    id: HUMAN
+    status: ALWAYS
+
+# ---------------------------------------------------------------------------
+# Edges
+# ---------------------------------------------------------------------------
+edges:
+  - { id: G4E001, from: HUMAN, to: A_ROOT, kind: hitl, label: mission_intake }
+  - { id: G4E010, from: A_ROOT, to: D_INTENT_CLASSIFY, kind: dynamic, label: classify }
+  - { id: G4E020, from: A_ROOT, to: REGISTRY_PRIVATE, kind: deterministic, label: card_resolve }
+  - { id: G4E030, from: A_ROOT, to: POLICY_SEAT, kind: deterministic, label: pre_delegate_intercept }
+  - { id: G4E040, from: POLICY_SEAT, to: A_ROOT, kind: deterministic, label: allow_deny_hitl }
+  - { id: G4E050, from: A_ROOT, to: S_SPEC, kind: dynamic, label: delegate_spec, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: G4E060, from: A_ROOT, to: S_CODE, kind: dynamic, label: delegate_code, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: G4E070, from: A_ROOT, to: S_RESEARCH, kind: dynamic, label: delegate_research, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: G4E080, from: A_ROOT, to: S_SEC, kind: dynamic, label: delegate_security, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: G4E090, from: S_CODE, to: S_REVIEW, kind: dynamic, label: iterative_refine }
+  - { id: G4E100, from: S_REVIEW, to: A_ROOT, kind: deterministic, label: critique_result }
+  - { id: G4E110, from: S_SPEC, to: A_ROOT, kind: deterministic, label: leaf_result }
+  - { id: G4E120, from: S_CODE, to: A_ROOT, kind: deterministic, label: leaf_result }
+  - { id: G4E130, from: S_RESEARCH, to: A_ROOT, kind: deterministic, label: leaf_result }
+  - { id: G4E140, from: S_SEC, to: A_ROOT, kind: deterministic, label: leaf_result }
+  - { id: G4E150, from: A_ROOT, to: D_JOIN, kind: deterministic, label: fan_in }
+  - { id: G4E160, from: A_ROOT, to: S_EVAL, kind: deterministic, label: package_eval }
+  - { id: G4E170, from: S_EVAL, to: H_EVAL, kind: deterministic, label: trajectory_score }
+  - { id: G4E180, from: A_ROOT, to: AP2_LEDGER, kind: hitl, label: payment_path, gated_by: G4_TOPOLOGY_APPROVED_v1 }
+  - { id: G4E190, from: AP2_LEDGER, to: POLICY_SEAT, kind: deterministic, label: mandate_check }
+  - { id: G4E200, from: A_ROOT, to: A2UI_SURFACE, kind: dynamic, label: optional_aggregate_ui }
+  - { id: G4E210, from: A_ROOT, to: HUMAN, kind: hitl, label: escalate }
+  - { id: G4E220, from: POLICY_SEAT, to: HUMAN, kind: hitl, label: policy_escalate }
+  - { id: G4E230, from: A_ROOT, to: S_REMOTE_BILLING_EXAMPLE, kind: dynamic, label: example_only_denied, enabled: false }
+
+# ---------------------------------------------------------------------------
+# State machine binding
+# ---------------------------------------------------------------------------
+a2a_handshake_states:
+  - CARD_RESOLVE
+  - SECURITY_EVAL
+  - QUOTE_CAPS
+  - POLICY_CHECK
+  - TASK_OFFER
+  - NEGOTIATE
+  - ACCEPTED
+  - RUNNING
+  - NEEDS_INPUT
+  - PAYMENT_HOLD
+  - HITL_WAIT
+  - COMPLETED
+  - FAILED
+  - TIMED_OUT
+  - CANCELLED
+  - DENY_TERMINAL
+  - AGGREGATE
+
+# ---------------------------------------------------------------------------
+# Topologies allowed under overlay options (domain view)
+# ---------------------------------------------------------------------------
+options:
+  OPTION_1_CONSERVATIVE:
+    primary_topology: sequential_few_specialists
+    patterns_allowed: [P-SEQ, P-HITL]
+    ap2_live: false
+    parallel_max: 1
+    remote_a2a: false
+  OPTION_2_STANDARD:
+    primary_topology: hierarchical_coordinator_specialists
+    patterns_allowed: [P-SEQ, P-PAR, P-HIER, P-IR, P-HITL, P-MONO]
+    ap2_live: false
+    ap2_schema_and_limits: true
+    parallel_max: 3
+    remote_a2a: false
+    policy_seat: required
+  OPTION_3_CREATIVE:
+    primary_topology: swarm_or_dynamic
+    patterns_allowed: [P-SEQ, P-PAR, P-HIER, P-IR, P-HITL, P-BB, P-SWARM, P-DIST]
+    ap2_live: true
+    remote_a2a: true
+    a2ui_live: true
+    requires_strong_evaluation: true
+
+recommended_path: OPTION_2_STANDARD
+
+mermaid: |
+  flowchart TB
+    HUMAN --> A_ROOT
+    A_ROOT --> REGISTRY_PRIVATE
+    A_ROOT --> POLICY_SEAT
+    A_ROOT --> S_SPEC
+    A_ROOT --> S_CODE
+    A_ROOT --> S_RESEARCH
+    A_ROOT --> S_SEC
+    S_CODE --> S_REVIEW
+    S_REVIEW --> A_ROOT
+    A_ROOT --> S_EVAL
+    S_EVAL --> H_EVAL
+    A_ROOT --> AP2_LEDGER
+    AP2_LEDGER --> POLICY_SEAT
+    POLICY_SEAT --> HUMAN
+    A_ROOT --> HUMAN

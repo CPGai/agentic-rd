@@ -1,0 +1,43 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.leaf.spec_gherkin",
+  "name": "spec-gherkin-specialist",
+  "version": "1.0.0-draft",
+  "description": "Produces and normalizes Gherkin Feature/Scenario packs from missions. No production code writes. Returns structured scenarios tagged with @agent and @risk.",
+  "url": "local://hermes/s_spec",
+  "provider": { "organization": "agentic-rd", "registry": "private" },
+  "capabilities": [
+    { "id": "gherkin.author", "description": "Author Feature/Scenario/Examples" },
+    { "id": "gherkin.normalize", "description": "Validate tags, Background, and task envelopes" }
+  ],
+  "skills": [
+    { "name": "plan", "level": "L2_on_trigger", "risk_tier": "T1", "agentskills_io": true }
+  ],
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["application/gherkin", "application/json"],
+  "interaction": {
+    "multiTurn": true,
+    "streaming": false,
+    "taskOriented": true,
+    "supportsAgentToolShim": true,
+    "agentToolName": "run_spec_gherkin_specialist"
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["parent_task_token"],
+    "dataClasses": ["internal_specs"],
+    "residency": "wsl2_workspace",
+    "fileWriteAllowlist": ["specs/**", ".gherkin/**"]
+  },
+  "risk_tier": "T1",
+  "policy": {
+    "requiredInterceptClasses": ["workspace_write"],
+    "denyClasses": ["payments", "network_egress_unbrokered"]
+  },
+  "ap2": { "advertised": false, "liveSettle": false },
+  "x402": { "advertised": false, "enabled": false },
+  "lifecycle": "schema_only",
+  "option_2": { "enabled": true, "leafDefault": true }
+}

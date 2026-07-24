@@ -1,0 +1,87 @@
+{
+  "$schema_note": "Mock A2A Agent Card — declarative only; not a live endpoint",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.root.orchestrator",
+  "name": "factory-root-orchestrator",
+  "version": "1.0.0-draft",
+  "description": "Hierarchical factory root: decomposes missions into Gherkin tasks, matches private registry cards, delegates to AgentTool/A2A leaves under policy intercept. Does not own product architecture decisions.",
+  "url": "local://hermes/a_root",
+  "provider": {
+    "organization": "agentic-rd",
+    "registry": "private"
+  },
+  "capabilities": [
+    {
+      "id": "mission.decompose.gherkin",
+      "description": "Break user intent into Feature/Scenario/Task envelopes"
+    },
+    {
+      "id": "registry.match",
+      "description": "Match tasks to allowlisted Agent Cards"
+    },
+    {
+      "id": "delegate.local",
+      "description": "Fan-out to local leaf agents (Hermes delegate_task substrate)"
+    },
+    {
+      "id": "aggregate.results",
+      "description": "Typed join of leaf results + trajectory emission"
+    }
+  ],
+  "skills": [
+    {
+      "name": "agentic-rd-g-domain-runbook",
+      "level": "L2_on_trigger",
+      "risk_tier": "T1",
+      "agentskills_io": true
+    },
+    {
+      "name": "plan",
+      "level": "L2_on_trigger",
+      "risk_tier": "T1",
+      "agentskills_io": true
+    }
+  ],
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["text/plain", "application/json", "application/gherkin"],
+  "interaction": {
+    "multiTurn": true,
+    "streaming": true,
+    "taskOriented": true,
+    "supportsAgentToolShim": false,
+    "maxConcurrentChildren": 3,
+    "maxSpawnDepth": 1
+  },
+  "security": {
+    "identityClass": "agentic",
+    "authSchemes": ["session_bound", "workspace_profile"],
+    "dataClasses": ["internal_specs", "telemetry_no_secrets"],
+    "residency": "wsl2_workspace",
+    "confusedDeputyMitigations": ["no_user_ambient_creds", "policy_intercept_required"]
+  },
+  "risk_tier": "T2",
+  "policy": {
+    "requiredInterceptClasses": ["orchestration", "delegation", "budget"],
+    "hitlClasses": ["topology_change", "payment", "registry_expand"]
+  },
+  "ap2": {
+    "advertised": true,
+    "role": "mandate_consumer_planner",
+    "liveSettle": false
+  },
+  "x402": {
+    "advertised": false,
+    "enabled": false
+  },
+  "a2ui": {
+    "advertised": true,
+    "live": false,
+    "role": "aggregate_presenter"
+  },
+  "lifecycle": "schema_only",
+  "option_2": {
+    "enabled": true,
+    "notes": "Root always present; L3 specialist edges require G4_TOPOLOGY_APPROVED_v1"
+  }
+}

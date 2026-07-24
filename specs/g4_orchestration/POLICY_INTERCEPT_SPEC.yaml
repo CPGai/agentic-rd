@@ -1,0 +1,288 @@
+# POLICY_INTERCEPT_SPEC.yaml
+# G4 — Enterprise policy server / Centralised Agent Gateway seat
+# Status: DECLARED_NOT_WIRED (valid architectural seat; analogous to G2 broker)
+# Overlay: OPTION_2_STANDARD
+# Resume: G4_TOPOLOGY_APPROVED_v1 does not auto-wire this seat
+
+version: "1.0.0-draft"
+domain: G4
+seat_id: POLICY_SEAT
+status: DECLARED_NOT_WIRED
+mode: fail_closed_when_invoked
+anchors:
+  - WP-S4 Centralised Agent Gateway + contextual authorisation
+  - WP-F1 hybrid deterministic guardrails + policy engine
+  - WP-S2 AP2 mandate rules
+  - G2 broker_config.yaml DECLARED_NOT_WIRED precedent
+
+purpose: >
+  Intercept every high-risk orchestration action (delegate, egress MCP beyond
+  allowlist mutation, payment, registry expand, shell class elevation) and emit
+  allow | deny | hitl | rewrite_caps before side effects.
+
+placement:
+  logical_path:
+    - A_ROOT_or_leaf_intent
+    - POLICY_SEAT
+    - broker_or_a2a_executor_or_ap2_wallet
+  not_responsible_for:
+    - authentication_issuer
+    - model_inference
+    - long_term_memory_truth
+
+identity:
+  require_agentic_identity: true
+  forbid_user_ambient_delegation_as_final_authz: true  # confused deputy (WP-S4)
+  jit_downscope: true
+  unique_per_agent_id: true
+
+decision_vocab:
+  - allow
+  - deny
+  - hitl
+  - rewrite_caps
+
+# ---------------------------------------------------------------------------
+# Intercept classes
+# ---------------------------------------------------------------------------
+intercept_classes:
+  orchestration:
+    description: Root plan commit / topology edge enable
+    default: allow_with_trace
+    hitl_if:
+      - topology_not_in_option_allowlist
+      - l4_requested
+
+  delegation:
+    description: A_ROOT → specialist task.accept
+    default: allow_if_card_option2
+    deny_if:
+      - card_missing
+      - card_option_2_enabled_false
+      - risk_tier_gte_T4_without_hitl
+      - max_concurrent_children_exceeded
+      - max_spawn_depth_exceeded
+    rewrite_caps_if:
+      - timeout_missing
+      - spend_cap_missing_on_payment_tag
+
+  mcp_call:
+    description: Leaf or root MCP tools/call
+    inherit_from: G2_broker
+    default: broker_decision
+    deny_if:
+      - server_not_in_T1_T2_allowlist
+
+  workspace_write:
+    description: Filesystem mutations
+    default: allow_on_allowlist
+    deny_if:
+      - path_matches_secret_denylist
+      - path_outside_card_allowlist
+      - cross_profile_skills_write
+
+  shell:
+    description: Terminal execution
+    default: allow_wsl2_routed
+    deny_if:
+      - host_windows_python_detected
+      - unrestricted_egress_tool
+
+  egress:
+    description: Non-MCP network
+    default: deny
+    hitl_if:
+      - explicit_architect_override_token
+
+  payment:
+    description: AP2/x402 settle path
+    default: hitl
+    allow_if:
+      - mandate_valid
+      - amount_lte_ceilings
+      - merchant_allowlisted
+      - live_settle_flag_true  # false under OPTION_2 default
+    deny_if:
+      - mandate_missing
+      - ceiling_breach
+      - ledger_tamper_detected
+
+  pii:
+    description: Potential PII leave workspace
+    default: deny
+    hitl_if:
+      - g8_tenant_policy_allows
+
+  security_review:
+    description: Inbound recommendations from S_SEC
+    default: allow_with_trace
+    notes: Specialist cannot self-final-allow payments
+
+  registry_expand:
+    description: Add/update Agent Card in private registry
+    default: hitl
+    deny_if:
+      - remote_t4_without_dpa_flag
+
+  budget:
+    description: Token/tool/$-wallet budgets
+    default: rewrite_caps_or_deny
+    deny_if:
+      - session_budget_exhausted
+      - denial_of_wallet_score_high
+
+# ---------------------------------------------------------------------------
+# Rule pack (declarative examples)
+# ---------------------------------------------------------------------------
+rules:
+  - id: POL-G4-001
+    class: delegation
+    when:
+      all:
+        - event: task.offer
+        - card.lifecycle: schema_only
+        - runtime.wire_a2a: false
+    then:
+      decision: allow
+      notes: Local AgentTool shim / mock path only
+
+  - id: POL-G4-002
+    class: delegation
+    when:
+      all:
+        - event: task.offer
+        - card.id: card.remote.billing_specialist_example
+    then:
+      decision: deny
+      reason_code: REMOTE_EXAMPLE_DISABLED_OPTION_2
+
+  - id: POL-G4-003
+    class: payment
+    when:
+      all:
+        - event: payment.capture
+        - ap2.live_settle: false
+    then:
+      decision: deny
+      reason_code: LIVE_SETTLE_DISABLED
+
+  - id: POL-G4-004
+    class: payment
+    when:
+      all:
+        - event: payment.capture
+        - expr: amount_minor_units > mandate.max_per_tx
+    then:
+      decision: deny
+      reason_code: CEILING_BREACH
+      ledger_kind: reject
+
+  - id: POL-G4-005
+    class: budget
+    when:
+      any:
+        - trust_score_below_threshold: true
+        - unbounded_loop_suspected: true
+    then:
+      decision: hitl
+      side_effects:
+        - trip_circuit_breaker
+        - freeze_tool_access
+
+  - id: POL-G4-006
+    class: shell
+    when:
+      any:
+        - path_contains: C:\\
+        - interpreter_is_host_python: true
+    then:
+      decision: deny
+      reason_code: WSL2_MANDATE_VIOLATION
+
+  - id: POL-G4-007
+    class: orchestration
+    when:
+      all:
+        - event: enable_pattern
+        - pattern: P-SWARM
+        - overlay: OPTION_2_STANDARD
+    then:
+      decision: deny
+      reason_code: SWARM_OPTION_3_ONLY
+
+  - id: POL-G4-008
+    class: delegation
+    when:
+      all:
+        - event: task.offer
+        - risk_tier: T4
+    then:
+      decision: hitl
+      reason_code: T4_REQUIRES_HUMAN
+
+# ---------------------------------------------------------------------------
+# Circuit breaker (WP-S4)
+# ---------------------------------------------------------------------------
+circuit_breaker:
+  enabled_declared: true
+  inputs:
+    - agent_trust_score
+    - intent_drift_signal
+    - token_burn_rate
+    - repeated_policy_deny
+  actions_on_trip:
+    - freeze_autonomous_execution
+    - revoke_jit_tokens
+    - checkpoint_notice_to_human
+    - preserve_forensics
+  reset: manual_hitl
+
+# ---------------------------------------------------------------------------
+# Decision response envelope
+# ---------------------------------------------------------------------------
+response_envelope:
+  decision_id: ulid
+  ts: iso8601
+  decision: allow|deny|hitl|rewrite_caps
+  reason_code: string
+  rule_ids: [string]
+  caps_delta: object
+  trace_bind:
+    task_id: string
+    parent_trace_id: string
+    card_id: string
+
+# ---------------------------------------------------------------------------
+# Telemetry / non-goals
+# ---------------------------------------------------------------------------
+telemetry_required:
+  - decision_id
+  - rule_ids
+  - card_id
+  - reason_code
+  - overlay
+
+secrets:
+  never_log:
+    - raw_mandate_private_keys
+    - oauth_refresh_tokens
+    - pan_data
+    - openrouter_keys
+
+wiring_gates:
+  schema_lock: G4_TOPOLOGY_APPROVED_v1
+  wire_implementation: deferred_post_gate_or_G8
+  live_payment_enable: explicit_commerce_flag_plus_hitl
+
+option_matrix:
+  OPTION_1_CONSERVATIVE:
+    intercept_minimum: [delegation, shell, workspace_write]
+    payment_class: force_deny
+  OPTION_2_STANDARD:
+    intercept_minimum: [orchestration, delegation, mcp_call, workspace_write, shell, payment, budget]
+    payment_class: hitl_and_ceiling
+    seat_status_ok: DECLARED_NOT_WIRED
+  OPTION_3_CREATIVE:
+    intercept_minimum: all_classes
+    payment_class: allow_with_strong_eval
+    requires_strong_evaluation: true

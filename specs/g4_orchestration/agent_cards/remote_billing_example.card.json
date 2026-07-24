@@ -1,0 +1,54 @@
+{
+  "$schema_note": "Mock remote A2A Agent Card — schema only; not allowlisted for live OPTION_2 calls",
+  "protocol": "a2a",
+  "protocolVersion": "0.2-mock",
+  "id": "card.remote.billing_specialist_example",
+  "name": "example-remote-billing-specialist",
+  "version": "0.0.0-example",
+  "description": "EXAMPLE remote AaaS billing specialist (WP-S2 snippet shape). Illustrates registry+endpoint fields. Live invoke DENY under OPTION_2 until commerce gate.",
+  "url": "https://example.invalid/v1/billing/a2a",
+  "provider": {
+    "organization": "example-vendor",
+    "registry": "public_marketplace_example"
+  },
+  "capabilities": [
+    { "id": "billing.quote", "description": "Return price quote for a SKU bundle" },
+    { "id": "billing.settle", "description": "Attempt settlement under AP2 mandate" }
+  ],
+  "skills": [],
+  "defaultInputModes": ["application/json"],
+  "defaultOutputModes": ["application/json"],
+  "interaction": {
+    "multiTurn": true,
+    "streaming": true,
+    "taskOriented": true,
+    "supportsAgentToolShim": false
+  },
+  "security": {
+    "identityClass": "remote_agentic",
+    "authSchemes": ["oauth2_client_credentials_example", "mtls_example"],
+    "dataClasses": ["pii_possible", "payment_metadata"],
+    "residency": "vendor_cloud_unspecified",
+    "requiresEnterpriseDPA": true
+  },
+  "risk_tier": "T4",
+  "policy": {
+    "requiredInterceptClasses": ["egress", "payment", "pii"],
+    "defaultDecision": "deny_option_2"
+  },
+  "ap2": {
+    "advertised": true,
+    "role": "merchant",
+    "liveSettle": false,
+    "requiresMandate": true
+  },
+  "x402": {
+    "advertised": true,
+    "enabled": false
+  },
+  "lifecycle": "schema_only",
+  "option_2": {
+    "enabled": false,
+    "notes": "Present for discovery schema tests only"
+  }
+}
