@@ -16,12 +16,12 @@
     {
       "server_id": "context7",
       "package": "@upstash/context7-mcp",
-      "version": "3.2.4",
+      "version": "1.0.6",
       "resolved_at": "2026-07-23",
       "manager": "npm",
       "transport": "stdio",
       "command": "npx",
-      "args_template": ["-y", "@upstash/context7-mcp@3.2.4"],
+      "args_template": ["-y", "@upstash/context7-mcp@1.0.6"],
       "notes": "Pin closes floating npx GAP from pre-HITL draft."
     }
   ]

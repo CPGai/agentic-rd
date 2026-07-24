@@ -49,7 +49,7 @@
       "server_id": "context7",
       "tier": "T2",
       "package": "@upstash/context7-mcp",
-      "version_pin": "3.2.4",
+      "version_pin": "1.0.6",
       "tools": [
         "mcp__context7__resolve_library_id",
         "mcp__context7__query_docs",

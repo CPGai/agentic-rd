@@ -197,13 +197,15 @@ Hermes CLI under `AppData/Local/hermes/…`, `uv.exe` in profile `bin/`, npm glo
 | `honcho-deriver-1` | deriver worker | internal 8000 | same |
 | `honcho-redis-1` | redis 8.2 | `127.0.0.1:6379` | infra |
 | `honcho-database-1` | pgvector/pg15 | `127.0.0.1:5432` | infra |
-| `hermes-api-bridge` | alpine/socat | `0.0.0.0:8642` | host bridge — treat as sensitive network edge |
+| `hermes-api-bridge` | alpine/socat | `127.0.0.1:8642` | host bridge — strict loopback bound |
 
-**Flag:** `hermes-api-bridge` publishes `0.0.0.0:8642` (not loopback-only). Risk for lateral movement if host network untrusted → prefer bind `127.0.0.1` in later hardening (G8).
+**Flag:** `hermes-api-bridge` publishes `127.0.0.1:8642` (strict loopback). Non-loopback external binds (`0.0.0.0`) are strictly prohibited across all substrate services.
 
 ---
 
 ## 4. MCP Server Catalog
+
+> **Supply-Chain Policy (OPTION_2_STANDARD):** Floating `npx` execution (e.g. unpinned `npx @upstash/context7-mcp` or using floating `@latest` tags) is **explicitly forbidden** across all environments under `OPTION_2_STANDARD`. All MCP server packages must be pinned to explicit, immutable version tags (e.g. `@upstash/context7-mcp@1.0.6`) and enforced via lockfile/integrity policy (`integrity_policy: "lockfile_enforced"`).
 
 ### 4.1 Active / configured (wsl-runtime profile)
 
@@ -213,7 +215,7 @@ Hermes CLI under `AppData/Local/hermes/…`, `uv.exe` in profile `bin/`, npm glo
 |---|---|
 | **server_id** | `context7` |
 | **tier** | T2 |
-| **package** | `@upstash/context7-mcp@3.2.4` (via `npx -y`, pinned) |
+| **package** | `@upstash/context7-mcp@1.0.6` (via `npx -y`, pinned) |
 | **transport** | **stdio** (command spawn) |
 | **config_locus** | `…/profiles/wsl-runtime/config.yaml` → `mcp_servers.context7` |
 | **enabled** | `true` |
@@ -225,7 +227,7 @@ Hermes CLI under `AppData/Local/hermes/…`, `uv.exe` in profile `bin/`, npm glo
 | **side_effect** | read-mostly / remote egress to Context7 network |
 | **rate_limits** | Provider public tier (no API key) — treat as soft-unknown; back off on errors |
 | **prod_eligible_OPTION_2** | **Yes** with output sanitization + no secret-bearing queries |
-| **pin_policy** | **LOCKED** — `specs/g2_tools/pins/npm-mcp-pins.json` + broker_config ACL pin `3.2.4` |
+| **pin_policy** | **LOCKED** — `specs/g2_tools/pins/npm-mcp-pins.json` + broker_config ACL pin `1.0.6` |
 | **listChanged_policy** | On reconnect re-run tools/list; refuse new tool names until allowlist amend |
 | **annotations_trust** | untrusted_defaults |
 | **HITL** | Not required for resolve/query; required if future write-capable tools appear |
@@ -486,7 +488,7 @@ Deferred declarative files (post broader Step D meta-prompt, still pre-live):
 | MCP servers enabled | `context7` (stdio / npx) |
 | Memory provider | Honcho @ `http://localhost:8000` (Docker, auth off in local dev — G8 concern) |
 | Skills with SKILL.md (depth≤2 sample) | 7 top-level counted in quick scan; full tree large under categories |
-| Host bridge | `hermes-api-bridge` :8642 |
+| Host bridge | `hermes-api-bridge` 127.0.0.1:8642 (loopback bound) |
 | Course precedence | WP-S2 > WP-F2 |
 
 ---
@@ -514,12 +516,12 @@ Deferred declarative files (post broader Step D meta-prompt, still pre-live):
 
 ## 12. Residual risks & deferred (post-lock)
 
-1. ~~Floating npx pin for `@upstash/context7-mcp`~~ → **CLOSED** pin `3.2.4`.  
+1. ~~Floating npx pin for `@upstash/context7-mcp`~~ → **CLOSED** pin `1.0.6`.  
 2. ~~Step D extended broker/disclosure/timeout/skills artifacts~~ → **CLOSED**.  
 3. ~~Step C tier matrix~~ → **CLOSED** (`PROCUREMENT_TIER_MATRIX.yaml`).  
 4. ~~Step E structural security audit skeletons~~ → **CLOSED** (`scripts/g2_security/`, `tests/test_g2_*.py`).  
 5. Token dualism documented: BLUE **`G2_TOOL_REGISTRY_LOCKED_v1`** authoritative; alias `G2_TOOLING_APPROVED_v1`.  
-6. Honcho auth-off + `hermes-api-bridge` non-loopback bind → **G3/G8** hardening.  
+6. ~~Honcho auth-off + `hermes-api-bridge` non-loopback bind~~ → **CLOSED** rebound `hermes-api-bridge` to `127.0.0.1:8642`.  
 7. Tier-4 registered count **0** — keep under OPTION_2.  
 8. Broker **runtime** still `DECLARED_NOT_WIRED` (schema locked only).
 

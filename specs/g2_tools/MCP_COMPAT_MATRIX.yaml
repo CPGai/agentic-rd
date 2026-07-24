@@ -33,6 +33,12 @@ related_artifacts:
   - specs/g2_tools/skills_registry.json
   - specs/g2_tools/pins/npm-mcp-pins.json
 
+feature_gates:
+  ap2_payments_enabled: false
+  ucp_commerce_enabled: false
+  a2ui_dynamic_rendering_enabled: false
+  runtime_execution_option: "OPTION_2_STANDARD"
+
 # ---------------------------------------------------------------------------
 # Protocol baseline (all servers)
 # ---------------------------------------------------------------------------
@@ -276,15 +282,21 @@ mcp_servers:
     transport:
       kind: stdio
       command: npx
-      args: ["-y", "@upstash/context7-mcp@3.2.4"]
+      args: ["-y", "@upstash/context7-mcp@1.0.6"]
       cwd: null
       env_passthrough: []
     package:
       name: "@upstash/context7-mcp"
-      version_pin: "3.2.4"
+      version_pin: "1.0.6"
       registry: npm
       supply_chain_review: pinned_2026-07-23
       pins_ref: specs/g2_tools/pins/npm-mcp-pins.json
+    security_policy:
+      version_pinning:
+        package: "@upstash/context7-mcp"
+        pinned_version: "1.0.6"
+        allow_floating_tags: false
+        integrity_policy: "lockfile_enforced"
     auth:
       class: none_public
       oauth: false
@@ -348,7 +360,7 @@ mcp_servers:
         hash_alg: sha256
         current_pins:
           package: "@upstash/context7-mcp"
-          version: "3.2.4"
+          version: "1.0.6"
     list_changed_policy: revalidate_or_disconnect
     confused_deputy:
       risk: MED
@@ -475,8 +487,8 @@ environment_audit:
     - name: honcho-database-1
       ports: "127.0.0.1:5432->5432/tcp"
     - name: hermes-api-bridge
-      ports: "0.0.0.0:8642->8642/tcp"
-      risk_note: non_loopback_bind
+      ports: "127.0.0.1:8642->8642/tcp"
+      risk_note: loopback_bound
   mcp_servers_enabled_count: 1
   unauthenticated_mcp_servers:
     - context7
@@ -486,7 +498,7 @@ environment_audit:
   pinned_mcp_packages:
     - server_id: context7
       package: "@upstash/context7-mcp"
-      version: "3.2.4"
+      version: "1.0.6"
 
 # ---------------------------------------------------------------------------
 # HITL telemetry bundle (REQUIRED_TELEMETRY for gate)
@@ -497,10 +509,10 @@ hitl_telemetry:
   unauthenticated_mcp_count: 1
   audit_severity_counts:
     critical_open: 0
-    high_open: 1  # hermes-api-bridge non-loopback bind (G8-adjacent)
+    high_open: 0  # hermes-api-bridge rebound to 127.0.0.1:8642
     medium_open: 2  # honcho AUTH_USE_AUTH=false local; context7 unauth docs egress
     low_open: 1     # missing convenience CLIs in WSL PATH
-    high_closed_this_lock: 1  # context7 floated npx → pinned 3.2.4
+    high_closed_this_lock: 2  # context7 floated npx → pinned 1.0.6; hermes-api-bridge 0.0.0.0 → 127.0.0.1
   artifacts:
     - specs/g2_tools/TOOL_REGISTRY.md
     - specs/g2_tools/MCP_COMPAT_MATRIX.yaml

@@ -1,7 +1,6 @@
-# broker_config.yaml
-# Domain G2 Step D-ext — MCP Broker declarative seat (OPTION_2_STANDARD)
-# Status: LOCKED schema · runtime implementation N/A this domain (declarative only)
-# Anchors: BLUE G2 · WP-F2 security · WP-S2 broker-as-permanent-component · TOOL_REGISTRY §9.1
+# /home/carlospg/workspace/agentic-rd/specs/g2_tools/broker_config.yaml
+# MCP Security Broker — Core Runtime Configuration
+# Binding: G2_TOOL_REGISTRY_LOCKED_v1 / OPTION_2_STANDARD
 
 schema_version: "1.0.0"
 domain: G2
@@ -27,6 +26,45 @@ tenant_scoping:
     cross_profile_writes: deny
     cross_tenant_tool_state: deny
 
+apiVersion: agentic-rd/g2/v1
+kind: McpBrokerConfig
+metadata:
+  name: mcp-security-broker
+  version: "3.0.0"
+  state_token: G2_TOOL_REGISTRY_LOCKED_v1
+
+broker:
+  listen_mode: in_process  # in_process | stdio_wrap
+  fail_closed: true
+  strict_jsonrpc: true
+  reject_extra_properties: true
+  max_request_bytes: 1048576
+  max_response_bytes: 4194304
+  request_timeout_seconds: 30
+  upstream_connect_timeout_seconds: 10
+
+paths:
+  root: /home/carlospg/workspace/agentic-rd
+  acl: specs/g2_tools/security_acl.yaml
+  disclosure: specs/g2_tools/disclosure_policy.yaml
+  audit_log: var/log/mcp_broker_audit.jsonl
+
+jsonrpc:
+  supported_version: "2.0"
+  allowed_methods:
+    - initialize
+    - ping
+    - tools/list
+    - tools/call
+  error_codes:
+    parse_error: -32700
+    invalid_request: -32600
+    method_not_found: -32601
+    invalid_params: -32602
+    internal_error: -32603
+    security_violation: -32000
+    content_blocked: -32001
+
 policy:
   allowed_tiers: [T1, T2]
   conditional_tiers: [T3]
@@ -38,6 +76,16 @@ policy:
   progressive_disclosure: rag_for_tools
   audit_log: true
   redact_secrets: true
+  network_boundary:
+    enforce_loopback: true
+    allowed_bind_addresses:
+      - "127.0.0.1"
+      - "::1"
+    services:
+      - service_id: hermes-api-bridge
+        host: "127.0.0.1"
+        port: 8642
+        allowed_interface: loopback_only
 
 acls:
   servers:
@@ -73,7 +121,7 @@ acls:
         max_content_chars: 24000
       pin:
         package: "@upstash/context7-mcp"
-        version: "3.2.4"
+        version: "1.0.6"
         manager: npm
         enforce: true
     - server_id: public_unverified_wildcard
@@ -94,6 +142,52 @@ acls:
     - action_class: payment
       hitl: always
       live: false
+
+sanitizer:
+  enabled: true
+  action_on_match: reject  # reject | sanitize
+  max_string_length: 65536
+  path_traversal_patterns:
+    - '\\.\\.\\/'
+    - '\\.\\.\\\\'
+    - '%2e%2e%2f'
+    - '%2e%2e/'
+    - '..%2f'
+    - '%252e%252e%252f'
+  shell_metacharacter_pattern: '[;&|`$(){}\[\]<>]'
+  command_injection_patterns:
+    - '(?i)\b(curl|wget|nc|ncat|bash|sh|zsh|powershell|pwsh|cmd\.exe|python|perl|ruby)\b'
+    - '(?i)\b(rm\s+-rf|mkfs|dd\s+if=|:(){:|:&};:)\b'
+    - '(?i)\beval\s*\('
+    - '(?i)\bexec\s*\('
+    - '(?i)\bos\.system\b'
+    - '(?i)\bsubprocess\b'
+    - '(?i)\b(__import__|compile)\b'
+  prompt_injection_markers:
+    - '(?i)ignore\s+(all\s+)?(previous|prior|above)\s+instructions'
+    - '(?i)disregard\s+(all\s+)?(previous|prior)\s+(instructions|rules)'
+    - '(?i)you\s+are\s+now\s+(in\s+)?(dan|developer|jailbreak)\s+mode'
+    - '(?i)system\s*:\s*you\s+are'
+    - '(?i)<\|?(system|im_start|endoftext)\|?>'
+    - '(?i)\[INST\]'
+    - '(?i)###\s*(system|instruction)'
+    - '(?i)do\s+not\s+follow\s+your\s+(original\s+)?(safety\s+)?(policy|guidelines)'
+    - '(?i)reveal\s+(your\s+)?(system\s+)?prompt'
+    - '(?i)tool_call\s*=\s*\{'
+
+post_hook:
+  enabled: true
+  action_on_match: redact  # redact | reject | wrap
+  redaction_token: "[REDACTED_INJECTION_CANDIDATE]"
+  wrap_prefix: "SECURITY_NOTICE: The following tool output contained patterns consistent with indirect prompt injection and was sanitized.\n---\n"
+  wrap_suffix: "\n---\nEND_SANITIZED_OUTPUT"
+  result_injection_patterns:
+    - '(?i)ignore\s+(all\s+)?(previous|prior|above)\s+instructions'
+    - '(?i)disregard\s+(your\s+)?(safety|content)\s+policy'
+    - '(?i)as\s+an\s+ai\s+(language\s+)?model.*(ignore|override)'
+    - '(?i)new\s+instructions\s+for\s+you\s*:'
+    - '(?i)call\s+the\s+tool\s+[a-z0-9_\.]+\s+with'
+    - '(?i)IMPORTANT:\s*override\s+tool\s+policy'
 
 response_sanitization:
   enabled: true
@@ -139,7 +233,27 @@ tier_matrix_ref: specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
 compat_matrix_ref: specs/g2_tools/MCP_COMPAT_MATRIX.yaml
 pins_ref: specs/g2_tools/pins/npm-mcp-pins.json
 
+upstream_servers:
+  native_cli:
+    transport: in_process
+    description: "Native high-privilege local tools"
+  context7:
+    transport: streamable_http
+    base_url_env: CONTEXT7_MCP_URL
+    description: "Context7 documentation MCP"
+  filesystem:
+    transport: stdio
+    command:
+      - /home/carlospg/workspace/agentic-rd/.venv-hermes/bin/python3
+      - -m
+      - mcp_server_filesystem
+    description: "Scoped filesystem MCP"
+
 audit:
+  enabled: true
+  log_all_calls: true
+  log_denies: true
+  include_payload_hash: true
   fields:
     - timestamp
     - tenant

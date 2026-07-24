@@ -65,7 +65,7 @@ for marker in (
     "RAG-for-tools",
     "confused deputy",
     "context7",
-    "3.2.4",
+    "1.0.6",
 ):
     check(marker.casefold() in reg.casefold(), f"registry has {marker!r}", f"registry missing {marker!r}")
 
@@ -83,6 +83,13 @@ check(broker.get("resume_token") == "G2_TOOL_REGISTRY_LOCKED_v1", "broker resume
 check(tiers.get("status") == "LOCKED", "tier matrix LOCKED", "tier matrix not locked")
 check((timeouts.get("lro") or {}).get("threshold_ms") == 10000, "LRO 10s", "LRO threshold missing")
 check(skills.get("resume_token") == "G2_TOOL_REGISTRY_LOCKED_v1", "skills resume", "skills resume mismatch")
+
+# feature gates lock check
+fg = matrix.get("feature_gates", {})
+check(fg.get("ap2_payments_enabled") is False, "feature_gates ap2 disabled", "ap2_payments_enabled not false")
+check(fg.get("ucp_commerce_enabled") is False, "feature_gates ucp disabled", "ucp_commerce_enabled not false")
+check(fg.get("a2ui_dynamic_rendering_enabled") is False, "feature_gates a2ui disabled", "a2ui_dynamic_rendering_enabled not false")
+check(fg.get("runtime_execution_option") == "OPTION_2_STANDARD", "feature_gates runtime_option", "runtime_execution_option mismatch")
 
 # pins
 viol = collect_pin_violations(pins=pins, broker=broker, matrix=matrix, skills=skills)
@@ -139,8 +146,15 @@ check(
     "no secret patterns in specs",
     "possible secret material in specs",
 )
-# declarative dir should not host python
-check(not list(G2.glob("*.py")), "g2_tools declarative-only", "python under g2_tools")
+# declarative dir should not host python (except boundary assertion script)
+py_files = [p for p in G2.glob("*.py") if p.name != "assert_network_boundary.py"]
+check(not py_files, "g2_tools declarative-only", f"unexpected python under g2_tools: {py_files}")
+
+# network boundary assertion
+sys.path.insert(0, str(G2))
+from assert_network_boundary import run_network_boundary_assertion  # noqa: E402
+net_ok = run_network_boundary_assertion()
+check(net_ok, "network boundary loopback enforced", "network boundary assertion failed")
 
 # OPTION_2 ceilings
 check(tiers.get("option_2_allowed_tiers") == ["T1", "T2"], "option2 tiers T1/T2", "bad option2 tiers")

@@ -1,0 +1,132 @@
+# /home/carlospg/workspace/agentic-rd/specs/g2_tools/disclosure_policy.yaml
+# Progressive Tool Disclosure (RAG-for-Tools) Policy
+
+apiVersion: agentic-rd/g2/v1
+kind: DisclosurePolicy
+metadata:
+  name: progressive-tool-disclosure
+  version: "3.0.0"
+
+disclosure:
+  mode: intent_threshold  # intent_threshold | allowlist_only | all_blocked_default
+  default_max_tools: 8
+  score_threshold: 0.22
+  always_include: []  # empty = nothing free-rides into context
+  never_include:
+    - "*.admin.*"
+    - "*.internal.*"
+    - "debug.*"
+    - "raw_shell"
+    - "exec_unrestricted"
+
+scoring:
+  algorithm: weighted_keyword_tf
+  # Offline-capable scorer: token overlap + synonym boost + description IDF-lite
+  title_weight: 2.5
+  description_weight: 1.0
+  tag_weight: 1.75
+  name_weight: 3.0
+  min_token_length: 2
+  stopwords:
+    - the
+    - a
+    - an
+    - and
+    - or
+    - to
+    - of
+    - in
+    - for
+    - on
+    - is
+    - with
+    - by
+    - from
+    - at
+    - as
+    - it
+    - be
+    - this
+    - that
+    - are
+    - was
+    - were
+    - been
+    - tool
+    - tools
+    - function
+    - call
+    - please
+    - help
+    - use
+    - using
+  synonyms:
+    read:
+      - cat
+      - open
+      - get
+      - fetch
+      - load
+      - view
+      - show
+    write:
+      - put
+      - save
+      - create
+      - update
+      - edit
+      - patch
+    delete:
+      - remove
+      - unlink
+      - rm
+      - destroy
+    search:
+      - find
+      - query
+      - lookup
+      - grep
+      - locate
+    file:
+      - path
+      - document
+      - filesystem
+      - directory
+      - folder
+    exec:
+      - run
+      - shell
+      - command
+      - cli
+      - bash
+    docs:
+      - documentation
+      - reference
+      - api
+      - library
+      - context7
+    web:
+      - http
+      - url
+      - browser
+      - fetch
+
+intent_extraction:
+  # When tools/list arrives with params.intent or params.query, use it.
+  # Fallback keys inspected in order:
+  intent_param_keys:
+    - intent
+    - query
+    - q
+    - user_intent
+    - task
+  fallback_intent: "general safe information retrieval"
+  max_intent_chars: 512
+
+response_shaping:
+  strip_fields:
+    - x-internal
+    - debug
+    - raw_schema_ext
+  include_input_schema: true
+  include_annotations: false

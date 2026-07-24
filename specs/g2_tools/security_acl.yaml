@@ -1,0 +1,89 @@
+# /home/carlospg/workspace/agentic-rd/specs/g2_tools/security_acl.yaml              
+# Cryptographic-style ACL — explicit allowlist only (fail closed)              
+              
+apiVersion: agentic-rd/g2/v1              
+kind: SecurityACL              
+metadata:              
+  name: mcp-tool-acl              
+  version: "3.0.0"              
+  state_token: G2_TOOL_REGISTRY_LOCKED_v1              
+              
+policy:              
+  default_action: deny              
+  unregistered_tool_error_code: -32601              
+  unregistered_message: "Method not found / Unregistered deputy"              
+              
+# server_id → list of explicitly allowed tool names              
+allowlist:              
+  native_cli:              
+    - echo              
+    - safe_stat              
+    - list_workspace_dir              
+  filesystem:              
+    - read_file              
+    - list_directory              
+    - get_file_info              
+    # write_file intentionally omitted from default locked profile              
+  context7:              
+    - resolve-library-id              
+    - get-library-docs              
+              
+# Optional per-tool argument constraints (enforced in addition to JSON Schema)              
+tool_constraints:              
+  filesystem.read_file:              
+    allowed_roots:              
+      - /home/carlospg/workspace/agentic-rd              
+    denied_path_substrings:              
+      - /home/carlospg/workspace/agentic-rd/.venv-hermes              
+      - /home/carlospg/workspace/agentic-rd/var/secrets              
+      - .ssh              
+      - .gnupg              
+      - id_rsa              
+      - .env              
+    max_bytes: 524288              
+  filesystem.list_directory:              
+    allowed_roots:              
+      - /home/carlospg/workspace/agentic-rd              
+  filesystem.get_file_info:              
+    allowed_roots:              
+      - /home/carlospg/workspace/agentic-rd              
+  native_cli.echo:              
+    max_message_length: 2048              
+  native_cli.list_workspace_dir:              
+    allowed_roots:              
+      - /home/carlospg/workspace/agentic-rd              
+  context7.resolve-library-id:              
+    max_query_length: 256              
+  context7.get-library-docs:              
+    max_tokens: 10000              
+              
+# Tool shadowing defense: canonical name map (server.tool → immutable)              
+# Any attempt to register or call a colliding alias is denied              
+canonical_registry:              
+  echo: native_cli.echo              
+  safe_stat: native_cli.safe_stat              
+  list_workspace_dir: native_cli.list_workspace_dir              
+  read_file: filesystem.read_file              
+  list_directory: filesystem.list_directory              
+  get_file_info: filesystem.get_file_info              
+  resolve-library-id: context7.resolve-library-id              
+  get-library-docs: context7.get-library-docs              
+              
+# Namespaces that may never appear in tools/list or tools/call              
+blocked_namespaces:              
+  - admin              
+  - internal              
+  - debug              
+  - shell              
+  - raw              
+  - sudo              
+  - agent_override              
+              
+# Simulated "hmac" binding material for allowlist integrity checks (local)              
+# Hermes verifies sha256 of canonical allowlist body matches this at boot              
+allowlist_integrity:              
+  algorithm: sha256              
+  # Computed over normalized JSON of allowlist+canonical_registry+blocked_namespaces              
+  # Hermes recomputes at startup; mismatch → refuse to start broker              
+  expected_sha256: "0"  # placeholder replaced by broker boot self-hash pin mode              
+  pin_mode: self_hash_file  # write var/mcp_broker_acl.sha256 on first lock

@@ -91,12 +91,12 @@ class PinEnforceTests(unittest.TestCase):
         viol = collect_pin_violations()
         self.assertEqual(viol, [], viol)
 
-    def test_version_is_324(self) -> None:
+    def test_version_is_106(self) -> None:
         pins = json.loads(
             (ROOT / "specs/g2_tools/pins/npm-mcp-pins.json").read_text(encoding="utf-8")
         )
         row = next(p for p in pins["pins"] if p["server_id"] == "context7")
-        self.assertEqual(row["version"], "3.2.4")
+        self.assertEqual(row["version"], "1.0.6")
 
 
 class MockRpcTests(unittest.TestCase):
