@@ -300,6 +300,8 @@ domains:
     name: context_skills_memory
     state: APPROVED
     locked: true
+    locked_at: "2026-07-24"
+    tag: context-v1.0.0
     requires: [G1_HARNESS_APPROVED_v1, G2_TOOL_REGISTRY_LOCKED_v1]
     primary_harness_touch: [H_CONTEXT]
     resume_token: G3_CONTEXT_LAYER_LOCKED_v1
@@ -335,19 +337,12 @@ domains:
   G4:
     id: D_G4
     name: multi_agent_orchestration
-    state: APPROVED
-    locked: true
-    locked_at: "2026-07-24"
-    tag: orchestration-v1.0.0
-    resume_token: G4_TOPOLOGY_APPROVED_v1
+    state: IN_PROGRESS
+    locked: false
     requires: [G1_HARNESS_APPROVED_v1, G2_TOOL_REGISTRY_LOCKED_v1, G3_CONTEXT_LAYER_LOCKED_v1]
     primary_harness_touch: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
     enables_level: L3
     resume_token_expected: G4_TOPOLOGY_APPROVED_v1
-    verification:
-      unittests: 45
-      verifier_checks: 67
-      errors: 0
   G5:
     id: D_G5
     name: evaluation_observability
