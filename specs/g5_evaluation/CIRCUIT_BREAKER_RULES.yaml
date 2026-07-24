@@ -1,0 +1,516 @@
+# CIRCUIT_BREAKER_RULES.yaml
+# G5 — Trust Score decay engine, circuit breaker trip triggers, quarantine states
+# Status: DRAFT_PRE_GATE — declarative schema; no runtime wiring until Step E
+# Overlay: OPTION_2_STANDARD
+# Upstream: orchestration-v1.0.0 (G4 LOCKED)
+# BLUE resume token: G5_EVAL_FRAMEWORK_APPROVED_v1
+# User checkpoint alias: G5_EVAL_APPROVED_v1
+#
+# Anchors:
+#   WP-S4 p.25: "Trust Decay dictates that trust is lost when an agent's
+#     internal chain of thought pursues sub-goals that diverge from the
+#     original human vibe."
+#   WP-S4 p.25: "If this score drops below a pre-defined threshold, an
+#     automated circuit breaker is tripped."
+#   G4 POLICY_INTERCEPT_SPEC.yaml circuit_breaker section
+#   G4 FAILURE_MODE_MATRIX.yaml (15 failure modes → trip triggers)
+
+version: "1.0.0-draft"
+domain: G5
+overlay: OPTION_2_STANDARD
+status: DRAFT_PRE_GATE
+resume_token_authoritative: G5_EVAL_FRAMEWORK_APPROVED_v1
+resume_token_alias: G5_EVAL_APPROVED_v1
+upstream_tag: orchestration-v1.0.0
+
+companions:
+  - EVALUATION_HARNESS_SPEC.md
+  - OBSERVABILITY_PILLARS_SPEC.yaml
+  - EVAL_DATASET_BENCHMARKS.json
+
+# ---------------------------------------------------------------------------
+# 1. Trust Score Definition
+#    Range: 0.0 (zero trust) → 1.0 (full trust)
+#    Initial value: 1.0 (full trust at session start)
+#    Decay is monotonic within a session (trust cannot be auto-restored)
+#    Restoration requires manual HITL reset (WP-S4: "reset: manual_hitl")
+# ---------------------------------------------------------------------------
+trust_score:
+  range: [0.0, 1.0]
+  initial: 1.0
+  decay_direction: monotonically_decreasing
+  auto_restore: false
+  restore_method: manual_hitl
+  precision: 0.01  # 2 decimal places
+  
+  # WP-S4: "dynamic Agent Trust Score" — penalised by detected instability
+  # The trust score is the continuous non-binary Effective Trust signal
+  # that feeds the circuit breaker (BLUE §G5 temporal synthesis)
+
+# ---------------------------------------------------------------------------
+# 2. Trust Score Decay Penalties
+#    Each signal adds a penalty (delta) to the trust score
+#    Penalties are cumulative within a session
+#    Multiple signals can fire simultaneously (sum of deltas)
+# ---------------------------------------------------------------------------
+decay_penalties:
+  - id: PEN-01
+    name: intent_drift_detected
+    source: WP-S4 p.25 (Trust Decay)
+    delta: -0.15
+    description: "Agent sub-goals diverge from original mission"
+    detection: agbom_comparison + vibe_trajectory_analytics
+    severity: HIGH
+    
+  - id: PEN-02
+    name: unauthorized_tool_spike
+    source: WP-S4 p.25
+    delta: -0.10
+    description: "Agent suddenly queries unusual number of external tools"
+    detection: agbom_drift + tool_usage_frequency_anomaly
+    severity: HIGH
+    
+  - id: PEN-03
+    name: secret_detected
+    source: G4 FM-SECRET-LEAK
+    delta: -0.30
+    description: "Secret or credential material in artifacts/traces"
+    detection: secret_scanner + policy_workspace_write
+    severity: CRITICAL
+    
+  - id: PEN-04
+    name: policy_deny
+    source: G4 FM-POLICY-DENY
+    delta: -0.05
+    description: "Policy intercept deny decision"
+    detection: POLICY_SEAT decision_deny
+    severity: MED
+    
+  - id: PEN-05
+    name: hallucination_detected
+    source: WP-F4 (LLM-as-Judge hallucination dimension)
+    delta: -0.10
+    description: "Agent output contains fabricated facts or citations"
+    detection: llm_judge hallucination dimension
+    severity: HIGH
+    
+  - id: PEN-06
+    name: pii_leakage_detected
+    source: WP-F4 p.42 + WP-S4 Pillar 2
+    delta: -0.20
+    description: "PII found in logs, traces, or agent output"
+    detection: pii_scrubbing pipeline post-scrub audit
+    severity: CRITICAL
+    
+  - id: PEN-07
+    name: timeout_violation
+    source: G4 FM-TIMEOUT
+    delta: -0.08
+    description: "Task or leaf exceeded timeout cap"
+    detection: root_watchdog_timer + leaf_progress_silence
+    severity: HIGH
+    
+  - id: PEN-08
+    name: budget_ceiling_breach
+    source: G4 FM-BUDGET-CEILING
+    delta: -0.15
+    description: "Spending limit or token budget exceeded"
+    detection: ap2_ceiling_compare + circuit_breaker_token_burn
+    severity: CRITICAL
+    
+  - id: PEN-09
+    name: nesting_violation
+    source: G4 FM-NESTING-VIOLATION
+    delta: -0.08
+    description: "Leaf attempted nested orchestration"
+    detection: deterministic_spawn_depth_enforce
+    severity: HIGH
+    
+  - id: PEN-10
+    name: goto_leak
+    source: G4 FM-GOTO-LEAK
+    delta: -0.10
+    description: "Unbounded agent wrapped as tool (WP-S2 GOTO problem)"
+    detection: card.supportsAgentToolShim_false_but_shim_used
+    severity: HIGH
+    
+  - id: PEN-11
+    name: region_collision
+    source: G4 FM-REGION-COLLISION
+    delta: -0.08
+    description: "Two leaves write same path"
+    detection: path_lease_registry
+    severity: HIGH
+    
+  - id: PEN-12
+    name: concurrency_cap_exceeded
+    source: G4 FM-CONCURRENCY-CAP
+    delta: -0.05
+    description: "Parallel fan-out exceeds cap (3)"
+    detection: concurrent_children_cap
+    severity: MED
+    
+  - id: PEN-13
+    name: partial_join_failure
+    source: G4 FM-PARTIAL-JOIN
+    delta: -0.05
+    description: "Fan-in join not all children successful"
+    detection: D_JOIN
+    severity: MED
+    
+  - id: PEN-14
+    name: session_translation_error
+    source: G4 FM-SESSION-TRANSLATION
+    delta: -0.05
+    description: "Child events pollute parent memory as facts"
+    detection: trajectory_schema_validate
+    severity: MED
+    
+  - id: PEN-15
+    name: critic_loop_non_convergence
+    source: G4 FM-CRITIC-LOOP
+    delta: -0.05
+    description: "Iterative refinement loop not converging"
+    detection: LOOP_REFINE_max_iterations + flat_fix_curve_signal
+    severity: MED
+    
+  - id: PEN-16
+    name: payment_hold_stall
+    source: G4 FM-PAYMENT-HOLD-STALL
+    delta: -0.10
+    description: "x402/AP2 hold without settlement path"
+    detection: state_machine_dwell_timer
+    severity: HIGH
+    
+  - id: PEN-17
+    name: card_invalid
+    source: G4 FM-CARD-INVALID
+    delta: -0.05
+    description: "Agent Card schema or allowlist failure"
+    detection: CARD_RESOLVE + SECURITY_EVAL
+    severity: MED
+    
+  - id: PEN-18
+    name: remote_a2a_outage
+    source: G4 FM-REMOTE-A2A-OUTAGE
+    delta: -0.03
+    description: "Remote specialist unavailable"
+    detection: handshake transport error
+    severity: LOW
+
+# ---------------------------------------------------------------------------
+# 3. Circuit Breaker Trip Triggers
+#    Mapped directly to G4's 15 failure modes + WP-S4 trust decay
+#    Trip occurs when trust_score < trip_threshold OR immediate CRITICAL signal
+# ---------------------------------------------------------------------------
+trip_thresholds:
+  warning: 0.85   # 5% degradation from initial 1.0
+  hitl_review: 0.70  # 15% degradation — HITL review required (BLUE §G5)
+  trip: 0.50        # Circuit breaker trips — freeze + checkpoint
+  
+  # Immediate trip (no score decay needed) for CRITICAL signals
+  immediate_trip_signals:
+    - secret_detected        # PEN-03 (CRITICAL)
+    - pii_leakage_detected   # PEN-06 (CRITICAL)
+    - budget_ceiling_breach  # PEN-08 (CRITICAL)
+
+# ---------------------------------------------------------------------------
+# 4. Failure Mode → Trip Trigger Mapping (15 modes from G4)
+# ---------------------------------------------------------------------------
+trip_triggers:
+  - fm_id: FM-TIMEOUT
+    penalty_id: PEN-07
+    trip_condition: trust_score < 0.50 OR repeated_timeout (count >= 3)
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-REGION-COLLISION
+    penalty_id: PEN-11
+    trip_condition: trust_score < 0.50 OR collision_on_critical_artifact
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-BUDGET-CEILING
+    penalty_id: PEN-08
+    trip_condition: immediate (CRITICAL)
+    immediate_trip: true
+    quarantine_on_trip: true
+    
+  - fm_id: FM-CARD-INVALID
+    penalty_id: PEN-17
+    trip_condition: trust_score < 0.50
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-POLICY-DENY
+    penalty_id: PEN-04
+    trip_condition: trust_score < 0.50 OR repeated_deny (count >= 3)
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-NESTING-VIOLATION
+    penalty_id: PEN-09
+    trip_condition: trust_score < 0.50 OR depth_violation_detected
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-CONCURRENCY-CAP
+    penalty_id: PEN-12
+    trip_condition: trust_score < 0.50
+    immediate_trip: false
+    quarantine_on_trip: false
+    
+  - fm_id: FM-GOTO-LEAK
+    penalty_id: PEN-10
+    trip_condition: trust_score < 0.50 OR goto_leak_detected
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-PARTIAL-JOIN
+    penalty_id: PEN-13
+    trip_condition: trust_score < 0.50 AND critical_mission
+    immediate_trip: false
+    quarantine_on_trip: false
+    
+  - fm_id: FM-SESSION-TRANSLATION
+    penalty_id: PEN-14
+    trip_condition: trust_score < 0.50 OR memory_override_attempted
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-TRUST-DECAY
+    penalty_id: PEN-01
+    trip_condition: trust_score < 0.50 OR intent_drift_signal = true
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-REMOTE-A2A-OUTAGE
+    penalty_id: PEN-18
+    trip_condition: trust_score < 0.50
+    immediate_trip: false
+    quarantine_on_trip: false
+    option_2_note: remote disabled by default — low likelihood
+    
+  - fm_id: FM-PAYMENT-HOLD-STALL
+    penalty_id: PEN-16
+    trip_condition: trust_score < 0.50 OR hold_duration > hold_ttl
+    immediate_trip: false
+    quarantine_on_trip: true
+    
+  - fm_id: FM-CRITIC-LOOP
+    penalty_id: PEN-15
+    trip_condition: trust_score < 0.50 OR loop_iterations > max
+    immediate_trip: false
+    quarantine_on_trip: false
+    
+  - fm_id: FM-SECRET-LEAK
+    penalty_id: PEN-03
+    trip_condition: immediate (CRITICAL)
+    immediate_trip: true
+    quarantine_on_trip: true
+
+# ---------------------------------------------------------------------------
+# 5. Circuit Breaker Actions on Trip
+#    WP-S4 p.25: "automated circuit breaker is tripped. The environment
+#    uses the version control checkpoint to immediately roll back changes,
+#    gracefully revoking tool access and freezing the agent's autonomous
+#    execution without corrupting connected APIs, preserving the
+#    environment state for forensic analysis."
+#    G4 POLICY_INTERCEPT_SPEC.yaml circuit_breaker.actions_on_trip
+# ---------------------------------------------------------------------------
+actions_on_trip:
+  - freeze_autonomous_execution
+  - revoke_jit_tokens
+  - checkpoint_notice_to_human
+  - preserve_forensics
+  - rollback_to_last_checkpoint
+  - freeze_tool_access
+  - emit_circuit_breaker_trip_telemetry
+  
+trip_sequence:
+  - step: 1
+    action: freeze_autonomous_execution
+    description: "Agent can no longer execute tools or delegate tasks"
+  - step: 2
+    action: revoke_jit_tokens
+    description: "All JIT-scoped credentials immediately invalidated"
+  - step: 3
+    action: rollback_to_last_checkpoint
+    description: "Version control checkpoint used to revert filesystem mutations"
+  - step: 4
+    action: freeze_tool_access
+    description: "All tool access revoked — no MCP, no terminal, no file writes"
+  - step: 5
+    action: preserve_forensics
+    description: "Environment state preserved for forensic analysis (WP-S4)"
+  - step: 6
+    action: checkpoint_notice_to_human
+    description: "Human notified with forensic snapshot and trust score history"
+  - step: 7
+    action: emit_circuit_breaker_trip_telemetry
+    description: "OTEL span exception + CRITICAL log + dashboard alert"
+
+# ---------------------------------------------------------------------------
+# 6. Quarantine State Machine
+#    Upon trip, agent enters quarantine; recovery requires manual HITL
+# ---------------------------------------------------------------------------
+quarantine_states:
+  - id: QS-HEALTHY
+    name: Healthy
+    description: "Normal operation; trust_score >= 0.85"
+    entry_condition: session_start OR hitl_reset
+    exit_condition: trust_score < 0.85 → QS-WARNING
+    allowed_actions: [all tool calls, delegate_task, file writes, terminal]
+    
+  - id: QS-WARNING
+    name: Warning
+    description: "5% degradation; auto-flag; open defect"
+    entry_condition: trust_score < 0.85
+    exit_condition: trust_score < 0.70 → QS-HITL_REVIEW
+    allowed_actions: [all tool calls with extra logging, delegate_task with warning]
+    auto_actions: [open_defect, increase_logging_to_DEBUG, alert_dashboard]
+    
+  - id: QS-HITL_REVIEW
+    name: HITL Review Required
+    description: "15% degradation; human review required"
+    entry_condition: trust_score < 0.70
+    exit_condition: "hitl_approve → QS-HEALTHY (trust_score reset to 1.0) | trust_score < 0.50 → QS-TRIPPED"
+    allowed_actions: [read_only_tools, no_file_writes, no_delegation]
+    auto_actions: [block_promotion, queue_for_hitl_review, emit_WARN_log]
+    
+  - id: QS-TRIPPED
+    name: Circuit Breaker Tripped
+    description: "Trust score below threshold or CRITICAL signal; frozen"
+    entry_condition: "trust_score < 0.50 OR immediate_trip_signal"
+    exit_condition: "hitl_manual_reset → QS-QUARANTINE_REVIEW (never auto-restore)"
+    allowed_actions: [none — all frozen]
+    auto_actions: all actions_on_trip (§5 above)
+    
+  - id: QS-QUARANTINE_REVIEW
+    name: Quarantine Review
+    description: "Post-trip; human reviews forensic data before reset"
+    entry_condition: hitl_manual_reset from QS-TRIPPED
+    exit_condition: "hitl_approve_full_reset → QS-HEALTHY | hitl_approve_partial → QS-WARNING | hitl_deny → QS-Locked"
+    allowed_actions: [read_forensics, review_trajectory, review_agbom]
+    auto_actions: [present_forensic_report, present_trust_score_history]
+    
+  - id: QS-LOCKED
+    name: Locked
+    description: "Human denied reset; session terminated"
+    entry_condition: hitl_deny from QS-QUARANTINE_REVIEW
+    exit_condition: "none — session must be fully restarted"
+    allowed_actions: [none]
+    auto_actions: [session_termination, permanent_forensic_archive]
+
+# ---------------------------------------------------------------------------
+# 7. Checkpoint Protocol (WP-S4 p.25)
+#    "Before an agent executes any codebase modifications, the system must
+#    generate a version control checkpoint."
+# ---------------------------------------------------------------------------
+checkpoint_protocol:
+  trigger: before_filesystem_mutation
+  method: git_checkpoint (create checkpoint ref)
+  checkpoint_ref_format: "checkpoint/{session_id}/{trajectory_id}"
+  storage: git object database (permanent)
+  
+  rollback:
+    trigger: circuit_breaker_trip
+    method: git reset to checkpoint ref
+    preserve_post_trip: true  # post-trip state preserved for forensics
+    forensic_branch: "forensic/{session_id}/{trip_timestamp}"
+
+# ---------------------------------------------------------------------------
+# 8. Trust Score Calculation Example (illustrative, not executable)
+# ---------------------------------------------------------------------------
+trust_score_calculation_example: |
+  Session start: trust_score = 1.0
+  
+  Cycle 1: Tool call succeeds
+    → trust_score = 1.0 (no penalty)
+    
+  Cycle 2: Policy deny (PEN-04)
+    → trust_score = 1.0 + (-0.05) = 0.95
+    → QS-WARNING (0.95 >= 0.85: no, 0.95 < 0.85: no → still HEALTHY)
+    → Actually: 0.95 >= 0.85 → still HEALTHY
+    
+  Cycle 3: Intent drift detected (PEN-01)
+    → trust_score = 0.95 + (-0.15) = 0.80
+    → 0.80 < 0.85 → QS-WARNING
+    → Auto-actions: open defect, increase logging, alert dashboard
+    
+  Cycle 4: Hallucination detected (PEN-05)
+    → trust_score = 0.80 + (-0.10) = 0.70
+    → 0.70 < 0.70 → no, 0.70 == 0.70 → boundary
+    → 0.70 >= 0.70 → QS-HITL_REVIEW boundary
+    → Auto-actions: block promotion, queue for HITL review
+    
+  Cycle 5: Secret detected (PEN-03, CRITICAL)
+    → trust_score = 0.70 + (-0.30) = 0.40
+    → 0.40 < 0.50 → QS-TRIPPED
+    → Immediate trip: freeze, revoke JIT, rollback, preserve forensics
+    → Human notified; session enters QUARANTINE_REVIEW after manual reset
+
+# ---------------------------------------------------------------------------
+# 9. AgBOM (Runtime Agent Bill of Materials) — WP-S4 p.25
+#    "a living document that maps the agent's active blast radius at any
+#    given millisecond"
+# ---------------------------------------------------------------------------
+agbom:
+  description: "Dynamic inventory of tools, models, and data sources the agent is actively using"
+  update_frequency: per_trajectory_step
+  fields:
+    - active_tools: list of tool names currently available
+    - active_model: dynamic model tier (Premium Frontier | Strong Coding | Fast Flash)
+    - active_skills: list of loaded skill names (G3 progressive disclosure)
+    - active_memory_sources: list of memory providers (e.g., honcho)
+    - blast_radius: qualitative (low | medium | high)
+    - egress_paths: list of authorized network endpoints
+    - jit_tokens_active: count of active JIT-scoped credentials
+  
+  drift_detection:
+    method: compare current AgBOM against baseline AgBOM
+    baseline: AgBOM at session_start
+    drift_signal: any unauthorized addition to active_tools or egress_paths
+    feeds: PEN-01 (intent_drift_detected) and PEN-02 (unauthorized_tool_spike)
+
+# ---------------------------------------------------------------------------
+# 10. Option Matrix
+# ---------------------------------------------------------------------------
+option_matrix:
+  OPTION_1_CONSERVATIVE:
+    trust_score: enabled (monitoring only, no auto-trip)
+    circuit_breaker: manual_trip_only
+    quarantine: QS-HEALTHY and QS-TRIPPED only
+    checkpoint: enabled
+    notes: "Human reviews all degradation; no auto-freeze"
+    
+  OPTION_2_STANDARD:
+    trust_score: enabled with auto-decay
+    circuit_breaker: auto-trip at 0.50 + immediate CRITICAL signals
+    quarantine: all 6 states
+    checkpoint: enabled with auto-rollback
+    agbom: enabled with drift detection
+    notes: "Full WP-S4 Effective Trust; graduated response"
+    
+  OPTION_3_CREATIVE:
+    trust_score: enabled with self-tuning thresholds
+    circuit_breaker: auto-trip with adaptive thresholds
+    quarantine: all 6 states + auto-recovery experiments
+    checkpoint: enabled with auto-rollback + auto-retry
+    agbom: enabled with predictive drift
+    notes: "Requires strong G5/G7; self-tuning risk infinite-loop"
+
+# ---------------------------------------------------------------------------
+# 11. Telemetry summary for HITL
+# ---------------------------------------------------------------------------
+telemetry:
+  decay_penalties: 18
+  trip_triggers: 15  # one per G4 failure mode
+  immediate_trip_signals: 3  # secret, pii, budget
+  quarantine_states: 6
+  checkpoint_enabled: true
+  agbom_enabled: true
+  trust_score_range: "0.0 → 1.0"
+  trip_threshold: 0.50
+  warning_threshold: 0.85
+  hitl_review_threshold: 0.70

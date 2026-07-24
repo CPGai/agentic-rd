@@ -346,9 +346,39 @@ domains:
   G5:
     id: D_G5
     name: evaluation_observability
-    state: READY_FOR_DOMAIN
-    requires: [G1_HARNESS_APPROVED_v1]
+    state: APPROVED
+    locked: true
+    locked_at: "2026-07-24"
+    tag: eval-v1.0.0
+    requires: [G1_HARNESS_APPROVED_v1, G4_TOPOLOGY_APPROVED_v1]
     primary_harness_touch: [H_EVAL]
+    resume_token: G5_EVAL_FRAMEWORK_APPROVED_v1
+    resume_token_alias: G5_EVAL_APPROVED_v1
+    recommended: OPTION_2_STANDARD
+    selected: OPTION_2_STANDARD
+    granted: true
+    granted_at: "2026-07-24"
+    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    artifacts:
+      - specs/g5_evaluation/EVALUATION_HARNESS_SPEC.md
+      - specs/g5_evaluation/OBSERVABILITY_PILLARS_SPEC.yaml
+      - specs/g5_evaluation/CIRCUIT_BREAKER_RULES.yaml
+      - specs/g5_evaluation/EVAL_DATASET_BENCHMARKS.json
+      - specs/g5_evaluation/G5_MIGRATION_CONTEXT.md
+      - scripts/verify_g5_evaluation.py
+      - tests/test_g5_evaluation.py
+    required_telemetry:
+      - trajectory_schema_6_fields
+      - 7_pillar_effective_trust
+      - 5pct_15pct_degradation_thresholds
+      - trust_score_range_0_to_1
+      - circuit_breaker_15_fm_trip_triggers
+      - 6_quarantine_states
+      - 18_benchmark_scenarios
+      - scripts/verify_g5_evaluation.py green
+      - tests/test_g5_evaluation.py green
+    next_domain: G6
+    next_resume_token_expected: G6_VIBE_SPEC_APPROVED_v1
   G6:
     id: D_G6
     name: vibe_coding_spec_harness

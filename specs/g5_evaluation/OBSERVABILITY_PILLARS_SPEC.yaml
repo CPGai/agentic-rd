@@ -1,0 +1,640 @@
+# OBSERVABILITY_PILLARS_SPEC.yaml
+# G5 — Observability specification: OTEL tracing, structured logging, telemetry hooks
+# Status: DRAFT_PRE_GATE — declarative schema; no runtime wiring until Step E
+# Overlay: OPTION_2_STANDARD
+# Upstream: orchestration-v1.0.0 (G4 LOCKED)
+# BLUE resume token: G5_EVAL_FRAMEWORK_APPROVED_v1
+# User checkpoint alias: G5_EVAL_APPROVED_v1
+
+version: "1.0.0-draft"
+domain: G5
+overlay: OPTION_2_STANDARD
+status: DRAFT_PRE_GATE
+resume_token_authoritative: G5_EVAL_FRAMEWORK_APPROVED_v1
+resume_token_alias: G5_EVAL_APPROVED_v1
+upstream_tag: orchestration-v1.0.0
+
+companions:
+  - EVALUATION_HARNESS_SPEC.md
+  - CIRCUIT_BREAKER_RULES.yaml
+  - EVAL_DATASET_BENCHMARKS.json
+
+anchors:
+  - "WP-F4 Chapter 3 (Observability: Logs, Traces, Metrics)"
+  - "WP-S4 Pillar 7 (Observability: Auditing the Agent's Mind)"
+  - "WP-S4 Pillar 6 (Red/Blue/Green, Agent Behavioural Analytics)"
+  - "G1 HARNESS_SPEC.md §4.2 (Autonomous Loop Integration)"
+  - "G3 SESSION_STATE_SPEC.md (compaction/lifecycle to trajectory capture)"
+  - "G4 POLICY_INTERCEPT_SPEC.yaml (circuit breaker inputs/outputs to hooks)"
+
+# ---------------------------------------------------------------------------
+# 1. OTEL Tracing Alignment
+#    WP-F4 p.37: OpenTelemetry spans, attributes, context propagation
+#    G4 hierarchical topology: Root span + Leaf spans per agent
+# ---------------------------------------------------------------------------
+otel_tracing:
+  standard: "OpenTelemetry Trace Context (W3C)"
+  propagation: "traceparent header"
+  
+  span_hierarchy:
+    root_span:
+      name: "mission.{mission_id}"
+      kind: INTERNAL
+      attributes:
+        mission_id: string
+        session_id: "string (G3 session)"
+        overlay: OPTION_2_STANDARD
+        domain: "string (G-domain context)"
+        architect_mode: "Conductor|Orchestrator"
+      required: true
+      
+    agent_span:
+      name: "agent.{card_id}.{action_type}"
+      kind: INTERNAL
+      parent: root_span
+      attributes:
+        agent_id: "string (G4 card_id)"
+        card_id: string
+        agent_role: "root|leaf|orchestrator"
+        action_type: "tool_call|delegate_task|terminal|write_file|read_file|patch"
+        risk_tier: "T1|T2|T3|T4"
+        policy_decision: "allow|deny|hitl|rewrite_caps"
+        trust_score_before: "float (0.0 to 1.0)"
+        trust_score_after: "float (0.0 to 1.0)"
+        trust_score_delta: float
+      required: true
+      
+    tool_span:
+      name: "tool.{tool_name}"
+      kind: CLIENT
+      parent: agent_span
+      attributes:
+        tool_name: string
+        tool_version: "string (if pinned)"
+        parameters_hash: "string (sanitized hash - never raw params)"
+        exit_code: int
+        latency_ms: int
+        tokens_consumed: int
+        error: "string|null"
+      required: true
+      
+    delegate_span:
+      name: "delegate.{child_card_id}"
+      kind: INTERNAL
+      parent: agent_span
+      attributes:
+        child_card_id: string
+        child_agent_id: string
+        delegation_id: string
+        child_trace_id: "string (child root span trace_id for cross-trace linking)"
+        child_verdict: "continue|success|fail|escalate_HITL"
+        child_trust_score_delta: float
+      required: "true (when delegate_task invoked)"
+      
+    eval_span:
+      name: "eval.{judge_type}.{dimension}"
+      kind: INTERNAL
+      parent: agent_span
+      attributes:
+        judge_type: "automated|llm_judge|agent_judge|secret_scanner"
+        dimension: "correctness|helpfulness|safety|trajectory_adherence|hallucination|intent_drift|secret_leak|pii"
+        score: "float (0.0 to 1.0 or 1 to 5)"
+        threshold_breached: bool
+        degradation_pct: float
+      required: "true (when judge invoked)"
+
+  context_propagation:
+    trace_id: "W3C trace_id (32 hex chars)"
+    span_id: "W3C span_id (16 hex chars)"
+    baggage:
+      session_id: string
+      agent_id: string
+      mission_id: string
+    
+  correlation:
+    - "trajectory_id <-> trace_id (1:1 per cycle)"
+    - "session_id <-> G3 session (1:1 per session)"
+    - "agent_id <-> G4 card_id (1:1 per agent instance)"
+    - "parent_trajectory_id <-> parent span_id (hierarchical rollup)"
+
+# ---------------------------------------------------------------------------
+# 2. Structured JSON Logging Envelope
+#    WP-F4 p.33: "Logs are the atomic unit of observability - timestamped
+#    entries in the agent's diary. Each entry is a raw, immutable fact."
+# ---------------------------------------------------------------------------
+structured_logging:
+  format: JSON
+  encoding: utf-8
+  pii_scrubbing: true
+  secret_redaction: true
+  
+  log_envelope:
+    required_fields:
+      - "ts: iso8601"
+      - "level: DEBUG|INFO|WARN|ERROR|CRITICAL"
+      - "session_id: string (G3 session identifier)"
+      - "agent_id: string (G4 card_id)"
+      - "trace_id: string (OTEL trace_id)"
+      - "span_id: string (OTEL span_id)"
+      - "event_type: string (see event_types below)"
+      - "message: string (human-readable summary)"
+    optional_fields:
+      - "trajectory_id: string"
+      - "parent_trace_id: string"
+      - "mission_id: string"
+      - "card_id: string"
+      - "risk_tier: string"
+      - "trust_score: float"
+      - "latency_ms: int"
+      - "tokens_consumed: int"
+      - "tool_name: string"
+      - "error: string"
+      - "stacktrace: string"
+      - "policy_decision: string"
+      - "reason_code: string"
+      - "agbom_hash: string"
+
+  event_types:
+    - mission_start
+    - mission_end
+    - context_assembled
+    - tool_call_start
+    - tool_call_end
+    - delegate_task_start
+    - delegate_task_end
+    - judge_eval_start
+    - judge_eval_end
+    - checkpoint_created
+    - circuit_breaker_trip
+    - circuit_breaker_reset
+    - policy_decision
+    - secret_detected
+    - pii_detected
+    - trust_score_update
+    - agbom_update
+    - verdict_emitted
+    - hard_stop
+
+  log_levels:
+    DEBUG: "Internal reasoning, context assembly, skill loading"
+    INFO: "Tool calls, delegate tasks, verdicts, checkpoints"
+    WARN: "5% degradation threshold, retry attempts, policy deny with hitl_if"
+    ERROR: "Tool failures, non-zero exit codes, trajectory validation failures"
+    CRITICAL: "Secret detected, circuit breaker trip, 15% degradation, hard stop"
+
+  retention:
+    session_lifetime: "All logs retained for session duration"
+    archive: "90 days post-session (compressed, PII-scrubbed)"
+    forensic: "Circuit breaker trips and secret detections retained permanently"
+
+# ---------------------------------------------------------------------------
+# 3. Telemetry Hooks for G3 Honcho Memory State
+#    G3 SESSION_STATE_SPEC.md to trajectory capture constraints
+# ---------------------------------------------------------------------------
+telemetry_hooks_g3_memory:
+  source: "G3 Honcho (self-hosted, Docker Compose, loopback port 8000)"
+  provider: honcho
+  
+  hooks:
+    - id: HOOK-G3-01
+      name: memory_window_assembly_capture
+      trigger: "context_assembled event"
+      captures:
+        - skills_loaded: list
+        - tools_available: list
+        - memory_window_tokens: int
+        - token_budget_remaining: int
+        - context_assembly_order: list
+      feeds: "trajectory.scene field"
+      span: "agent_span attribute"
+      
+    - id: HOOK-G3-02
+      name: compaction_event_capture
+      trigger: "memory compaction triggered (G3 lifecycle hook)"
+      captures:
+        - compaction_strategy: "last_n|token_backfill|recursive_summary"
+        - tokens_before: int
+        - tokens_after: int
+        - bookmark_created: bool
+      feeds: "structured log (event_type agbom_update)"
+      
+    - id: HOOK-G3-02b
+      name: memory_advisory_check
+      trigger: "child trajectory rollup (G4 FM-SESSION-TRANSLATION)"
+      captures:
+        - child_events_polluting_parent: bool
+        - memory_override_attempted: bool
+      feeds: "circuit breaker (FM-SESSION-TRANSLATION trigger)"
+      
+    - id: HOOK-G3-03
+      name: session_lifecycle_capture
+      trigger: "session start/end"
+      captures:
+        - session_id: string
+        - session_strategy: per-directory
+        - recall_mode: hybrid
+        - honcho_deriver_model: "string (observed, not pinned in constitution)"
+      feeds: "structured log (event_type mission_start/end)"
+
+# ---------------------------------------------------------------------------
+# 4. Telemetry Hooks for G4 AP2 Spending Tracking
+#    G4 POLICY_INTERCEPT_SPEC.yaml to budget class, AP2 ledger
+# ---------------------------------------------------------------------------
+telemetry_hooks_g4_ap2:
+  source: "G4 AP2 ledger (schema + spending limits, live_settle false)"
+  
+  hooks:
+    - id: HOOK-G4-AP2-01
+      name: spending_capture_event
+      trigger: "payment.capture or budget.class evaluated"
+      captures:
+        - mandate_id: string
+        - amount_minor_units: int
+        - ceiling_max_per_tx: int
+        - ceiling_session_total: int
+        - decision: "allow|deny|hitl|rewrite_caps"
+        - reason_code: string
+      feeds: "structured log (event_type policy_decision)"
+      span: "agent_span.policy_decision attribute"
+      
+    - id: HOOK-G4-AP2-02
+      name: token_burn_rate_monitor
+      trigger: "every tool_span end"
+      captures:
+        - tokens_consumed: int
+        - cumulative_session_tokens: int
+        - session_token_budget: int
+        - burn_rate: "float (tokens per minute)"
+      feeds: "circuit breaker (FM-BUDGET-CEILING trigger)"
+      alert_if: "burn_rate > denial_of_wallet_threshold"
+      
+    - id: HOOK-G4-AP2-03
+      name: tool_call_count_monitor
+      trigger: "every tool_span end"
+      captures:
+        - tool_call_count: int
+        - tool_call_cap: int
+      feeds: "circuit breaker (FM-BUDGET-CEILING trigger)"
+      alert_if: "tool_call_count > tool_call_cap"
+      
+    - id: HOOK-G4-AP2-04
+      name: payment_hold_dwell_timer
+      trigger: "PAYMENT_HOLD state entered"
+      captures:
+        - hold_duration_ms: int
+        - hold_ttl_ms: int
+      feeds: "circuit breaker (FM-PAYMENT-HOLD-STALL trigger)"
+      alert_if: "hold_duration_ms > hold_ttl_ms"
+
+# ---------------------------------------------------------------------------
+# 5. Telemetry Hooks for G4 Policy Intercept
+#    G4 POLICY_INTERCEPT_SPEC.yaml to decision telemetry
+# ---------------------------------------------------------------------------
+telemetry_hooks_g4_policy:
+  source: "G4 POLICY_SEAT (DECLARED_NOT_WIRED)"
+  
+  hooks:
+    - id: HOOK-G4-POL-01
+      name: policy_decision_capture
+      trigger: "POLICY_SEAT decision emitted"
+      captures:
+        - decision_id: ulid
+        - decision: "allow|deny|hitl|rewrite_caps"
+        - reason_code: string
+        - rule_ids: list
+        - card_id: string
+        - intercept_class: "orchestration|delegation|mcp_call|workspace_write|shell|egress|payment|pii|security_review|registry_expand|budget"
+      feeds: "structured log (event_type policy_decision)"
+      span: "agent_span.policy_decision attribute"
+      
+    - id: HOOK-G4-POL-02
+      name: circuit_breaker_signal_capture
+      trigger: "policy rule POL-G4-005 (trust_score_below_threshold or unbounded_loop_suspected)"
+      captures:
+        - trust_score: float
+        - trust_score_threshold: float
+        - unbounded_loop_suspected: bool
+      feeds: "circuit breaker (FM-TRUST-DECAY trigger)"
+      action: "trip_circuit_breaker + freeze_tool_access"
+
+# ---------------------------------------------------------------------------
+# 6. Telemetry Hooks for G4 Failure Mode Detection
+#    G4 FAILURE_MODE_MATRIX.yaml to 15 failure modes
+# ---------------------------------------------------------------------------
+telemetry_hooks_g4_failure_modes:
+  source: "G4 FAILURE_MODE_MATRIX.yaml (15 modes)"
+  
+  hooks:
+    - id: HOOK-G4-FM-TIMEOUT
+      fm_id: FM-TIMEOUT
+      trigger: "heartbeat_missing or wall_clock > caps_timeout_ms"
+      captures:
+        - wall_clock_ms: int
+        - caps_timeout_ms: int
+        - heartbeat_last_seen: string
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-REGION-COLLISION
+      fm_id: FM-REGION-COLLISION
+      trigger: "path_lease_registry conflict"
+      captures:
+        - conflict_paths: list
+        - lease_holders: list
+        - join_time_diff: int
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-BUDGET-CEILING
+      fm_id: FM-BUDGET-CEILING
+      trigger: "ap2_ceiling_compare breach or circuit_breaker_token_burn"
+      captures:
+        - amount: int
+        - ceiling: int
+        - burn_rate: float
+        - session_tokens: int
+        - tool_call_count: int
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-CARD-INVALID
+      fm_id: FM-CARD-INVALID
+      trigger: "CARD_RESOLVE or SECURITY_EVAL failure"
+      captures:
+        - card_id: string
+        - missing_fields: list
+        - unknown_card: bool
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-POLICY-DENY
+      fm_id: FM-POLICY-DENY
+      trigger: "POLICY_SEAT decision_deny"
+      captures:
+        - decision_id: string
+        - reason_code: string
+        - rule_ids: list
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-NESTING-VIOLATION
+      fm_id: FM-NESTING-VIOLATION
+      trigger: "leaf_calls_delegate_task or depth > max_spawn_depth"
+      captures:
+        - depth: int
+        - max_spawn_depth: int
+        - caller_card_id: string
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-CONCURRENCY-CAP
+      fm_id: FM-CONCURRENCY-CAP
+      trigger: "concurrent_children > 3"
+      captures:
+        - concurrent_children: int
+        - cap: int
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-GOTO-LEAK
+      fm_id: FM-GOTO-LEAK
+      trigger: "multi_turn_agent_in_mcp_tool_shape or NEEDS_INPUT_without_a2a_state"
+      captures:
+        - tool_name: string
+        - card_id: string
+        - shim_detected: bool
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-PARTIAL-JOIN
+      fm_id: FM-PARTIAL-JOIN
+      trigger: "D_JOIN group not all success"
+      captures:
+        - join_group_id: string
+        - child_results: list
+        - quorum_policy: string
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-SESSION-TRANSLATION
+      fm_id: FM-SESSION-TRANSLATION
+      trigger: "trajectory_schema_validate failure or memory_advisory_only_check"
+      captures:
+        - child_events: list
+        - parent_trace_id_missing: bool
+        - memory_override_attempted: bool
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-TRUST-DECAY
+      fm_id: FM-TRUST-DECAY
+      trigger: "vibe_trajectory_analytics or circuit_breaker"
+      captures:
+        - trust_score: float
+        - intent_drift_signal: bool
+        - agbom_drift: string
+      feeds: "circuit breaker (primary trigger)"
+      
+    - id: HOOK-G4-FM-REMOTE-A2A-OUTAGE
+      fm_id: FM-REMOTE-A2A-OUTAGE
+      trigger: "handshake transport error"
+      captures:
+        - endpoint: string
+        - card_id: string
+        - retry_count: int
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-PAYMENT-HOLD-STALL
+      fm_id: FM-PAYMENT-HOLD-STALL
+      trigger: "state_machine_dwell_timer exceeded"
+      captures:
+        - hold_duration_ms: int
+        - hold_ttl_ms: int
+        - mandate_id: string
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-CRITIC-LOOP
+      fm_id: FM-CRITIC-LOOP
+      trigger: "loop_iterations > max or critic_score_flat"
+      captures:
+        - iterations: int
+        - max_iterations: int
+        - score_trend: string
+      feeds: "circuit breaker"
+      
+    - id: HOOK-G4-FM-SECRET-LEAK
+      fm_id: FM-SECRET-LEAK
+      trigger: "secret_scan_hit"
+      captures:
+        - scan_target: string
+        - match_type: string
+        - severity: string
+      feeds: "circuit breaker (CRITICAL - immediate trip)"
+
+# ---------------------------------------------------------------------------
+# 7. Metrics Aggregation (WP-F4 pp.38-39)
+# ---------------------------------------------------------------------------
+metrics:
+  system_metrics:
+    - name: token_count
+      type: histogram
+      source: "tool_span.tokens_consumed"
+      aggregation: "sum per trace, avg per mission"
+    - name: latency_ms
+      type: histogram
+      source: "tool_span.latency_ms"
+      aggregation: "p50, p95, p99 per trace"
+    - name: api_cost_per_run
+      type: counter
+      source: "token_count times model_pricing"
+      aggregation: "sum per mission"
+    - name: error_rate
+      type: gauge
+      source: "traces with error=true span"
+      aggregation: "percentage of total traces"
+    - name: tool_usage_frequency
+      type: counter
+      source: "tool_span.name"
+      aggregation: "count per tool_name"
+      
+  quality_metrics:
+    - name: task_completion_rate
+      type: gauge
+      source: "traces reaching success span"
+      aggregation: percentage
+    - name: trajectory_adherence_score
+      type: gauge
+      source: "agent_judge eval_span"
+      aggregation: "avg per mission"
+    - name: hallucination_rate
+      type: counter
+      source: "llm_judge hallucination dimension"
+      aggregation: "count per mission"
+    - name: pii_leakage_blocked_count
+      type: counter
+      source: "secret_scanner eval_span"
+      aggregation: "count (zero tolerance)"
+    - name: policy_violation_rate
+      type: gauge
+      source: "policy_decision log (decision deny)"
+      aggregation: "percentage of total decisions"
+    - name: trust_score_trend
+      type: gauge
+      source: "agent_span.trust_score_after"
+      aggregation: "time series (per agent, per session)"
+    - name: intent_drift_signal
+      type: gauge
+      source: "agbom comparison"
+      aggregation: "binary (drift detected true or false)"
+    - name: red_team_bypass_count
+      type: counter
+      source: "red team injection suite"
+      aggregation: "count per run"
+    - name: judge_agreement_rate
+      type: gauge
+      source: "llm_judge vs agent_judge comparison"
+      aggregation: "percentage agreement"
+
+# ---------------------------------------------------------------------------
+# 8. Dashboard Layout (declarative — BLUE Step D constraint)
+#    "Meta-Prompt produces declarative dashboard layout only"
+# ---------------------------------------------------------------------------
+dashboard:
+  panels:
+    - name: System Health
+      metrics:
+        - latency_ms
+        - token_count
+        - error_rate
+        - tool_usage_frequency
+      alert_on: "error_rate > 5%"
+      
+    - name: Quality Metrics
+      metrics:
+        - task_completion_rate
+        - trajectory_adherence_score
+        - hallucination_rate
+      alert_on: "degradation > 5% auto-flag, > 15% HITL"
+      
+    - name: Security and Trust
+      metrics:
+        - pii_leakage_blocked_count
+        - policy_violation_rate
+        - trust_score_trend
+        - intent_drift_signal
+      alert_on: "pii_leakage > 0, trust_score < threshold, intent_drift = true"
+      
+    - name: Red Blue Green Status
+      metrics:
+        - red_team_bypass_count
+      alert_on: "bypass_count > 0"
+      
+    - name: Cost and Efficiency
+      metrics:
+        - api_cost_per_run
+        - token_count
+      alert_on: "api_cost > budget ceiling"
+      
+    - name: Judge Agreement
+      metrics:
+        - judge_agreement_rate
+      alert_on: "agreement_rate < 80%"
+
+# ---------------------------------------------------------------------------
+# 9. PII Scrubbing Pipeline (WP-F4 p.42)
+# ---------------------------------------------------------------------------
+pii_scrubbing:
+  enabled: true
+  pipeline:
+    - step: 1_detect
+      method: "regex + NER (Named Entity Recognition)"
+      patterns:
+        - email_addresses
+        - phone_numbers
+        - credit_card_numbers
+        - api_keys_and_tokens
+        - ssn_national_ids
+      action: "redact to [REDACTED:{type}]"
+      min_token_length: 20
+    - step: 2_scrub
+      target: "structured_log.message and observation.result_summary"
+      method: "replace matched patterns with redaction placeholder"
+    - step: 3_audit
+      target: "all emitted logs and trajectory records"
+      method: "post-hoc scan for residual PII"
+      alert_if: "any PII pattern found post-scrub triggers CRITICAL"
+
+# ---------------------------------------------------------------------------
+# 10. Option Matrix
+# ---------------------------------------------------------------------------
+option_matrix:
+  OPTION_1_CONSERVATIVE:
+    tracing: "minimal (root_span only)"
+    logging: "INFO level minimum"
+    metrics: "system_metrics only"
+    pii_scrubbing: enabled
+    dashboard: "system_health panel only"
+    notes: "No LLM or Agent-as-Judge telemetry hooks; manual review only"
+    
+  OPTION_2_STANDARD:
+    tracing: "full (root + agent + tool + delegate + eval spans)"
+    logging: "DEBUG level minimum"
+    metrics: "system_metrics + quality_metrics"
+    pii_scrubbing: "enabled with NER"
+    dashboard: "all 6 panels"
+    telemetry_hooks: "all G3/G4 hooks enabled"
+    notes: "Full observability; feeds circuit breaker and flywheel"
+    
+  OPTION_3_CREATIVE:
+    tracing: "full + dynamic span injection"
+    logging: "TRACE level"
+    metrics: "system + quality + custom self-generated metrics"
+    pii_scrubbing: "enabled with adaptive NER"
+    dashboard: "all panels + auto-generated custom panels"
+    notes: "Requires strong G5/G7; self-modifying dashboards risk infinite revision"
+
+# ---------------------------------------------------------------------------
+# 11. Telemetry summary for HITL
+# ---------------------------------------------------------------------------
+telemetry:
+  span_types: 5
+  log_event_types: 19
+  g3_hooks: 4
+  g4_ap2_hooks: 4
+  g4_policy_hooks: 2
+  g4_failure_mode_hooks: 15
+  total_telemetry_hooks: 25
+  dashboard_panels: 6
+  quality_metrics: 10
+  system_metrics: 5
+  pii_scrub_steps: 3

@@ -106,8 +106,8 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 | **G2** Tools & MCP | Registry + disclosure + broker | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
 | **G3** Context / Skills / Memory | Co-load precedence + budgets | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G4** Multi-Agent | — | `G4_TOPOLOGY_APPROVED_v1` | **OPTION_2_STANDARD (IN_PROGRESS)** |
-| **G5** Eval & Observability | Trust posture + thresholds | domain token | OPTION_2_STANDARD |
-| **G6** Vibe→Spec harness | Production vs prototype boundary | domain token | OPTION_2_STANDARD |
+| **G5** Eval & Observability | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ GRANTED (alias `G5_EVAL_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
+| **G6** Vibe→Spec harness | `G6_VIBE_SPEC_APPROVED_v1` | OPTION_2_STANDARD |
 | **G7** Self-improvement | L4 / mutation bounds | domain token | Conservative until proven |
 | **G8** Multi-tenant / policy | Isolation + policy server | `G8_MULTITENANT_APPROVED_v1` | OPTION_2_STANDARD |
 | **G9** Research loops | Synthesis & ethics release | `G9_RESEARCH_FLEET_LOCKED_v1` | OPTION_2_STANDARD |
@@ -160,6 +160,7 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 
 - G1 is `APPROVED` (`G1_HARNESS_APPROVED_v1`); G2–G10 may start under OPTION_2_STANDARD overlays — still stop at each domain's own HITL gate
 - G4 is `IN_PROGRESS` (`G4_TOPOLOGY_APPROVED_v1` pending); L3 locked behind G4 gate
+- G5 is `APPROVED` (`G5_EVAL_FRAMEWORK_APPROVED_v1`); G6+ may proceed under OPTION_2_STANDARD overlays — still stop at G6's own HITL gate
 - Do not enable L4 AgentCreator
 - Do not treat a green demo as a green eval
 - Do not expand static context past the § envelope in `HARNESS_SPEC.md` without progressive disclosure

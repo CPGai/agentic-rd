@@ -1,7 +1,7 @@
 # Agentic R&D & Implementation Blueprint
 
 **Dual-Course Synthesis** (Nov 2025 → June 2026)  
-**Domain Status:** G1/G2/G3 `APPROVED` — `OPTION_2_STANDARD` / `G2_TOOL_REGISTRY_LOCKED_v1` / `G3_CONTEXT_LAYER_LOCKED_v1` ✅ · G4 `IN_PROGRESS`
+**Domain Status:** G1–G5 `APPROVED` — `OPTION_2_STANDARD` / `G1_HARNESS_APPROVED_v1` / `G2_TOOL_REGISTRY_LOCKED_v1` / `G3_CONTEXT_LAYER_LOCKED_v1` / `G4_TOPOLOGY_APPROVED_v1` / `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ · G6 `READY`
 
 A formally-specified **Three-Harness Factory Model** for autonomous agentic systems, synthesizing the Google AI Agents Whitepaper Series (WP-F1–F5, Nov 2025) and Google Vibe Coding / Agentic Engineering Series (WP-S1–S5, June 2026) into a single, auditable architectural constitution spanning 10 domains (G1–G10).
 
@@ -34,8 +34,8 @@ The project's architectural constitution is triangulated across three binding ar
 | **G1** | Agent Foundations & Architecture | 🏛️ All three | ✅ `APPROVED` |
 | **G2** | Tool Use & MCP | Constraint, Context | ✅ `APPROVED` |
 | **G3** | Context Engineering / Sessions / Memory | Context | ✅ COMPLETED (`context-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G4** | Multi-Agent Orchestration | All three | **🔄 IN_PROGRESS** |
-| **G5** | Evaluation & Observability | Evaluation | Ready |
+| **G4** | Multi-Agent Orchestration | All three | ✅ COMPLETED (`orchestration-v1.0.0` · `OPTION_2_STANDARD`) |
+| **G5** | Evaluation & Observability | Evaluation | ✅ COMPLETED (`eval-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G6** | Vibe Coding → Spec Harness | Constraint, Evaluation | Ready |
 | **G7** | Self-Improvement (L4 gated) | Evaluation, Constraint | Ready |
 | **G8** | Multi-Tenant & Policy | Constraint | Ready |
@@ -117,15 +117,15 @@ Every strategic domain gate (G1–G10) surfaces a `HARD_STOP` decision matrix an
 
 ---
 
-## G1, G2, G3 & G4 Gate Decisions (Active)
+## G1–G5 Gate Decisions (Active)
 
-| Field | G1 Foundations | G2 Tools & MCP | G3 Context & Memory | G4 Multi-Agent |
-|---|---|---|---|---|
-| **Decision** | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` |
-| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ | `G4_TOPOLOGY_APPROVED_v1` |
-| **Tag** | — | `tool-registry-v1.0.0` | `context-v1.0.0` | — |
-| **Default Agent Level** | L2 | L2 | L2 | L2 (→L3 after G4 gate) |
-| **Harness / Substrate** | Three-harness Factory + full audit trail | Security Broker Proxy + NPM Pins + Loopback Boundary | Dynamic Token Budget + Honcho Memory + Skills Co-Load Policy | Pending G4 topology approval |
+| Field | G1 Foundations | G2 Tools & MCP | G3 Context & Memory | G4 Multi-Agent | G5 Eval & Observability |
+|---|---|---|---|---|---|
+| **Decision** | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` |
+| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ | `G4_TOPOLOGY_APPROVED_v1` | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ |
+| **Tag** | — | `tool-registry-v1.0.0` | `context-v1.0.0` | `orchestration-v1.0.0` | `eval-v1.0.0` |
+| **Default Agent Level** | L2 | L2 | L2 | L2 (→L3 after G4 gate) | L2 |
+| **Harness / Substrate** | Three-harness Factory + full audit trail | Security Broker Proxy + NPM Pins + Loopback Boundary | Dynamic Token Budget + Honcho Memory + Skills Co-Load Policy | Hierarchical Coordinator + Agent Cards + Policy Seat (DECLARED) | LLM-as-Judge + OTEL Trajectories + Trust Score + Circuit Breaker + 5%/15% Thresholds |
 
 ---
 
