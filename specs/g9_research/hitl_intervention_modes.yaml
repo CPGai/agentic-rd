@@ -1,0 +1,315 @@
+# hitl_intervention_modes.yaml
+# G9 — Seven HITL Intervention Modes
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: multitenant-v1.0.0 (G8 LOCKED)
+# BLUE resume: G9_RESEARCH_FLEET_LOCKED_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G9
+kind: hitl_intervention_modes
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: multitenant-v1.0.0
+blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# 1. Seven HITL Intervention Gates
+#    Each gate is triggered by a specific research loop condition
+#    and requires human action before the loop can proceed.
+# ---------------------------------------------------------------------------
+
+hitl_intervention_modes:
+
+  # -------------------------------------------------------------------------
+  # HG-RS-01: Hypothesis Authorization
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-01
+    name: "Hypothesis Authorization"
+    trigger: "New hypothesis submitted for investigation"
+    trigger_condition: "Hypothesis Gherkin spec passes structural and semantic validation"
+    phase: "Pre-DRAFT (before investigation begins)"
+    human_action: "Review hypothesis for scientific validity, ethics, and scope"
+    human_decision_options:
+      - "APPROVE: hypothesis is valid; investigation may proceed"
+      - "REJECT: hypothesis is invalid or unethical; investigation denied"
+      - "REQUEST_REVISION: hypothesis needs modification before approval"
+    timeout: "No auto-approve — waits indefinitely for human review"
+    on_approve: "Hypothesis transitions PROPOSED → DRAFT"
+    on_reject: "Hypothesis transitions to REJECTED (terminal state)"
+    on_request_revision: "Hypothesis returns to author for modification"
+    on_timeout: "Hypothesis remains in PROPOSED; no auto-action"
+    telemetry:
+      - "hypothesis_id"
+      - "domain_tag"
+      - "risk_classification"
+      - "review_decision"
+      - "review_timestamp"
+      - "reviewer_id"
+    constraint_enforced: "C-RS-01, C-RS-08"
+
+  # -------------------------------------------------------------------------
+  # HG-RS-02: Tool Access
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-02
+    name: "Tool Access Authorization"
+    trigger: "Research agent requests access to a new external API or data source"
+    trigger_condition: "Tool not in approved tool registry OR procurement tier requires HITL"
+    phase: "DRAFT or DEBUG (when new tool is needed mid-investigation)"
+    human_action: "Review tool request; check procurement tier, G8 policy compliance, and security implications"
+    human_decision_options:
+      - "APPROVE: tool access granted for this investigation"
+      - "DENY: tool access denied; agent must use alternative"
+      - "APPROVE_WITH_RESTRICTIONS: access granted with usage limits"
+    timeout: "24 hours — after which request is auto-denied (fail-closed)"
+    on_approve: "Tool added to approved registry for this tenant and investigation"
+    on_deny: "Agent notified; must proceed without tool or request alternative"
+    on_timeout: "Request auto-denied; agent notified"
+    telemetry:
+      - "tool_id"
+      - "tool_name"
+      - "procurement_tier"
+      - "tenant_id"
+      - "svid_required"
+      - "review_decision"
+      - "g8_policy_compliance_check"
+    constraint_enforced: "C-RS-06, C-MT-06, C-MT-07"
+
+  # -------------------------------------------------------------------------
+  # HG-RS-03: High Drift
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-03
+    name: "High Hypothesis Drift"
+    trigger: "Hypothesis scope changes more than 30 percent from original spec"
+    trigger_condition: "Drift metric calculated as semantic distance between original and current hypothesis scope"
+    phase: "DEBUG or IMPROVE (scope creep during investigation)"
+    human_action: "Review scope change; determine if it is a legitimate pivot or scope creep"
+    human_decision_options:
+      - "APPROVE_PIVOT: scope change is legitimate; hypothesis spec updated"
+      - "REJECT_DRIFT: scope change is creep; agent must return to original scope"
+      - "SPLIT_HYPOTHESIS: scope change warrants a new separate hypothesis"
+    timeout: "No auto-approve — waits indefinitely"
+    on_approve_pivot: "Hypothesis spec updated; investigation continues with new scope"
+    on_reject_drift: "Agent must return to original scope; IMPROVE cycles reset"
+    on_split: "Original hypothesis continues; new hypothesis created for divergent scope"
+    on_timeout: "Investigation paused; no auto-action"
+    telemetry:
+      - "hypothesis_id"
+      - "original_scope_hash"
+      - "current_scope_hash"
+      - "drift_percentage"
+      - "drift_trigger_operator"
+      - "review_decision"
+    drift_threshold: 30
+    drift_metric: "semantic distance between original and current hypothesis scope"
+
+  # -------------------------------------------------------------------------
+  # HG-RS-04: Low Evidence
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-04
+    name: "Low Evidence Confidence"
+    trigger: "Evidence confidence below threshold after IMPROVE cycle OR S1 fabrication detected"
+    trigger_condition: "confidence < hypothesis_confidence_threshold OR S1 finding in DEBUG"
+    phase: "DEBUG or IMPROVE (evidence quality insufficient)"
+    human_action: "Review evidence quality; determine if additional investigation is warranted or hypothesis should be rejected"
+    human_decision_options:
+      - "APPROVE_WITH_CAVEATS: evidence is sufficient with documented limitations"
+      - "REQUEST_ADDITIONAL_INVESTIGATION: agent must gather more evidence"
+      - "REJECT_HYPOTHESIS: evidence is insufficient; hypothesis rejected"
+    timeout: "No auto-approve — waits indefinitely"
+    on_approve_with_caveats: "Synthesis proceeds with caveats documented"
+    on_request_additional: "Agent returns to DRAFT or DEBUG for additional evidence gathering"
+    on_reject: "Hypothesis transitions to REJECTED (terminal)"
+    on_timeout: "Hypothesis remains in current state; no auto-action"
+    telemetry:
+      - "hypothesis_id"
+      - "confidence_level"
+      - "confidence_threshold"
+      - "s1_findings_count"
+      - "s2_findings_count"
+      - "review_decision"
+    s1_immediate_trigger: true
+    s1_action: "Freeze hypothesis immediately; mandatory HG-RS-04"
+
+  # -------------------------------------------------------------------------
+  # HG-RS-05: Synthesis Sign-off
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-05
+    name: "Synthesis Sign-off"
+    trigger: "Synthesis reaches VALIDATED state and is ready for human review"
+    trigger_condition: "All citations verified AND no S1/S2 findings remain AND confidence threshold met"
+    phase: "Post-IMPROVE (synthesis complete, pending approval)"
+    human_action: "Review synthesis for scientific integrity, citation completeness, and ethical boundaries"
+    human_decision_options:
+      - "APPROVE: synthesis is scientifically sound; approved for release preparation"
+      - "REJECT: synthesis is flawed; hypothesis rejected"
+      - "REQUEST_REVISION: synthesis needs modification; return to IMPROVE"
+    timeout: "No auto-approve — waits indefinitely"
+    on_approve: "Synthesis transitions to APPROVED; eligible for release"
+    on_reject: "Synthesis transitions to REJECTED (terminal)"
+    on_request_revision: "Synthesis returns to IMPROVE for specified modifications"
+    on_timeout: "Synthesis remains PENDING_HITL; no auto-action"
+    telemetry:
+      - "hypothesis_id"
+      - "synthesis_id"
+      - "citation_count"
+      - "verified_citation_count"
+      - "unverified_assertion_count"
+      - "confidence_level"
+      - "s3_caveats_count"
+      - "s4_caveats_count"
+      - "review_decision"
+      - "reviewer_id"
+    constraint_enforced: "C-RS-07, C-RS-08"
+
+  # -------------------------------------------------------------------------
+  # HG-RS-06: Exfiltration Gate
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-06
+    name: "Data Egress Control"
+    trigger: "Research output ready to leave tenant boundary"
+    trigger_condition: "Approved synthesis or data artifact requests egress to external system or different tenant"
+    phase: "Post-approval (data leaving tenant boundary)"
+    human_action: "Approve data egress; verify G8 policy server cross-tenant checks; confirm no PII leakage"
+    human_decision_options:
+      - "APPROVE_EGRESS: data egress approved; G8 policy server enforces"
+      - "DENY_EGRESS: data must remain within tenant boundary"
+      - "APPROVE_REDACTED: egress approved with PII redaction applied"
+    timeout: "No auto-approve — waits indefinitely (data security critical)"
+    on_approve: "Data egress proceeds through G8 policy server with SVID validation"
+    on_deny: "Data remains within tenant; no egress"
+    on_redacted: "PII redaction applied; redacted data egresses"
+    on_timeout: "No egress; data remains within tenant boundary (fail-closed)"
+    telemetry:
+      - "hypothesis_id"
+      - "synthesis_id"
+      - "source_tenant_id"
+      - "destination_tenant_id_or_external"
+      - "data_classification"
+      - "pii_scan_result"
+      - "g8_policy_check_result"
+      - "svid_validated"
+      - "review_decision"
+    constraint_enforced: "C-RS-06, C-MT-01, C-MT-06, C-MT-07, C-MT-08"
+
+  # -------------------------------------------------------------------------
+  # HG-RS-07: Release Approval
+  # -------------------------------------------------------------------------
+  - gate_id: HG-RS-07
+    name: "Final Release Approval"
+    trigger: "Synthesis approved and ready for publication or distribution"
+    trigger_condition: "HG-RS-05 approved AND HG-RS-06 egress approved (if applicable)"
+    phase: "Final gate (before public release)"
+    human_action: "Grant final approval for release; confirm all prior gates cleared"
+    human_decision_options:
+      - "APPROVE_RELEASE: synthesis released for publication/distribution"
+      - "DENY_RELEASE: synthesis not released; held for further review"
+      - "APPROVE_WITH_EMBARGO: released with time-limited embargo"
+    timeout: "No auto-approve — waits indefinitely (final gate)"
+    on_approve: "Synthesis transitions to RELEASED; published/distributed"
+    on_deny: "Synthesis held; remains APPROVED but not released"
+    on_embargo: "Synthesis released after embargo period"
+    on_timeout: "Synthesis not released; remains APPROVED (fail-closed)"
+    telemetry:
+      - "hypothesis_id"
+      - "synthesis_id"
+      - "all_prior_gates_cleared"
+      - "hg_rs_01_decision"
+      - "hg_rs_05_decision"
+      - "hg_rs_06_decision"
+      - "release_decision"
+      - "release_timestamp"
+      - "reviewer_id"
+    constraint_enforced: "C-RS-08"
+
+# ---------------------------------------------------------------------------
+# 2. Gate Sequencing
+# ---------------------------------------------------------------------------
+
+gate_sequence:
+  standard_flow:
+    - gate: HG-RS-01
+      phase: "Pre-DRAFT"
+      required: true
+    - gate: HG-RS-02
+      phase: "DRAFT (conditional)"
+      required: "conditional — only if new tool needed"
+    - gate: HG-RS-03
+      phase: "DEBUG/IMPROVE (conditional)"
+      required: "conditional — only if drift detected"
+    - gate: HG-RS-04
+      phase: "DEBUG/IMPROVE (conditional)"
+      required: "conditional — only if S1 or low confidence"
+    - gate: HG-RS-05
+      phase: "Post-IMPROVE"
+      required: true
+    - gate: HG-RS-06
+      phase: "Post-approval (conditional)"
+      required: "conditional — only if data egress needed"
+    - gate: HG-RS-07
+      phase: "Final"
+      required: true
+
+  mandatory_gates: [HG-RS-01, HG-RS-05, HG-RS-07]
+  conditional_gates: [HG-RS-02, HG-RS-03, HG-RS-04, HG-RS-06]
+
+# ---------------------------------------------------------------------------
+# 3. Gate Interaction with Operators
+# ---------------------------------------------------------------------------
+
+operator_gate_interaction:
+  DRAFT:
+    active_gates: [HG-RS-01, HG-RS-02]
+    notes: "HG-RS-01 before DRAFT; HG-RS-02 if new tool needed during DRAFT"
+  DEBUG:
+    active_gates: [HG-RS-03, HG-RS-04]
+    notes: "HG-RS-03 if drift detected; HG-RS-04 if S1 or low confidence"
+  IMPROVE:
+    active_gates: [HG-RS-03, HG-RS-04, HG-RS-05]
+    notes: "HG-RS-03/04 if triggered; HG-RS-05 after max cycles or success"
+  post_IMPROVE:
+    active_gates: [HG-RS-05, HG-RS-06, HG-RS-07]
+    notes: "HG-RS-05 sign-off; HG-RS-06 egress; HG-RS-07 release"
+
+# ---------------------------------------------------------------------------
+# 4. Fail-Closed Rules (All Gates)
+# ---------------------------------------------------------------------------
+
+fail_closed_rules:
+  - rule: "No gate auto-approves on timeout (except HG-RS-02 which auto-denies)"
+    enforcement: "deterministic timeout handler"
+  - rule: "S1 findings always trigger HG-RS-04 immediately"
+    enforcement: "DEBUG operator severity check"
+  - rule: "No synthesis can be released without HG-RS-05 and HG-RS-07 approval"
+    enforcement: "state machine transition guard"
+  - rule: "No data egress without HG-RS-06 approval"
+    enforcement: "G8 policy server cross-tenant check"
+  - rule: "Gate decisions are logged with full telemetry"
+    enforcement: "G5 trajectory emission"
+
+# ---------------------------------------------------------------------------
+# 5. G5/G7/G8 Inheritance
+# ---------------------------------------------------------------------------
+
+inheritance:
+  G5_trajectory: "Each gate decision emits a G5 trajectory with verdict escalate_HITL"
+  G5_trust_score: "Gate review may adjust agent trust score based on findings"
+  G5_circuit_breaker: "S1 findings may trigger circuit breaker trip (trust < 0.50)"
+  G7_severity: "S1–S4 severity classification determines gate urgency"
+  G7_thrashing: "Max IMPROVE cycles (3) before mandatory HG-RS-05"
+  G8_policy_server: "HG-RS-06 egress passes through G8 policy server"
+  G8_svid: "All gate actions require SVID-authenticated agent identity"
+  G8_tenant_isolation: "Gate decisions are per-tenant; no cross-tenant gate sharing"
+
+# ---------------------------------------------------------------------------
+# 6. Cross-Artifact Consistency
+# ---------------------------------------------------------------------------
+
+cross_artifact_refs:
+  blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+  upstream_tag: multitenant-v1.0.0
+  overlay: OPTION_2_STANDARD
+  constraint_ids: [C-RS-01, C-RS-06, C-RS-07, C-RS-08, C-MT-01, C-MT-06, C-MT-07, C-MT-08]
+  hitl_gates: [HG-RS-01, HG-RS-02, HG-RS-03, HG-RS-04, HG-RS-05, HG-RS-06, HG-RS-07]
+  total_gates: 7

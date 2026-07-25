@@ -1,0 +1,375 @@
+# operators.yaml
+# G9 — DRAFT/DEBUG/IMPROVE Operator Mechanics
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: multitenant-v1.0.0 (G8 LOCKED)
+# BLUE resume: G9_RESEARCH_FLEET_LOCKED_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G9
+kind: research_operators
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: multitenant-v1.0.0
+blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# 1. DRAFT Operator — Synthesis Composition
+# ---------------------------------------------------------------------------
+
+DRAFT:
+  id: OP-DRAFT
+  name: "Synthesis Composition"
+  purpose: "Compose the initial research synthesis from retrieved literature, data, and analysis"
+  tier: "autonomous under OPTION_2 (no HITL required)"
+
+  inputs:
+    - "Hypothesis Gherkin spec (validated)"
+    - "Retrieved papers and datasets"
+    - "Fleet agent contributions via A2A"
+    - "G5 trajectory context"
+
+  process:
+    - step: 1
+      action: "Parse hypothesis Gherkin spec"
+      output: "investigation_objective, acceptance_criteria"
+      constraint: "C-RS-01 (Gherkin formalization)"
+
+    - step: 2
+      action: "Route sub-tasks to specialist agents via A2A task SM"
+      output: "task_envelopes dispatched"
+      constraint: "C-RS-02 (A2A task state machine)"
+      max_concurrent: 3
+      svid_required: true
+
+    - step: 3
+      action: "Collect specialist contributions"
+      output: "agent_results with citations and confidence"
+      timeout_cycles: 5
+      on_timeout: "Mark sub-task as FAILED; proceed with partial results"
+
+    - step: 4
+      action: "Compose synthesis draft with inline citation placeholders"
+      output: "DRAFT synthesis document"
+      constraint: "C-RS-07 (zero ungrounded statements — every assertion gets placeholder or [UNVERIFIED])"
+
+    - step: 5
+      action: "Emit G5 trajectory record"
+      output: "trajectory with verdict"
+      constraint: "C-RS-04 (trajectory emission)"
+
+  outputs:
+    - "DRAFT synthesis with citation placeholders"
+    - "G5 trajectory log"
+    - "Citation registry (initial)"
+
+  decisions:
+    DRAFT_SUCCESS:
+      condition: "Synthesis composed; all sub-tasks completed"
+      next_state: "DEBUG"
+    DRAFT_PARTIAL:
+      condition: "Some sub-tasks failed; synthesis incomplete"
+      next_state: "DEBUG"
+      note: "Gaps marked in synthesis"
+    DRAFT_FAILED:
+      condition: "Critical sub-task failure; no synthesis possible"
+      next_state: "PROPOSED"
+      note: "Retry or HITL intervention"
+    DRAFT_NEEDS_TOOLS:
+      condition: "Required tools not available or not authorized"
+      next_state: "HG-RS-02"
+      note: "Tool Access HITL gate"
+
+  constraints:
+    - "C-RS-01: Hypothesis must be Gherkin BDD"
+    - "C-RS-02: A2A task state machine for coordination"
+    - "C-RS-03: Paper knowledge progressive disclosure L1→L2→L3"
+    - "C-RS-04: G5 trajectory emission"
+    - "C-RS-06: Per-tenant SVID for all tool calls"
+    - "C-RS-07: Every assertion has citation placeholder or [UNVERIFIED]"
+
+  trust_score_required: 0.70
+
+# ---------------------------------------------------------------------------
+# 2. DEBUG Operator — Citation & Methodology Audit
+# ---------------------------------------------------------------------------
+
+DEBUG:
+  id: OP-DEBUG
+  name: "Citation and Methodology Audit"
+  purpose: "Audit the DRAFT synthesis for citation integrity, methodological soundness, and contradiction detection"
+  tier: "autonomous under OPTION_2 (no HITL required except S1)"
+
+  inputs:
+    - "DRAFT synthesis with citation placeholders"
+    - "Citation registry"
+    - "Source corpus (papers, datasets, code)"
+
+  process:
+    - step: 1
+      action: "Citation resolution"
+      substeps:
+        - "For each citation placeholder: resolve to source URI"
+        - "Extract verbatim quote from source"
+        - "Verify contextual accuracy (supports / partially_supports / contradicts)"
+      output: "citation_status per assertion"
+      constraint: "C-RS-05 (fail-closed: unresolved → CITATION_FAILED)"
+      on_failure: "Mark CITATION_FAILED; do not silently drop"
+
+    - step: 2
+      action: "Unverified assertion handling"
+      substeps:
+        - "For each [UNVERIFIED] assertion: flag for IMPROVE or removal"
+      output: "unverified_report"
+
+    - step: 3
+      action: "Methodology audit"
+      substeps:
+        - "Check sample size adequacy"
+        - "Check statistical validity (p-values, confidence intervals)"
+        - "Check reproducibility (data availability, code availability)"
+        - "Check for selection bias"
+      output: "methodology_report with severity tags"
+      constraint: "G5 Agent-as-Judge on sampling basis"
+
+    - step: 4
+      action: "Contradiction detection"
+      substeps:
+        - "Cross-reference assertions against source corpus"
+        - "Identify direct contradictions"
+        - "Identify partial contradictions"
+      output: "contradiction_report"
+      on_contradiction: "Trigger debate_protocol if DT-01 condition met"
+
+    - step: 5
+      action: "Emit debug report with severity-tagged findings"
+      output: "debug_report, annotated_synthesis"
+      constraint: "C-RS-04 (trajectory emission)"
+
+  outputs:
+    - "Debug report with S1–S4 severity tags"
+    - "Annotated synthesis (verified / unverified / contradicted markers)"
+    - "G5 trajectory log"
+
+  severity_classification:
+    S1:
+      label: "Fabricated citation"
+      examples: ["Citation does not exist in source", "Quote fabricated"]
+      action: "Freeze hypothesis; trigger HG-RS-04 (Low Evidence)"
+      auto_fix: false
+    S2:
+      label: "Citation misrepresentation"
+      examples: ["Source contradicts assertion", "Quote taken out of context"]
+      action: "IMPROVE: fix or remove assertion; HITL if recurring"
+      auto_fix: false
+    S3:
+      label: "Missing citation"
+      examples: ["Assertion presented without citation", "Citation unresolvable"]
+      action: "IMPROVE: add citation or mark as speculation"
+      auto_fix: true
+    S4:
+      label: "Minor phrasing issue"
+      examples: ["Imprecise language", "Minor contextual gap"]
+      action: "Log and monitor"
+      auto_fix: true
+
+  decisions:
+    DEBUG_CLEAN:
+      condition: "All citations verified; no contradictions; no S1/S2 findings"
+      next_state: "IMPROVE"
+      note: "Proceed to finalization"
+    DEBUG_CITATION_FAILURES:
+      condition: "Some citations unresolvable (S2)"
+      next_state: "IMPROVE"
+      note: "Fix citations"
+    DEBUG_CONTRADICTIONS:
+      condition: "Contradictory evidence found"
+      next_state: "IMPROVE or debate_protocol"
+      note: "Resolve contradictions"
+    DEBUG_METHODOLOGY_FAIL:
+      condition: "Methodology audit found S2 issues"
+      next_state: "IMPROVE"
+      note: "Fix methodology"
+    DEBUG_S1_FABRICATION:
+      condition: "Fabricated citation detected (S1)"
+      next_state: "HG-RS-04"
+      note: "Freeze; Low Evidence HITL gate"
+    DEBUG_HIGH_DRIFT:
+      condition: "Hypothesis scope drifted more than 30 percent from original spec"
+      next_state: "HG-RS-03"
+      note: "High Drift HITL gate"
+
+  constraints:
+    - "C-RS-04: G5 trajectory emission"
+    - "C-RS-05: Fail-closed citation verification"
+    - "C-RS-07: Zero ungrounded statements"
+    - "C-RS-08: HITL at S1 findings"
+
+  trust_score_required: 0.70
+
+# ---------------------------------------------------------------------------
+# 3. IMPROVE Operator — Iterative Refinement
+# ---------------------------------------------------------------------------
+
+IMPROVE:
+  id: OP-IMPROVE
+  name: "Iterative Refinement"
+  purpose: "Refine the synthesis based on DEBUG findings"
+  tier: "autonomous for S3/S4; HITL for S1/S2"
+
+  inputs:
+    - "Debug report with severity-tagged findings"
+    - "Annotated synthesis"
+
+  process:
+    - step: 1
+      action: "Process S2 findings"
+      substeps:
+        - "Fix citation misrepresentations (rephrase or remove)"
+        - "Fix methodology issues (add caveats, restructure)"
+      output: "s2_fixes_applied"
+      auto_fix: false
+      note: "S2 requires IMPROVE but not HITL unless recurring"
+
+    - step: 2
+      action: "Process S3 findings"
+      substeps:
+        - "Add missing citations"
+        - "Mark unsupported assertions as speculation"
+      output: "s3_fixes_applied"
+      auto_fix: true
+
+    - step: 3
+      action: "Process S4 findings"
+      substeps:
+        - "Log minor issues"
+        - "Monitor for pattern recurrence"
+      output: "s4_log"
+      auto_fix: true
+
+    - step: 4
+      action: "Re-run citation verification on modified assertions"
+      output: "revised_citation_status"
+      constraint: "C-RS-05 (fail-closed re-verification)"
+
+    - step: 5
+      action: "Re-run contradiction detection"
+      output: "revised_contradiction_report"
+
+    - step: 6
+      action: "State transition decision"
+      output: "next_state"
+      constraint: "C-RS-08 (HITL at high-leverage gates)"
+
+  outputs:
+    - "Improved synthesis"
+    - "Verification log"
+    - "State transition decision"
+    - "G5 trajectory log"
+
+  cycle_tracking:
+    max_cycles: 3
+    current_cycle: "incremented per IMPROVE invocation"
+    on_max_cycles: "Escalate to HG-RS-05 (Synthesis Sign-off)"
+
+  decisions:
+    IMPROVE_SUCCESS:
+      condition: "All S1/S2/S3 findings fixed; all citations verified; no contradictions"
+      next_state: "VALIDATED"
+    IMPROVE_PARTIAL:
+      condition: "S3/S4 findings remain; S1/S2 resolved"
+      next_state: "VALIDATED"
+      note: "Synthesis includes caveats for S4 items"
+    IMPROVE_THRASHING:
+      condition: "Max 3 cycles reached; not converging"
+      next_state: "HG-RS-05"
+      note: "Synthesis Sign-off HITL gate"
+    IMPROVE_FAILED:
+      condition: "Cannot resolve S1/S2 findings within cycle budget"
+      next_state: "HG-RS-04"
+      note: "Low Evidence HITL gate"
+    IMPROVE_DRIFT:
+      condition: "Scope changed during improvement beyond 30 percent"
+      next_state: "HG-RS-03"
+      note: "High Drift HITL gate"
+
+  thrashing_guard:
+    same_signal_threshold: 3
+    oscillation_pattern: "A to B to A detection"
+    on_thrashing: "Freeze auto-integration; escalate to HITL"
+    max_proposals_per_session: 10
+
+  constraints:
+    - "C-RS-04: G5 trajectory emission"
+    - "C-RS-05: Fail-closed re-verification"
+    - "C-RS-07: Zero ungrounded after refinement"
+    - "C-RS-08: HITL at max cycles or S1/S2 failure"
+
+  trust_score_required: 0.70
+
+# ---------------------------------------------------------------------------
+# 4. Operator State Machine Summary
+# ---------------------------------------------------------------------------
+
+state_machine:
+  initial: "PROPOSED"
+  transitions:
+    - from: "PROPOSED"
+      to: "DRAFT"
+      operator: "entry"
+      hitl: "HG-RS-01"
+    - from: "DRAFT"
+      to: "DEBUG"
+      operator: "DRAFT"
+      hitl: null
+    - from: "DEBUG"
+      to: "IMPROVE"
+      operator: "DEBUG"
+      hitl: null
+    - from: "IMPROVE"
+      to: "VALIDATED"
+      operator: "IMPROVE"
+      hitl: null
+    - from: "IMPROVE"
+      to: "DEBUG"
+      operator: "IMPROVE"
+      hitl: null
+      note: "Refine loop (max 3)"
+    - from: "VALIDATED"
+      to: "PENDING_HITL"
+      operator: "eval"
+      hitl: null
+    - from: "PENDING_HITL"
+      to: "APPROVED"
+      operator: "gate"
+      hitl: "HG-RS-05"
+    - from: "PENDING_HITL"
+      to: "REJECTED"
+      operator: "gate"
+      hitl: "HG-RS-05"
+    - from: "APPROVED"
+      to: "RELEASED"
+      operator: "gate"
+      hitl: "HG-RS-07"
+    - from: "any"
+      to: "HG-RS-03"
+      operator: "any"
+      hitl: "HG-RS-03"
+      condition: "scope drift more than 30 percent"
+    - from: "any"
+      to: "HG-RS-04"
+      operator: "any"
+      hitl: "HG-RS-04"
+      condition: "S1 fabrication or low evidence"
+
+# ---------------------------------------------------------------------------
+# 5. Cross-Artifact Consistency
+# ---------------------------------------------------------------------------
+
+cross_artifact_refs:
+  blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+  upstream_tag: multitenant-v1.0.0
+  overlay: OPTION_2_STANDARD
+  constraint_ids: [C-RS-01, C-RS-02, C-RS-03, C-RS-04, C-RS-05, C-RS-06, C-RS-07, C-RS-08]
+  hitl_gates: [HG-RS-01, HG-RS-02, HG-RS-03, HG-RS-04, HG-RS-05, HG-RS-06, HG-RS-07]

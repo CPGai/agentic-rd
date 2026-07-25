@@ -1,0 +1,366 @@
+# CAPABILITY_DISCOVERY.yaml
+# G9 — Research Tool & Academic API Sourcing Report
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: multitenant-v1.0.0 (G8 LOCKED)
+# BLUE resume: G9_RESEARCH_FLEET_LOCKED_v1
+# Tier: Fast Flash (Step B)
+
+version: "1.0.0-draft"
+domain: G9
+kind: capability_discovery
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: multitenant-v1.0.0
+blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# 1. Academic API Providers
+#    Research literature retrieval sources mapped to procurement tiers
+# ---------------------------------------------------------------------------
+academic_api_providers:
+  - id: API-01
+    name: "arXiv API"
+    endpoint: "http://export.arxiv.org/api/query"
+    protocol: "REST (Atom XML)"
+    auth: "none (rate-limited)"
+    rate_limit: "1 request / 3 seconds"
+    coverage: "physics, math, CS, quantitative biology, quantitative finance, statistics, EE"
+    paper_metadata: "title, authors, abstract, DOI, published date, categories"
+    full_text: "PDF link (unauthenticated download)"
+    procurement_tier: T1
+    option_2_eligible: true
+    skill_link: "arxiv"
+    notes: "Primary literature search for STEM; no API key required"
+
+  - id: API-02
+    name: "PubMed (NCBI E-utilities)"
+    endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
+    protocol: "REST (XML/JSON)"
+    auth: "none (API key recommended for higher rate limits)"
+    rate_limit: "3 requests / second without key; 10 / second with key"
+    coverage: "biomedical, life sciences, chemistry"
+    paper_metadata: "title, authors, abstract, MeSH terms, PMID, DOI"
+    full_text: "link to publisher (often paywalled)"
+    procurement_tier: T1
+    option_2_eligible: true
+    skill_link: null
+    notes: "Biomedical literature; NCBI E-utilities esearch + efetch"
+
+  - id: API-03
+    name: "IEEE Xplore API"
+    endpoint: "https://ieeexploreapi.ieee.org/api/v1/"
+    protocol: "REST (JSON)"
+    auth: "API key required (institutional)"
+    rate_limit: "200 requests / day (basic tier)"
+    coverage: "electrical engineering, CS, electronics"
+    paper_metadata: "title, authors, abstract, DOI, conference/journal"
+    full_text: "link to IEEE (subscription required)"
+    procurement_tier: T2
+    option_2_eligible: true
+    skill_link: null
+    notes: "Requires institutional API key; HITL HG-RS-02 for access"
+
+  - id: API-04
+    name: "Semantic Scholar API"
+    endpoint: "https://api.semanticscholar.org/graph/v1/"
+    protocol: "REST (JSON)"
+    auth: "API key recommended (x-api-key header)"
+    rate_limit: "100 requests / 5 minutes (unauthenticated); higher with key"
+    coverage: "all CS, broad academic (200M+ papers)"
+    paper_metadata: "title, authors, abstract, DOI, citations, references, TLDR, S2 fields of study"
+    full_text: "open access PDF link when available"
+    procurement_tier: T1
+    option_2_eligible: true
+    skill_link: null
+    notes: "Citation graph traversal; TLDR auto-summary; reference extraction"
+
+  - id: API-05
+    name: "OpenAlex API"
+    endpoint: "https://api.openalex.org/"
+    protocol: "REST (JSON)"
+    auth: "none (polite pool with mailto)"
+    rate_limit: "100K requests / day (polite pool)"
+    coverage: "all academic disciplines (250M+ works)"
+    paper_metadata: "title, authors, abstract, DOI, concepts, institutions, cited_by_count, open access"
+    full_text: "open access PDF link when available"
+    procurement_tier: T1
+    option_2_eligible: true
+    skill_link: null
+    notes: "Replacement for Microsoft Academic Graph; broad coverage"
+
+  - id: API-06
+    name: "Crossref API"
+    endpoint: "https://api.crossref.org/"
+    protocol: "REST (JSON)"
+    auth: "none (polite pool with mailto)"
+    rate_limit: "50 requests / second (polite pool)"
+    coverage: "all DOI-registered works (150M+)"
+    paper_metadata: "title, authors, DOI, container-title, published date, references"
+    full_text: "link to publisher (no full text)"
+    procurement_tier: T1
+    option_2_eligible: true
+    skill_link: null
+    notes: "DOI metadata resolution; reference list extraction"
+
+  - id: API-07
+    name: "CORE API"
+    endpoint: "https://core.ac.uk:443/api-v2/"
+    protocol: "REST (JSON)"
+    auth: "API key required"
+    rate_limit: "varies by tier"
+    coverage: "open access papers (200M+ from repositories worldwide)"
+    paper_metadata: "title, authors, abstract, DOI, download URL"
+    full_text: "full text PDF for open access papers"
+    procurement_tier: T2
+    option_2_eligible: true
+    skill_link: null
+    notes: "Open access full text retrieval; HITL HG-RS-02 for API key"
+
+# ---------------------------------------------------------------------------
+# 2. Research Tool Skills (Profile Inventory)
+#    Existing Hermes skills relevant to research loops
+# ---------------------------------------------------------------------------
+research_skills:
+  - id: SK-01
+    skill_name: "arxiv"
+    category: "research"
+    role: "arXiv paper search by keyword, author, category, or ID"
+    g9_phase: "DRAFT (literature search)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Primary STEM literature search skill"
+
+  - id: SK-02
+    skill_name: "youtube-content"
+    category: "media"
+    role: "YouTube transcripts to summaries, threads, blogs"
+    g9_phase: "DRAFT (video evidence)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Conference talks, lectures, technical presentations as evidence"
+
+  - id: SK-03
+    skill_name: "llm-wiki"
+    category: "research"
+    role: "Karpathy LLM Wiki: build/query interlinked markdown knowledge base"
+    g9_phase: "DRAFT (internal corpus)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Domain-specific knowledge base for ML/AI research"
+
+  - id: SK-04
+    skill_name: "blogwatcher"
+    category: "research"
+    role: "Monitor blogs and RSS/Atom feeds via blogwatcher-cli"
+    g9_phase: "DRAFT (real-time monitoring)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Real-time research feed monitoring"
+
+  - id: SK-05
+    skill_name: "polymarket"
+    category: "research"
+    role: "Query Polymarket: markets, prices, orderbooks, history"
+    g9_phase: "DRAFT (forecasting data)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Prediction market data for forecasting hypotheses"
+
+  - id: SK-06
+    skill_name: "systematic-debugging"
+    category: "software-development"
+    role: "4-phase root cause debugging"
+    g9_phase: "DEBUG (methodology audit)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Inherited from G7; used for DEBUG operator root-cause analysis"
+
+  - id: SK-07
+    skill_name: "test-driven-development"
+    category: "software-development"
+    role: "TDD: enforce RED-GREEN-REFACTOR"
+    g9_phase: "IMPROVE (validation scenario generation)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Inherited from G5; used for hypothesis validation scenario generation"
+
+  - id: SK-08
+    skill_name: "ocr-and-documents"
+    category: "productivity"
+    role: "Extract text from PDFs/scans (pymupdf, marker-pdf)"
+    g9_phase: "DRAFT (paper full text extraction)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Extract full text from PDF papers for L2/L3 progressive disclosure"
+
+  - id: SK-09
+    skill_name: "weights-and-biases"
+    category: "mlops/evaluation"
+    role: "W&B: log ML experiments, sweeps, model registry"
+    g9_phase: "IMPROVE (experiment tracking)"
+    procurement_tier: T2
+    loaded: true
+    notes: "Track research experiment metrics; HITL for API key access"
+
+  - id: SK-10
+    skill_name: "huggingface-hub"
+    category: "mlops"
+    role: "HuggingFace hf CLI: search/download/upload models, datasets"
+    g9_phase: "DRAFT (dataset retrieval)"
+    procurement_tier: T1
+    loaded: true
+    notes: "Retrieve datasets and models for research reproduction"
+
+# ---------------------------------------------------------------------------
+# 3. Literature Synthesis MCP Tools
+# ---------------------------------------------------------------------------
+synthesis_mcp_tools:
+  - id: MCP-01
+    name: "Context7 MCP"
+    transport: "stdio (npx @upstash/context7-mcp)"
+    tools: ["resolve-library-id", "query-docs"]
+    role: "Library documentation retrieval for technical research"
+    procurement_tier: T2
+    option_2_eligible: true
+    auth: "none (lower rate limits without API key)"
+    g9_phase: "DRAFT (technical documentation)"
+    notes: "Already configured on wsl-runtime profile; 2 tools"
+
+  - id: MCP-02
+    name: "Zotero MCP (candidate)"
+    transport: "stdio (proposed)"
+    tools: ["search_references", "get_annotations", "create_bibliography"]
+    role: "Reference management and bibliography generation"
+    procurement_tier: T3
+    option_2_eligible: false
+    auth: "API key required (Zotero Web API)"
+    g9_phase: "DEBUG (citation management)"
+    notes: "Not installed; T3 custom MCP — requires HITL HG-RS-02 for procurement"
+
+  - id: MCP-03
+    name: "PaperQA MCP (candidate)"
+    transport: "stdio (proposed)"
+    tools: ["search_papers", "answer_question", "get_citations"]
+    role: "LLM-powered paper question answering with citation grounding"
+    procurement_tier: T3
+    option_2_eligible: false
+    auth: "API key required (OpenAI/Anthropic for LLM backend)"
+    g9_phase: "DRAFT (literature QA)"
+    notes: "Not installed; T3 custom MCP — requires HITL HG-RS-02; anti-hallucination risk: must verify citations independently"
+
+  - id: MCP-04
+    name: "Semantic Scholar MCP (candidate)"
+    transport: "stdio (proposed)"
+    tools: ["search_papers", "get_paper_details", "get_citations", "get_references"]
+    role: "Semantic Scholar API wrapper for citation graph traversal"
+    procurement_tier: T2
+    option_2_eligible: true
+    auth: "API key recommended"
+    g9_phase: "DEBUG (citation graph verification)"
+    notes: "Not installed; T2 vetted MCP — eligible under OPTION_2; requires HG-RS-02 for access"
+
+# ---------------------------------------------------------------------------
+# 4. Procurement Tier Summary
+# ---------------------------------------------------------------------------
+procurement_summary:
+  T1_native_skills:
+    count: 10
+    items: [SK-01, SK-02, SK-03, SK-04, SK-05, SK-06, SK-07, SK-08, SK-10]
+    status: "enabled — no HITL required for existing skills"
+    notes: "All T1 skills are already loaded in the wsl-runtime profile"
+
+  T2_vetted_mcp:
+    count: 3
+    items: [MCP-01, MCP-04, API-03, API-07]
+    status: "eligible under OPTION_2 — HITL HG-RS-02 for new access"
+    notes: "Context7 already configured; Semantic Scholar MCP and IEEE/CORE APIs require HITL approval"
+
+  T3_custom_mcp:
+    count: 2
+    items: [MCP-02, MCP-03]
+    status: "disabled under OPTION_2 — requires HITL HG-RS-02 + prototype dune validation"
+    notes: "Zotero and PaperQA MCPs are custom; must validate citation grounding independently"
+
+  T4_ad_hoc:
+    count: 0
+    items: []
+    status: "denied under OPTION_2 — prototype dune only"
+    notes: "No ad-hoc tools permitted for research loops in production"
+
+# ---------------------------------------------------------------------------
+# 5. G8 Compliance for Research Tools
+# ---------------------------------------------------------------------------
+g8_compliance:
+  svid_required: true
+  policy_server_passthrough: true
+  per_tenant_isolation: true
+  cross_tenant_research: "requires HG-RS-06 Exfiltration Gate approval"
+  notes: "All research tool calls must carry per-tenant SPIFFE SVID and pass through G8 policy server. Cross-tenant data flows require explicit HITL approval."
+
+# ---------------------------------------------------------------------------
+# 6. Capability Gaps
+# ---------------------------------------------------------------------------
+capability_gaps:
+  - gap: "No PubMed-specific skill in profile"
+    impact: "Biomedical research requires manual E-utilities calls"
+    mitigation: "Use arXiv for CS; add PubMed skill post-gate if biomedical research needed"
+
+  - gap: "No Semantic Scholar MCP installed"
+    impact: "Citation graph traversal requires manual API calls"
+    mitigation: "T2 eligible; install post-gate with HITL HG-RS-02 approval"
+
+  - gap: "No reference management tool (Zotero MCP)"
+    impact: "Bibliography generation is manual"
+    mitigation: "T3 custom; requires HITL + prototype dune validation post-gate"
+
+  - gap: "No paper QA MCP (PaperQA)"
+    impact: "LLM-powered paper question answering not available"
+    mitigation: "T3 custom; anti-hallucination risk requires independent citation verification"
+
+  - gap: "No full-text retrieval for paywalled papers"
+    impact: "IEEE/Springer/Elsevier papers may be inaccessible"
+    mitigation: "Use open access (arXiv, OpenAlex, CORE); institutional access requires HITL"
+
+  - gap: "No patent search API"
+    impact: "Patent landscape analysis not supported"
+    mitigation: "Post-gate procurement; Google Patents API or USPTO as T2 candidates"
+
+# ---------------------------------------------------------------------------
+# 7. Phase-to-Source Mapping
+# ---------------------------------------------------------------------------
+phase_source_mapping:
+  DRAFT:
+    literature_search: [API-01, API-04, API-05, SK-01]
+    data_retrieval: [SK-10, API-06]
+    video_evidence: [SK-02]
+    internal_corpus: [SK-03]
+    real_time_feeds: [SK-04]
+    technical_docs: [MCP-01]
+    full_text_extraction: [SK-08]
+
+  DEBUG:
+    citation_verification: [API-04, API-05, API-06, MCP-04]
+    methodology_audit: [SK-06]
+    contradiction_detection: [API-04, MCP-04]
+    reference_management: [MCP-02]
+
+  IMPROVE:
+    experiment_tracking: [SK-09]
+    validation_scenarios: [SK-07]
+    additional_literature: [API-01, API-04, API-05]
+    bibliography_generation: [MCP-02]
+
+  HITL_GATES:
+    tool_access_review: [HG-RS-02]
+    all_tool_calls: "G8 policy server + SPIFFE SVID"
+
+# ---------------------------------------------------------------------------
+# 8. Cross-Artifact Consistency
+# ---------------------------------------------------------------------------
+cross_artifact_refs:
+  blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+  upstream_tag: multitenant-v1.0.0
+  overlay: OPTION_2_STANDARD
+  constraint_ids: [C-RS-01, C-RS-02, C-RS-03, C-RS-04, C-RS-05, C-RS-06, C-RS-07, C-RS-08]
+  hitl_gates: [HG-RS-01, HG-RS-02, HG-RS-03, HG-RS-04, HG-RS-05, HG-RS-06, HG-RS-07]

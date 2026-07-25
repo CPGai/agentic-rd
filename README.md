@@ -1,7 +1,7 @@
 # Agentic R&D & Implementation Blueprint
 
 **Dual-Course Synthesis** (Nov 2025 → June 2026)  
-**Domain Status:** G1–G8 `APPROVED` — `OPTION_2_STANDARD` / `G1_HARNESS_APPROVED_v1` / `G2_TOOL_REGISTRY_LOCKED_v1` / `G3_CONTEXT_LAYER_LOCKED_v1` / `G4_TOPOLOGY_APPROVED_v1` / `G5_EVAL_FRAMEWORK_APPROVED_v1` / `G6_VIBE_ENV_LOCKED_v1` / `G7_IMPROVEMENT_BOUNDS_v1` / `G8_MULTITENANT_APPROVED_v1` ✅ · G9 `READY`
+**Domain Status:** G1–G9 `APPROVED` — `G1_HARNESS_APPROVED_v1` / `G2_TOOL_REGISTRY_LOCKED_v1` / `G3_CONTEXT_LAYER_LOCKED_v1` / `G4_TOPOLOGY_APPROVED_v1` / `G5_EVAL_FRAMEWORK_APPROVED_v1` / `G6_VIBE_ENV_LOCKED_v1` / `G7_IMPROVEMENT_BOUNDS_v1` / `G8_MULTITENANT_APPROVED_v1` / `G9_RESEARCH_FLEET_LOCKED_v1` ✅ · G10 `READY`
 
 A formally-specified **Three-Harness Factory Model** for autonomous agentic systems, synthesizing the Google AI Agents Whitepaper Series (WP-F1–F5, Nov 2025) and Google Vibe Coding / Agentic Engineering Series (WP-S1–S5, June 2026) into a single, auditable architectural constitution spanning 10 domains (G1–G10).
 
@@ -39,7 +39,7 @@ The project's architectural constitution is triangulated across three binding ar
 | **G6** | Vibe Coding → Spec Harness | Constraint, Evaluation | ✅ COMPLETED (`vibecoding-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G7** | Self-Improvement (L4 gated) | Evaluation, Constraint | ✅ COMPLETED (`self-improvement-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G8** | Multi-Tenant & Policy | Constraint | ✅ COMPLETED (`multitenant-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G9** | Autonomous Research Loops | Context, Evaluation | Ready |
+| **G9** | Autonomous Research Loops | Context, Evaluation | ✅ COMPLETED (`research-loop-v1.0.0` · `OPTION_2_STANDARD`) |
 | **G10** | Production AgentOps | All three | Ready |
 
 Each domain includes a 6-step delegation runbook (A–F), copy-pasteable Meta-Prompts, and a GIVEN/WHEN/THEN HITL gate with decision-support matrices (Option 1 Conservative / Option 2 Standard / Option 3 Creative).
@@ -117,15 +117,14 @@ Every strategic domain gate (G1–G10) surfaces a `HARD_STOP` decision matrix an
 
 ---
 
-## G1–G8 Gate Decisions (Active)
+## G1–G9 Gate Decisions (Active)
 
-| Field | G1 Foundations | G2 Tools & MCP | G3 Context & Memory | G4 Multi-Agent | G5 Eval & Observability | G6 Vibe→Spec | G7 Self-Improvement | G8 Multi-Tenant |
-|---|---|---|---|---|---|---|---|---|
-| **Decision** | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` |
-| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ | `G4_TOPOLOGY_APPROVED_v1` ✅ | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ | `G6_VIBE_ENV_LOCKED_v1` ✅ | `G7_IMPROVEMENT_BOUNDS_v1` ✅ | `G8_MULTITENANT_APPROVED_v1` ✅ |
-| **Tag** | — | `tool-registry-v1.0.0` | `context-v1.0.0` | `orchestration-v1.0.0` | `eval-v1.0.0` | `vibecoding-v1.0.0` | `self-improvement-v1.0.0` | `multitenant-v1.0.0` |
-| **Default Agent Level** | L2 | L2 | L2 | L2 (→L3 after G4 gate) | L2 | L2 |
-| **Harness / Substrate** | Three-harness Factory + full audit trail | Security Broker Proxy + NPM Pins + Loopback Boundary | Dynamic Token Budget + Honcho Memory + Skills Co-Load Policy | Hierarchical Coordinator + Agent Cards + Policy Seat (DECLARED) | LLM-as-Judge + OTEL Trajectories + Trust Score + Circuit Breaker + 5%/15% Thresholds | Vibe→Agentic Spectrum + SDD + Dune Policy + G5 Inheritance + Slash Command Routing |
+| Field | G1 Foundations | G2 Tools & MCP | G3 Context & Memory | G4 Multi-Agent | G5 Eval & Observability | G6 Vibe→Spec | G7 Self-Improvement | G8 Multi-Tenant | G9 Research Loops |
+|---|---|---|---|---|---|---|---|---|---|
+| **Decision** | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` |
+| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ | `G4_TOPOLOGY_APPROVED_v1` ✅ | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ | `G6_VIBE_ENV_LOCKED_v1` ✅ | `G7_IMPROVEMENT_BOUNDS_v1` ✅ | `G8_MULTITENANT_APPROVED_v1` ✅ | `G9_RESEARCH_FLEET_LOCKED_v1` ✅ |
+| **Tag** | — | `tool-registry-v1.0.0` | `context-v1.0.0` | `orchestration-v1.0.0` | `eval-v1.0.0` | `vibecoding-v1.0.0` | `self-improvement-v1.0.0` | `multitenant-v1.0.0` | `research-loop-v1.0.0` |
+| **Harness / Substrate** | Three-harness Factory + full audit trail | Security Broker Proxy + NPM Pins + Loopback Boundary | Dynamic Token Budget + Honcho Memory + Skills Co-Load Policy | Hierarchical Coordinator + Agent Cards + Policy Seat (DECLARED) | LLM-as-Judge + OTEL Trajectories + Trust Score + Circuit Breaker + 5%/15% Thresholds | Vibe→Agentic Spectrum + SDD + Dune Policy + G5 Inheritance + Slash Command Routing | Bounded Self-Improvement + 10 IT Types + DRAFT/DEBUG/IMPROVE + L4 Gated | ISO-1/2/3 Isolation + SPIFFE SVID + Hybrid Policy Server + Per-Tenant R/B/G | Gherkin BDD Hypotheses + DRAFT/DEBUG/IMPROVE + 7 HITL Gates + Fail-Closed Citation Verification |
 
 ---
 

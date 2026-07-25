@@ -479,10 +479,41 @@ domains:
   G9:
     id: D_G9
     name: autonomous_research_loops
-    state: READY_FOR_DOMAIN
+    state: APPROVED
+    locked: true
+    tag: research-loop-v1.0.0
+    resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+    overlay: OPTION_2_STANDARD
+    upstream_tag: multitenant-v1.0.0
     requires: [G1_HARNESS_APPROVED_v1]
     primary_harness_touch: [H_CONTEXT, H_EVAL]
     resume_token_expected: G9_RESEARCH_FLEET_LOCKED_v1
+    artifacts:
+      - specs/g9_research/RESEARCH_LOOP_ARCHITECTURE.md
+      - specs/g9_research/CAPABILITY_DISCOVERY.yaml
+      - specs/g9_research/HYPOTHESIS_DSL_SPEC.md
+      - specs/g9_research/debate_protocol.yaml
+      - specs/g9_research/operators.yaml
+      - specs/g9_research/verifiable_reporting.yaml
+      - specs/g9_research/hitl_intervention_modes.yaml
+      - scripts/verify_g9_research.py
+      - tests/test_g9_research.py
+    required_telemetry:
+      - citation_provenance_coverage_100pct
+      - false_positive_citation_rate_zero
+      - methodology_compliance_sv01_to_sv10_pass
+      - methodology_compliance_sem01_to_sem06_pass
+      - improve_cycle_ceiling_3_respected
+      - scripts/verify_g9_research.py green
+      - tests/test_g9_research.py green
+    verification:
+      unittest_suite: "72/72 OK (test_g9_research.py)"
+      pack_verifier: "330/330 OK (verify_g9_research.py)"
+      hallucination_simulation: "5 verified, 2 hallucinated caught, 0% false-positive, 100% citation coverage"
+      improve_cycle_ceiling: 3
+      secret_scan_hits: 0
+    next_domain: G10
+    next_resume_token_expected: G10_PRODUCTION_DEPLOY_v1
   G10:
     id: D_G10
     name: production_agentops

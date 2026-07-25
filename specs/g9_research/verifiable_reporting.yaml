@@ -1,0 +1,312 @@
+# verifiable_reporting.yaml
+# G9 — Anti-Hallucination Citation Provenance Rules
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: multitenant-v1.0.0 (G8 LOCKED)
+# BLUE resume: G9_RESEARCH_FLEET_LOCKED_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G9
+kind: verifiable_reporting
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: multitenant-v1.0.0
+blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# 1. Core Principle: Zero Ungrounded Statements
+#    C-RS-07: No assertion in a research synthesis may be presented as
+#    fact without a verified citation. Unverified assertions must be
+#    explicitly marked [UNVERIFIED] or removed.
+# ---------------------------------------------------------------------------
+
+zero_ungrounded_statements:
+  constraint_id: C-RS-07
+  rule: "No assertion presented as fact without a verified citation"
+  enforcement: "H_CONSTRAINT: citation verification pipeline (fail-closed)"
+  exceptions:
+    - "Assertions explicitly marked [UNVERIFIED] or [SPECULATION]"
+    - "Logical deductions clearly labeled as inference from verified premises"
+    - "Hypothesis statements within the Gherkin spec (not assertions of fact)"
+
+# ---------------------------------------------------------------------------
+# 2. Citation Provenance Schema
+#    Every citation in a research synthesis carries a full provenance record
+# ---------------------------------------------------------------------------
+
+citation_provenance_schema:
+  required_fields:
+    - field: citation_id
+      type: "ULID"
+      required: true
+      description: "Unique identifier for this citation instance"
+
+    - field: assertion_text
+      type: "string"
+      required: true
+      description: "The exact assertion text being cited"
+
+    - field: source_type
+      type: "enum"
+      required: true
+      values: ["paper", "dataset", "code", "web", "internal", "book", "standard"]
+      description: "Type of source being cited"
+
+    - field: source_uri
+      type: "string"
+      required: true
+      description: "URI to the source (DOI, URL, repository link)"
+
+    - field: source_title
+      type: "string"
+      required: true
+      description: "Title of the source work"
+
+    - field: source_authors
+      type: "list[string]"
+      required: true
+      description: "Author list of the source"
+
+    - field: source_date
+      type: "ISO 8601 date"
+      required: true
+      description: "Publication date of the source"
+
+    - field: verbatim_quote
+      type: "string"
+      required: true
+      description: "Exact quote from the source supporting the assertion"
+
+    - field: contextual_accuracy
+      type: "enum"
+      required: true
+      values: ["SUPPORTS", "PARTIALLY_SUPPORTS", "CONTRADICTS"]
+      description: "How well the quote supports the assertion in context"
+
+    - field: verification_status
+      type: "enum"
+      required: true
+      values: ["VERIFIED", "FAILED", "MISREPRESENTED", "PENDING"]
+      description: "Outcome of the verification pipeline"
+
+    - field: verified_by
+      type: "enum"
+      required: true
+      values: ["agent", "human"]
+      description: "Who performed the verification"
+
+    - field: verification_timestamp
+      type: "ISO 8601 datetime"
+      required: true
+      description: "When verification was performed"
+
+    - field: verification_method
+      type: "enum"
+      required: true
+      values: ["automated_resolution", "llm_advisory", "human_review", "cross_reference"]
+      description: "Method used to verify the citation"
+
+  optional_fields:
+    - field: source_doi
+      type: "string"
+      description: "DOI if available"
+    - field: source_arxiv_id
+      type: "string"
+      description: "arXiv ID if available"
+    - field: source_pmid
+      type: "string"
+      description: "PubMed ID if available"
+    - field: page_number
+      type: "string"
+      description: "Page or section reference"
+    - field: supplementary_data
+      type: "string"
+      description: "Link to supplementary materials"
+
+# ---------------------------------------------------------------------------
+# 3. Proof-of-Source Verification
+# ---------------------------------------------------------------------------
+
+proof_of_source_verification:
+  principle: "Every citation must be traceable to a primary source through a verifiable chain"
+
+  verification_levels:
+    L1_basic:
+      name: "Source existence"
+      checks:
+        - "Source URI resolves to an accessible document"
+        - "Source title matches cited title"
+        - "Source authors match cited authors"
+      automated: true
+      llm_involvement: false
+
+    L2_contextual:
+      name: "Quote verification"
+      checks:
+        - "Verbatim quote exists in source text"
+        - "Quote is not truncated in a misleading way"
+        - "Quote is not paraphrased without indication"
+      automated: true
+      llm_involvement: "advisory for contextual nuance"
+
+    L3_semantic:
+      name: "Contextual accuracy"
+      checks:
+        - "Quote supports the assertion in context"
+        - "Quote is not cherry-picked from a contradicting passage"
+        - "Surrounding context does not undermine the assertion"
+      automated: "LLM advisory + deterministic check"
+      llm_involvement: "advisory — deterministic engine has final authority"
+
+    L4_human:
+      name: "Human verification"
+      checks:
+        - "Human reviewer confirms citation accuracy"
+        - "Human reviewer confirms assertion is not misleading"
+      automated: false
+      llm_involvement: false
+      trigger: "S1 or S2 findings; HG-RS-05 sign-off"
+
+  verification_pipeline:
+    step_1: "Resolve citation placeholder to source URI"
+    step_2: "Fetch source content (full text or relevant section)"
+    step_3: "Search for verbatim quote in source text"
+    step_4: "Assess contextual accuracy (L1→L2→L3)"
+    step_5: "Assign verification_status"
+    step_6: "Record provenance in citation registry"
+    step_7: "If S1 (MISREPRESENTED) → trigger HG-RS-04"
+
+  fail_closed_rules:
+    - rule: "Source URI does not resolve"
+      result: "CITATION_FAILED"
+      severity: S2
+      action: "IMPROVE: find alternative source or remove assertion"
+    - rule: "Verbatim quote not found in source"
+      result: "CITATION_FAILED"
+      severity: S2
+      action: "IMPROVE: correct quote or remove assertion"
+    - rule: "Quote contradicts assertion"
+      result: "CITATION_MISREPRESENTED"
+      severity: S1
+      action: "Freeze; trigger HG-RS-04"
+    - rule: "Source is paywalled and inaccessible"
+      result: "CITATION_FAILED"
+      severity: S2
+      action: "IMPROVE: find open access version or remove assertion"
+    - rule: "Source is a preprint and not peer-reviewed"
+      result: "CITATION_VERIFIED with caveat"
+      severity: S4
+      action: "Mark as preprint in synthesis; no auto-fix needed"
+
+# ---------------------------------------------------------------------------
+# 4. Anti-Hallucination Constraints
+# ---------------------------------------------------------------------------
+
+anti_hallucination_constraints:
+  - id: AH-01
+    name: "No fabricated citations"
+    rule: "Citation URIs must resolve to real sources; fabricated DOIs or URLs are S1 violations"
+    enforcement: "automated URI resolution check"
+    severity: S1
+
+  - id: AH-02
+    name: "No quote fabrication"
+    rule: "Verbatim quotes must exist in the source text; fabricated quotes are S1 violations"
+    enforcement: "automated text search in source"
+    severity: S1
+
+  - id: AH-03
+    name: "No context stripping"
+    rule: "Quotes must not be cherry-picked from contradicting passages"
+    enforcement: "LLM advisory for contextual check + deterministic surrounding text check"
+    severity: S1
+
+  - id: AH-04
+    name: "No author fabrication"
+    rule: "Cited authors must match source author list"
+    enforcement: "automated metadata check"
+    severity: S2
+
+  - id: AH-05
+    name: "No date fabrication"
+    rule: "Cited publication date must match source metadata"
+    enforcement: "automated metadata check"
+    severity: S2
+
+  - id: AH-06
+    name: "No paraphrase as quote"
+    rule: "Paraphrased content must be marked as paraphrase, not as verbatim quote"
+    enforcement: "LLM advisory for paraphrase detection"
+    severity: S3
+
+  - id: AH-07
+    name: "No self-citation without disclosure"
+    rule: "If the research agent's own prior work is cited, it must be disclosed"
+    enforcement: "deterministic agent_id check against source authors"
+    severity: S2
+
+  - id: AH-08
+    name: "No circular citations"
+    rule: "Source A citing Source B citing Source C — must cite the primary source"
+    enforcement: "citation graph traversal; flag circular chains"
+    severity: S3
+
+# ---------------------------------------------------------------------------
+# 5. Reporting Format
+# ---------------------------------------------------------------------------
+
+reporting_format:
+  synthesis_document:
+    structure:
+      - "Title and hypothesis reference"
+      - "Executive summary (with confidence level)"
+      - "Methodology section"
+      - "Findings (each with inline citations)"
+      - "Limitations"
+      - "Citation registry (full provenance)"
+      - "Verification log"
+      - "Confidence assessment"
+
+  inline_citation_format: "[Author et al., Year] → citation_id:ULID"
+
+  unverified_assertion_format: "[UNVERIFIED] assertion text [UNVERIFIED]"
+
+  speculation_format: "[SPECULATION] assertion text [SPECULATION]"
+
+  confidence_reporting:
+    per_assertion: "Each assertion carries a confidence score [0.0, 1.0]"
+    per_synthesis: "Overall synthesis confidence = weighted average of assertion confidences"
+    threshold: "Synthesis confidence must meet hypothesis-specified confidence_threshold"
+
+  mandatory_disclosures:
+    - "All S1/S2 findings that were resolved during IMPROVE"
+    - "All remaining S3/S4 caveats"
+    - "All [UNVERIFIED] assertions (if any remain)"
+    - "All preprint sources used (not peer-reviewed)"
+    - "All potential conflicts of interest (self-citation, institutional bias)"
+
+# ---------------------------------------------------------------------------
+# 6. G5/G7/G8 Inheritance
+# ---------------------------------------------------------------------------
+
+inheritance:
+  G5_trajectory: "Verification pipeline emits G5 trajectory at each step"
+  G5_dual_judge: "LLM-as-Judge checks citation coherence; Agent-as-Judge checks quote accuracy"
+  G5_trust_score: "Citation verification specialist trust < 0.70 → all citations re-verified"
+  G7_severity: "S1–S4 severity classification inherited from G7"
+  G7_thrashing: "Max 3 re-verification cycles per citation"
+  G8_policy_server: "All source fetches pass through G8 policy server with SVID"
+  G8_pii_redaction: "No PII from sources enters the synthesis without redaction"
+  G8_tenant_isolation: "Citation registries are per-tenant; no cross-tenant citation sharing"
+
+# ---------------------------------------------------------------------------
+# 7. Cross-Artifact Consistency
+# ---------------------------------------------------------------------------
+
+cross_artifact_refs:
+  blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+  upstream_tag: multitenant-v1.0.0
+  overlay: OPTION_2_STANDARD
+  constraint_ids: [C-RS-05, C-RS-07, C-RS-08]
+  hitl_gates: [HG-RS-04, HG-RS-05, HG-RS-06]

@@ -1,0 +1,208 @@
+# debate_protocol.yaml
+# G9 — Multi-Agent Research Fleet Debate Protocol
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: multitenant-v1.0.0 (G8 LOCKED)
+# BLUE resume: G9_RESEARCH_FLEET_LOCKED_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G9
+kind: debate_protocol
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: multitenant-v1.0.0
+blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# 1. Debate Protocol Overview
+#    When specialists produce conflicting analyses, the fleet enters debate
+#    mode to resolve contradictions through structured argumentation.
+# ---------------------------------------------------------------------------
+
+debate_triggers:
+  - id: DT-01
+    name: "contradiction_in_evidence"
+    condition: "Two or more specialists produce findings that directly contradict each other"
+    source: "DEBUG operator contradiction detection"
+    action: "Enter debate mode"
+
+  - id: DT-02
+    name: "methodology_dispute"
+    condition: "Methodology audit specialist disagrees with data analysis specialist on method validity"
+    source: "DEBUG operator methodology audit"
+    action: "Enter debate mode"
+
+  - id: DT-03
+    name: "citation_conflict"
+    condition: "Same source cited as supporting contradictory assertions by different specialists"
+    source: "Citation verification specialist"
+    action: "Enter debate mode"
+
+  - id: DT-04
+    name: "confidence_divergence"
+    condition: "Specialists report confidence levels differing by more than 0.20"
+    source: "DRAFT operator confidence assessment"
+    action: "Enter debate mode"
+
+# ---------------------------------------------------------------------------
+# 2. Stance Alignment
+# ---------------------------------------------------------------------------
+
+stance_declaration:
+  process:
+    - step: 1
+      action: "Each participating specialist declares its position"
+      fields:
+        - specialist_id
+        - position_summary
+        - evidence_citations
+        - confidence_level
+        - methodology_summary
+    - step: 2
+      action: "Coordinator collects all stances"
+      output: "stance_registry"
+    - step: 3
+      action: "Coordinator identifies points of agreement and disagreement"
+      output: "agreement_map, disagreement_map"
+
+  stance_schema:
+    specialist_id: "ULID"
+    position_summary: "string (max 500 chars)"
+    evidence_citations:
+      - citation_id: "ULID"
+        source_uri: "string"
+        verbatim_quote: "string"
+        supports_position: "boolean"
+    confidence_level: "float [0.0, 1.0]"
+    methodology_summary: "string (max 300 chars)"
+    key_assumptions: "list[string]"
+
+# ---------------------------------------------------------------------------
+# 3. Evidence Exchange
+# ---------------------------------------------------------------------------
+
+evidence_exchange:
+  rounds: 3
+  round_process:
+    - round: 1
+      action: "Each specialist presents its strongest evidence to the others"
+      time_budget_cycles: 3
+      output: "evidence_packets"
+    - round: 2
+      action: "Each specialist critiques the evidence of others"
+      time_budget_cycles: 3
+      output: "critique_packets"
+    - round: 3
+      action: "Each specialist may revise its position based on critiques"
+      time_budget_cycles: 2
+      output: "revised_stances"
+
+  evidence_packet_schema:
+    from_specialist: "ULID"
+    to_specialists: "list[ULID]"
+    evidence_type: "supporting | contradicting | methodological"
+    citation_id: "ULID"
+    interpretation: "string"
+    strength: "strong | moderate | weak"
+
+# ---------------------------------------------------------------------------
+# 4. Consensus Convergence
+# ---------------------------------------------------------------------------
+
+consensus_convergence:
+  coordinator_role: "Synthesize positions; identify common ground; flag irreconcilable differences"
+
+  convergence_criteria:
+    full_consensus:
+      condition: "All specialists agree on the primary finding"
+      confidence_threshold: 0.85
+      next_state: "VALIDATED"
+      action: "Proceed to IMPROVE finalization"
+
+    partial_consensus:
+      condition: "Majority agree; minority dissent logged"
+      confidence_threshold: 0.70
+      next_state: "PENDING_HITL"
+      action: "Flag for HG-RS-05 Synthesis Sign-off with dissent note"
+
+    no_consensus:
+      condition: "Specialists remain divided after 3 rounds"
+      confidence_threshold: 0.0
+      next_state: "PENDING_HITL"
+      action: "Split report with both positions; mandatory HG-RS-05"
+
+  convergence_metrics:
+    - metric: "agreement_ratio"
+      definition: "Specialists in agreement / total specialists"
+      threshold: 0.67
+    - metric: "confidence_spread"
+      definition: "Max confidence - Min confidence across specialists"
+      threshold: 0.15
+    - metric: "evidence_overlap"
+      definition: "Shared citations / total unique citations"
+      threshold: 0.30
+
+# ---------------------------------------------------------------------------
+# 5. Debate Protocol Parameters
+# ---------------------------------------------------------------------------
+
+parameters:
+  max_rounds: 3
+  max_specialists_per_debate: 5
+  min_specialists_for_debate: 2
+  time_budget_per_round_cycles: 3
+  total_time_budget_cycles: 10
+  allow_position_reversal: true
+  require_citation_for_every_claim: true
+  ungrounded_claims_during_debate: "marked UNVERIFIED; do not block debate but block synthesis"
+  coordinator_vote: "advisory only — does not override specialist positions"
+  hitl_escalation_threshold: "no consensus after 3 rounds → HG-RS-05"
+
+# ---------------------------------------------------------------------------
+# 6. Split Report Schema
+#    When no consensus is reached, a split report is generated
+# ---------------------------------------------------------------------------
+
+split_report_schema:
+  report_id: "ULID"
+  hypothesis_id: "ULID"
+  debate_trigger: "DT-01 | DT-02 | DT-03 | DT-04"
+  positions:
+    - position_id: "P1"
+      specialists: "list[ULID]"
+      summary: "string"
+      evidence: "list[citation_id]"
+      confidence: "float"
+    - position_id: "P2"
+      specialists: "list[ULID]"
+      summary: "string"
+      evidence: "list[citation_id]"
+      confidence: "float"
+  coordinator_assessment: "string"
+  recommendation: "human_review_required"
+  hitl_gate: "HG-RS-05"
+
+# ---------------------------------------------------------------------------
+# 7. G5/G7/G8 Inheritance
+# ---------------------------------------------------------------------------
+
+inheritance:
+  G5_trajectory: "Each debate round emits a G5 trajectory record"
+  G5_trust_score: "Specialists with trust < 0.70 have their debate contributions flagged"
+  G5_dual_judge: "LLM-as-Judge evaluates debate coherence; Agent-as-Judge evaluates evidence quality"
+  G7_thrashing: "Max 3 debate rounds (inherited version ceiling)"
+  G7_severity: "S1 findings during debate → freeze + HG-RS-04"
+  G8_isolation: "Debate participants must be same-tenant; cross-tenant debate requires HG-RS-06"
+  G8_svid: "All evidence exchange packets require SVID-authenticated tool calls"
+
+# ---------------------------------------------------------------------------
+# 8. Cross-Artifact Consistency
+# ---------------------------------------------------------------------------
+
+cross_artifact_refs:
+  blue_resume_token: G9_RESEARCH_FLEET_LOCKED_v1
+  upstream_tag: multitenant-v1.0.0
+  overlay: OPTION_2_STANDARD
+  constraint_ids: [C-RS-02, C-RS-04, C-RS-05, C-RS-07, C-RS-08]
+  hitl_gates: [HG-RS-04, HG-RS-05, HG-RS-06]

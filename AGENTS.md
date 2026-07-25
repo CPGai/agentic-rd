@@ -110,7 +110,7 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 | **G6** Vibe→Spec harness | `G6_VIBE_ENV_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G7** Self-improvement | `G7_IMPROVEMENT_BOUNDS_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G8** Multi-tenant / policy | Isolation + policy server | `G8_MULTITENANT_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G9** Research loops | Synthesis & ethics release | `G9_RESEARCH_FLEET_LOCKED_v1` | OPTION_2_STANDARD |
+| **G9** Research loops | Synthesis & ethics release | `G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
 | **G10** Production AgentOps | Canary + final release | `G10_PRODUCTION_DEPLOY_v1` | OPTION_2_STANDARD |
 
 **G1 Decision Matrix (CLOSED — OPTION_2_STANDARD approved 2026-07-23)**
@@ -164,6 +164,7 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 - G6 is `APPROVED` (`G6_VIBE_ENV_LOCKED_v1`); G7 may proceed under OPTION_2_STANDARD overlays — still stop at G7's own HITL gate
 - G7 is `APPROVED` (`G7_IMPROVEMENT_BOUNDS_v1`); G8 may proceed under OPTION_2_STANDARD overlays — still stop at G8's own HITL gate
 - G8 is `APPROVED` (`G8_MULTITENANT_APPROVED_v1` ✅ GRANTED); G9 may proceed under OPTION_2_STANDARD overlays — still stop at G9's own HITL gate
+- G9 is `APPROVED` (`G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED); G10 may proceed under OPTION_2_STANDARD overlays — still stop at G10's own HITL gate
 - Do not enable L4 AgentCreator (G7 token grants bounded self-improvement loop; L4 AgentCreator requires separate explicit enablement beyond G7)
 - Do not treat a green demo as a green eval
 - Do not expand static context past the § envelope in `HARNESS_SPEC.md` without progressive disclosure
