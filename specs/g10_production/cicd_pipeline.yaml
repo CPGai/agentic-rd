@@ -1,0 +1,295 @@
+# cicd_pipeline.yaml
+# G10 — Spec-driven CI/CD pipeline stages, triggers, execution steps
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: research-loop-v1.0.0
+# BLUE resume: G10_PRODUCTION_DEPLOY_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G10
+kind: CanarySchedule
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: research-loop-v1.0.0
+upstream_lock_commit: "6299812"
+blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+dsl_ref: PRODUCTION_DSL_SPEC.md
+blueprint_ref: PRODUCTION_AGENTOPS_BLUEPRINT.md
+
+apiVersion: "1.0.0"
+metadata:
+  name: agentic-rd-spec-driven-cicd
+  release_id: "rel-pending-pregate"
+  overlay: OPTION_2_STANDARD
+  upstream_tag: research-loop-v1.0.0
+  resume_token: G10_PRODUCTION_DEPLOY_v1
+
+# ---------------------------------------------------------------------------
+# Durable vs disposable
+# ---------------------------------------------------------------------------
+source_of_truth:
+  durable:
+    - ".gherkin/**"
+    - "specs/**"
+    - "AGENTS.md"
+    - "HARNESS_SPEC.md"
+  disposable:
+    - "generated/**"
+    - "build/**"
+    - "dist/**"
+    - "codegen output under CI workspace"
+  principle: "WP-S5 — Gherkin and declarative specs durable; code disposable"
+
+# ---------------------------------------------------------------------------
+# Triggers
+# ---------------------------------------------------------------------------
+triggers:
+  - id: TR-PR
+    event: pull_request
+    paths:
+      - ".gherkin/**"
+      - "specs/**"
+      - "skills/**"
+      - "tests/**"
+      - "scripts/verify_*.py"
+    runner: GitHub_Actions
+    stages: [STG-01, STG-02, STG-03, STG-04, STG-05_fast]
+
+  - id: TR-MAIN
+    event: push
+    branches: [main, master]
+    runner: GitHub_Actions
+    stages: [STG-01, STG-02, STG-03, STG-04, STG-05, STG-06]
+
+  - id: TR-TAG
+    event: tag
+    pattern: "production-v*"
+    runner: Cloud_Build
+    stages: [STG-06, STG-07, STG-08]
+    requires_human: true
+    note: "Tag creation is post-token Step F ceremony — not auto from A-D"
+
+  - id: TR-GHERKIN
+    event: path_filter
+    paths: [".gherkin/**"]
+    runner: GitHub_Actions
+    stages: [STG-01, STG-02, STG-03, STG-05]
+
+  - id: TR-SCHEDULE_DOCTOR
+    event: cron
+    schedule: "*/5 * * * *"
+    runner: Hermes_scheduler
+    stages: [STG-10_doctor_nudge]
+    production_sole: false
+
+  - id: TR-MANUAL_PROMOTE
+    event: workflow_dispatch
+    runner: Cloud_Build
+    stages: [STG-07, STG-08, STG-09]
+    requires_roles: [Release_Officer, Security]
+
+# ---------------------------------------------------------------------------
+# Stages
+# ---------------------------------------------------------------------------
+stages:
+  - id: STG-01
+    name: spec_edit_ingest
+    harness: H_CONTEXT
+    steps:
+      - "detect changed gherkin and specs"
+      - "compute content digests"
+      - "reject prototype or dune path promotion refs"
+    on_fail: block_promote
+    exit_criteria: "changes inventoried with digests"
+
+  - id: STG-02
+    name: spec_lint_dsl
+    harness: H_CONSTRAINT
+    steps:
+      - "YAML safe_load all touched specs"
+      - "Markdown required section grep for blueprints"
+      - "PRODUCTION_DSL structural rules SV-PA-01 to SV-PA-18"
+      - "secret scan min-length 20 exclude resume tokens"
+      - "XML HTML tag scan on YAML"
+    on_fail: block_promote
+    exit_criteria: "lint green secret scan clean"
+
+  - id: STG-03
+    name: auto_regen_disposable
+    harness: H_CONTEXT
+    steps:
+      - "regenerate disposable bindings from specs"
+      - "refresh lockfile pin concurrence vs G2 pins"
+      - "emit build SBOM stub"
+    on_fail: block_promote
+    exit_criteria: "regen complete pins match"
+
+  - id: STG-04
+    name: structural_unit
+    harness: H_EVAL
+    steps:
+      - "run domain pack verifiers"
+      - "run stdlib unittest suites"
+      - "assert L4 disabled"
+    on_fail: block_promote
+    exit_criteria: "all structural NC=0"
+
+  - id: STG-05_fast
+    name: eval_harness_fast_subset
+    harness: H_EVAL
+    steps:
+      - "run golden smoke subset"
+      - "compare to baseline digest"
+      - "apply 5 percent auto-flag and 15 percent hitl_stop"
+    on_fail: auto_flag_or_hitl_stop
+    exit_criteria: "no red band; amber requires review comment"
+
+  - id: STG-05
+    name: eval_harness_full
+    harness: H_EVAL
+    steps:
+      - "full G5 benchmark scenarios"
+      - "dual-judge agreement metric"
+      - "trajectory schema validation"
+      - "FM coverage subset"
+      - "research citation fail-closed sim when research artifacts present"
+    thresholds:
+      auto_flag_pct: 5
+      hitl_stop_pct: 15
+    on_fail: hitl_stop
+    exit_criteria: "delta less than 5 percent green or amber ACKed"
+
+  - id: STG-06
+    name: policy_server_audit
+    harness: H_CONSTRAINT
+    steps:
+      - "policy fixture allow deny hitl rewrite_caps"
+      - "OWASP LLM06-01 to LLM06-08 non-delegatable"
+      - "authorization envelope shape check"
+      - "confused deputy broker seat assert"
+    on_fail: block_promote
+    mode_intent: WIRED_LIVE_PATH
+    prior_seat: DECLARED_NOT_WIRED
+    exit_criteria: "zero CRITICAL policy fails"
+
+  - id: STG-07
+    name: staging_deploy
+    harness: H_EVAL
+    steps:
+      - "deploy immutable artifact to staging"
+      - "Doctor full suite"
+      - "A2A handshake smoke"
+      - "load smoke lightweight"
+    runners: [Cloud_Build, Cloud_Run, Vertex_AI_Agent_Engine]
+    on_fail: block_promote
+    exit_criteria: "Doctor CRITICAL=0 staging healthy"
+
+  - id: STG-08
+    name: canary_rollout
+    harness: [H_EVAL, H_CONSTRAINT]
+    requires_evidence_pack: true
+    requires_roles: [Release_Officer]
+    canary:
+      observation_window_hours: 48
+      auto_rollback: true
+      schedule:
+        - pct: 1
+          dwell_minutes: 60
+          exit_gates: [QG-001, QG-010, QG-020, QG-030]
+        - pct: 5
+          dwell_minutes: 120
+          exit_gates: [QG-001, QG-002, QG-010, QG-020, QG-030]
+        - pct: 25
+          dwell_minutes: 240
+          exit_gates: [QG-001, QG-002, QG-003, QG-010, QG-020, QG-030]
+        - pct: 100
+          dwell_minutes: 2880
+          exit_gates: [QG-001, QG-002, QG-003, QG-004, QG-010, QG-020, QG-030]
+    on_fail: auto_rollback
+    exit_criteria: "schedule complete without RB trigger"
+
+  - id: STG-09
+    name: production_dwell
+    harness: H_EVAL
+    steps:
+      - "run production SLO monitors"
+      - "continuous Doctor CRITICAL subset"
+      - "trust decay vs canary baseline"
+    observation_window_hours_range: [24, 72]
+    on_fail: auto_rollback
+    exit_criteria: "SLO hold window complete"
+
+  - id: STG-10
+    name: telemetry_feedback
+    harness: H_EVAL
+    steps:
+      - "export OTEL aggregates"
+      - "feed failures into golden dataset candidates"
+      - "emit G7 DETECT signals under HB bounds"
+      - "never auto S1 integrate"
+    on_fail: auto_flag
+    exit_criteria: "feedback tickets or dataset PRs opened"
+
+  - id: STG-10_doctor_nudge
+    name: doctor_watchdog
+    harness: H_CONSTRAINT
+    steps:
+      - "invoke Doctor CRITICAL subset"
+      - "alert on fail"
+    on_fail: auto_flag
+    note: "Hermes secondary only"
+
+# ---------------------------------------------------------------------------
+# Branch policy
+# ---------------------------------------------------------------------------
+branch_policy:
+  production_branches: [main, master, release/*]
+  blocked_from_canary:
+    - "prototype/*"
+    - "dune/*"
+  require_tt05_transition_for_prod_path: true
+  g6_inheritance: true
+
+# ---------------------------------------------------------------------------
+# Evidence pack emission
+# ---------------------------------------------------------------------------
+evidence_pack:
+  emit_at: [STG-07, STG-08]
+  required_sections:
+    - identity
+    - genealogy_G1_G9
+    - spec_digests
+    - eval_report
+    - policy_report
+    - security_sbom_agbom
+    - doctor_transcript
+    - canary_plan
+    - rollback_wiring
+    - accountability_signoff
+    - cost_projection
+  signoff_roles: [Release_Officer, Security, Platform]
+
+# ---------------------------------------------------------------------------
+# Rollback wiring confirmation
+# ---------------------------------------------------------------------------
+rollback:
+  last_known_good: "pending_until_first_promote"
+  auto_rollback: true
+  triggers_ref: fleet_management.yaml
+  max_minutes_to_lkg: 5
+
+# ---------------------------------------------------------------------------
+# Consistency
+# ---------------------------------------------------------------------------
+consistency:
+  overlay: OPTION_2_STANDARD
+  blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+  upstream_tag: research-loop-v1.0.0
+  companions:
+    - quality_gates.yaml
+    - doctor_checks.yaml
+    - fleet_management.yaml
+    - PRODUCTION_DSL_SPEC.md
+    - PRODUCTION_AGENTOPS_BLUEPRINT.md
+    - CAPABILITY_DISCOVERY.yaml

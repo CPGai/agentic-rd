@@ -1,0 +1,82 @@
+{
+  "domain": "G10",
+  "kind": "chaos_dry_run",
+  "overlay": "OPTION_2_STANDARD",
+  "resume_token": "G10_PRODUCTION_DEPLOY_v1",
+  "upstream_tag": "research-loop-v1.0.0",
+  "timestamp_utc": "2026-07-25T11:49:20.273776+00:00",
+  "lkg_revision": "v0.9.0-previous",
+  "canary_revision": "v1.0.0-canary-candidate",
+  "scenarios": [
+    {
+      "name": "spec_surface_intact",
+      "missing": [],
+      "pass": true
+    },
+    {
+      "name": "policy_spike_llm06",
+      "controls_exercised": 8,
+      "malicious_all_denied": true,
+      "llm_cannot_downgrade_deny": true,
+      "critical_blocks": 8,
+      "deny_count": 8,
+      "surge_pct_vs_zero_baseline": 80.0,
+      "auto_rollback_candidacy": true,
+      "pass": true
+    },
+    {
+      "name": "pii_injection_redaction",
+      "fields_seen": 8,
+      "fields_redacted": 5,
+      "residual_raw_markers": [],
+      "leaks": 0,
+      "scrubbed_sample": {
+        "tenant_id": "t-demo",
+        "user_email": "REDACTED_EMAIL",
+        "user_ssn": "REDACTED_SSN",
+        "user_phone": "REDACTED_PHONE",
+        "payment": "REDACTED_CC",
+        "tool_secret": "REDACTED_SECRET",
+        "release_id": "rel-deadbeef",
+        "clean_flag": "ok"
+      },
+      "pass": true
+    },
+    {
+      "name": "trust_decay_rollback",
+      "baseline": 1.0,
+      "final_trust": 0.8,
+      "final_decay_pct": 20.0,
+      "rolled_back": true,
+      "active_revision": "v0.9.0-previous",
+      "expected_lkg": "v0.9.0-previous",
+      "canary_pct_after": 0,
+      "pass": true
+    },
+    {
+      "name": "doctor_critical_isolation",
+      "probe_id": "DOC-POL-01",
+      "fleet_state": "ISOLATED_LKG",
+      "active_revision": "v0.9.0-previous",
+      "canary_pct": 0,
+      "action": "auto_rollback_isolate",
+      "pass": true
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": [],
+    "all_pass": true,
+    "policy_critical_blocks": 8,
+    "pii_leaks": 0,
+    "trust_rolled_back_to_lkg": true,
+    "doctor_isolated_fleet": true
+  },
+  "spec_refs": {
+    "quality_gates": "quality_gates.yaml",
+    "doctor_checks": "doctor_checks.yaml",
+    "fleet_management": "fleet_management.yaml",
+    "cicd_pipeline": "cicd_pipeline.yaml"
+  }
+}

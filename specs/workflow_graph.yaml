@@ -1,10 +1,4 @@
-# specs/workflow_graph.yaml
-# G1 Factory Model — machine-readable topology
-# Status: APPROVED (OPTION_2_STANDARD · RESUME_TOKEN: G1_HARNESS_APPROVED_v1 granted 2026-07-23)
-# Anchors: WP-F1 L0-L4 · WP-S1 three-harness Factory Model · BLUE.md G1
-# Schema: declarative only — no executable payloads
-
-version: "1.0.0"
+version: 1.0.0
 domain: G1
 kind: factory_workflow_graph
 status: APPROVED
@@ -15,14 +9,13 @@ hitl_approval:
   decision: OPTION_2_STANDARD
   resume_token: G1_HARNESS_APPROVED_v1
   granted: true
-  granted_at: "2026-07-23"
+  granted_at: '2026-07-23'
   signal: human_session
   effect: unlock_G2_through_G10_under_option_2_overlays
 precedence:
-  whitepapers: "WP-S* supersedes WP-F* on overlap"
+  whitepapers: WP-S* supersedes WP-F* on overlap
   runtime_constitution: AGENTS.md
   deep_spec: HARNESS_SPEC.md
-
 metadata:
   workspace_root: /home/carlospg/workspace/agentic-rd
   substrate: wsl2-ubuntu-24.04
@@ -31,20 +24,25 @@ metadata:
   skills_spec: agentskills.io
   default_agent_level: L2
   l4_enabled: false
-  model_routing: dynamic  # premium_frontier | strong_coding | fast_flash
-
-# ---------------------------------------------------------------------------
-# Core equations
-# ---------------------------------------------------------------------------
+  model_routing: dynamic
 equations:
-  agent: "model + harness"
-  harness_union: ["context_harness", "constraint_harness", "evaluation_harness"]
-  loop: ["read", "write", "test", "observe", "fix"]
-  wp_f1_loop: ["get_mission", "scan_scene", "think", "act", "observe_iterate"]
-
-# ---------------------------------------------------------------------------
-# Taxonomy (WP-F1) with factory binding (WP-S1)
-# ---------------------------------------------------------------------------
+  agent: model + harness
+  harness_union:
+  - context_harness
+  - constraint_harness
+  - evaluation_harness
+  loop:
+  - read
+  - write
+  - test
+  - observe
+  - fix
+  wp_f1_loop:
+  - get_mission
+  - scan_scene
+  - think
+  - act
+  - observe_iterate
 taxonomy:
   levels:
     L0:
@@ -64,7 +62,10 @@ taxonomy:
       memory: false
       multi_agent: false
       self_evolve: false
-      min_harnesses: [context_harness, constraint_harness, evaluation_harness]
+      min_harnesses:
+      - context_harness
+      - constraint_harness
+      - evaluation_harness
       developer_mode: conductor
       topology: single_agent_tools
     L2:
@@ -75,7 +76,10 @@ taxonomy:
       context_engineering: true
       multi_agent: false
       self_evolve: false
-      min_harnesses: [context_harness, constraint_harness, evaluation_harness]
+      min_harnesses:
+      - context_harness
+      - constraint_harness
+      - evaluation_harness
       developer_mode: conductor_to_light_orchestrator
       topology: single_agent_sequential_multitool
       default_for_workspace: true
@@ -87,7 +91,10 @@ taxonomy:
       multi_agent: true
       a2a: true
       self_evolve: false
-      min_harnesses: [context_harness, constraint_harness, evaluation_harness]
+      min_harnesses:
+      - context_harness
+      - constraint_harness
+      - evaluation_harness
       developer_mode: orchestrator
       topology: hierarchical_coordinator_specialists
       requires_gate: G4_TOPOLOGY_APPROVED_v1
@@ -98,65 +105,87 @@ taxonomy:
       memory: true
       multi_agent: true
       self_evolve: true
-      min_harnesses: [context_harness, constraint_harness, evaluation_harness, meta_evaluation]
+      min_harnesses:
+      - context_harness
+      - constraint_harness
+      - evaluation_harness
+      - meta_evaluation
       developer_mode: orchestrator
       topology: dynamic_with_agent_creator
-      requires_gate: G7_IMPROVEMENT_BOUNDS_v1  # placeholder until G7 pack locks exact token
+      requires_gate: G7_IMPROVEMENT_BOUNDS_v1
       enabled: false
-
-# ---------------------------------------------------------------------------
-# Harness nodes
-# ---------------------------------------------------------------------------
 harnesses:
   context_harness:
     id: H_CONTEXT
     kind: harness
-    wp_s1_refs: ["pp.15-18 six context types", "pp.16-17 static vs dynamic", "pp.17-18 skills progressive disclosure"]
+    wp_s1_refs:
+    - pp.15-18 six context types
+    - pp.16-17 static vs dynamic
+    - pp.17-18 skills progressive disclosure
     context_types:
       instructions:
         placement: static
-        artifacts: [AGENTS.md, "module GEMINI.md|CLAUDE.md"]
-        token_share_target: "5-10%"
+        artifacts:
+        - AGENTS.md
+        - module GEMINI.md|CLAUDE.md
+        token_share_target: 5-10%
       knowledge:
         placement: progressive_dynamic
-        artifacts: [specs/, docs/, specs/references/]
+        artifacts:
+        - specs/
+        - docs/
+        - specs/references/
         token_share_target: on_demand
       memory:
         placement: hybrid
-        artifacts: [session_store, honcho_profile, SESSION_STATE_SPEC]
-        token_share_target: "2-5% pinned + windowed dynamic"
+        artifacts:
+        - session_store
+        - honcho_profile
+        - SESSION_STATE_SPEC
+        token_share_target: 2-5% pinned + windowed dynamic
       examples:
         placement: dynamic_on_skill_match
-        artifacts: [examples/, eval_goldens, skill_embedded]
+        artifacts:
+        - examples/
+        - eval_goldens
+        - skill_embedded
         token_share_target: on_demand
       tools:
         placement: progressive_dynamic
-        artifacts: [TOOL_REGISTRY.md, mcp_schemas]
+        artifacts:
+        - TOOL_REGISTRY.md
+        - mcp_schemas
         token_share_target: on_demand
         policy: rag_for_tools
       guardrails:
         placement: static_core_plus_dynamic_specialized
-        artifacts: [HARNESS_SPEC.md#constraint-catalog, hooks, policy_snippets]
-        token_share_target: "3-5% core"
+        artifacts:
+        - HARNESS_SPEC.md#constraint-catalog
+        - hooks
+        - policy_snippets
+        token_share_target: 3-5% core
     static_budget_hard_cap_pct: 20
     assembly_pipeline:
-      - load_static_pack
-      - skill_l1_match
-      - skill_l2_l3_load
-      - tool_schema_intent_match
-      - knowledge_retrieve
-      - memory_window_attach
-      - model_invoke
-      - capture_action_observation
-      - compact_if_threshold
-      - verdict_or_loop
-    owns_downstream: [G3]
+    - load_static_pack
+    - skill_l1_match
+    - skill_l2_l3_load
+    - tool_schema_intent_match
+    - knowledge_retrieve
+    - memory_window_attach
+    - model_invoke
+    - capture_action_observation
+    - compact_if_threshold
+    - verdict_or_loop
+    owns_downstream:
+    - G3
     edge_semantics_default: deterministic_load
-
   constraint_harness:
     id: H_CONSTRAINT
     kind: harness
-    wp_s1_refs: ["pp.28 hooks/guardrails", "pp.29-30 SDLC harness phases", "p.41 security remediation"]
+    wp_s1_refs:
+    - pp.28 hooks/guardrails
+    - pp.29-30 SDLC harness phases
+    - p.41 security remediation
     enforcement_layers:
       L0_hooks: deterministic
       L1_structural_tests: deterministic
@@ -165,67 +194,76 @@ harnesses:
       L4_human_gate: hitl
     catalog_ref: HARNESS_SPEC.md#31-constraint-catalog
     catalog_ids:
-      - C-FS-01
-      - C-FS-02
-      - C-LIB-01
-      - C-LIB-02
-      - C-ARCH-01
-      - C-ARCH-02
-      - C-ARCH-03
-      - C-ARCH-04
-      - C-CODE-01
-      - C-CODE-02
-      - C-CODE-03
-      - C-SEC-01
-      - C-SEC-02
-      - C-SEC-03
-      - C-LOOP-01
-      - C-LOOP-02
-      - C-MODEL-01
-      - C-HITL-01
+    - C-FS-01
+    - C-FS-02
+    - C-LIB-01
+    - C-LIB-02
+    - C-ARCH-01
+    - C-ARCH-02
+    - C-ARCH-03
+    - C-ARCH-04
+    - C-CODE-01
+    - C-CODE-02
+    - C-CODE-03
+    - C-SEC-01
+    - C-SEC-02
+    - C-SEC-03
+    - C-LOOP-01
+    - C-LOOP-02
+    - C-MODEL-01
+    - C-HITL-01
     sandbox:
       required: true
       substrate: wsl2
       append_windows_path: false
-    owns_downstream: [G2, G6, G8, G10]
+    owns_downstream:
+    - G2
+    - G6
+    - G8
+    - G10
     edge_semantics_default: deterministic_enforce
-
   evaluation_harness:
     id: H_EVAL
     kind: harness
-    wp_s1_refs: ["pp.14-15 tests vs evals", "p.23 quality flywheel", "p.30 feedback loop", "p.44 eval bar"]
+    wp_s1_refs:
+    - pp.14-15 tests vs evals
+    - p.23 quality flywheel
+    - p.30 feedback loop
+    - p.44 eval bar
     correctness_classes:
-      - syntactic
-      - structural
-      - functional
-      - trajectory
-      - semantic_quality
-      - security_trust
+    - syntactic
+    - structural
+    - functional
+    - trajectory
+    - semantic_quality
+    - security_trust
     loop_integration:
       on_pass: complete_or_next_mission
       on_fail: fix_if_budget_else_escalate
       on_escalate: hitl_tool
     g1_minimum_suite:
-      - constitution_integrity
-      - constraint_catalog_coverage
-      - workflow_graph_validation
-      - taxonomy_conformance
-      - no_secret_scan
+    - constitution_integrity
+    - constraint_catalog_coverage
+    - workflow_graph_validation
+    - taxonomy_conformance
+    - no_secret_scan
     full_suite_owner: G5
-    owns_downstream: [G5, G7, G9, G10]
-    edge_semantics_default: mixed  # deterministic tests + probabilistic judges
-
-# ---------------------------------------------------------------------------
-# Human + model tier nodes
-# ---------------------------------------------------------------------------
+    owns_downstream:
+    - G5
+    - G7
+    - G9
+    - G10
+    edge_semantics_default: mixed
 actors:
   human_systems_architect:
     id: HUMAN
-    modes: [conductor, orchestrator]
+    modes:
+    - conductor
+    - orchestrator
     responsibilities:
-      - approve_hitl_gates
-      - set_architecture_tradeoffs
-      - own_factory_configuration
+    - approve_hitl_gates
+    - set_architecture_tradeoffs
+    - own_factory_configuration
   model_premium_frontier:
     id: M_PREMIUM
     tier: premium_frontier
@@ -235,64 +273,87 @@ actors:
   model_fast_flash:
     id: M_FLASH
     tier: fast_flash
-
-# ---------------------------------------------------------------------------
-# Domain nodes (G1 active; G2-G10 stubs gated)
-# ---------------------------------------------------------------------------
 domains:
   G1:
     id: D_G1
     name: agent_foundations_architecture
     state: APPROVED
     artifacts:
-      - HARNESS_SPEC.md
-      - AGENTS.md
-      - specs/workflow_graph.yaml
+    - HARNESS_SPEC.md
+    - AGENTS.md
+    - specs/workflow_graph.yaml
     steps:
-      A: { name: ingestion_synthesis, tier: premium_frontier, status: complete_for_gate }
-      B: { name: capability_discovery, tier: fast_flash, status: pending_post_hitl }
-      C: { name: feature_decomposition, tier: strong_coding, status: pending_post_hitl }
-      D: { name: workspace_branching_skill_drafting, tier: strong_coding, status: artifacts_emitted_approved }
-      E: { name: code_generation_testing_structural, tier: strong_coding, status: blocked_on_hitl }
-      F: { name: sandbox_verification_tag, tier: fast_flash, status: blocked_on_hitl }
+      A:
+        name: ingestion_synthesis
+        tier: premium_frontier
+        status: complete_for_gate
+      B:
+        name: capability_discovery
+        tier: fast_flash
+        status: pending_post_hitl
+      C:
+        name: feature_decomposition
+        tier: strong_coding
+        status: pending_post_hitl
+      D:
+        name: workspace_branching_skill_drafting
+        tier: strong_coding
+        status: artifacts_emitted_approved
+      E:
+        name: code_generation_testing_structural
+        tier: strong_coding
+        status: blocked_on_hitl
+      F:
+        name: sandbox_verification_tag
+        tier: fast_flash
+        status: blocked_on_hitl
     hitl:
       status: APPROVED
       resume_token: G1_HARNESS_APPROVED_v1
       recommended: OPTION_2_STANDARD
       selected: OPTION_2_STANDARD
       granted: true
-      granted_at: "2026-07-23"
-      options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+      granted_at: '2026-07-23'
+      options:
+      - OPTION_1_CONSERVATIVE
+      - OPTION_2_STANDARD
+      - OPTION_3_CREATIVE
       required_telemetry:
-        - HARNESS_AUDIT_REPORT.md severity counts  # produced Step E/F
-        - git diff of constitution trio
+      - HARNESS_AUDIT_REPORT.md severity counts
+      - git diff of constitution trio
   G2:
     id: D_G2
     name: tool_use_mcp
     state: APPROVED
-    requires: [G1_HARNESS_APPROVED_v1]
-    primary_harness_touch: [H_CONSTRAINT, H_CONTEXT]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    primary_harness_touch:
+    - H_CONSTRAINT
+    - H_CONTEXT
     resume_token: G2_TOOL_REGISTRY_LOCKED_v1
     resume_token_alias: G2_TOOLING_APPROVED_v1
     recommended: OPTION_2_STANDARD
     selected: OPTION_2_STANDARD
     granted: true
-    granted_at: "2026-07-23"
-    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    granted_at: '2026-07-23'
+    options:
+    - OPTION_1_CONSERVATIVE
+    - OPTION_2_STANDARD
+    - OPTION_3_CREATIVE
     artifacts:
-      - specs/g2_tools/TOOL_REGISTRY.md
-      - specs/g2_tools/MCP_COMPAT_MATRIX.yaml
-      - specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
-      - specs/g2_tools/broker_config.yaml
-      - specs/g2_tools/timeout_budgets.yaml
-      - specs/g2_tools/TOOL_DISCLOSURE_POLICY.md
-      - specs/g2_tools/skills_registry.json
-      - specs/g2_tools/pins/npm-mcp-pins.json
+    - specs/g2_tools/TOOL_REGISTRY.md
+    - specs/g2_tools/MCP_COMPAT_MATRIX.yaml
+    - specs/g2_tools/PROCUREMENT_TIER_MATRIX.yaml
+    - specs/g2_tools/broker_config.yaml
+    - specs/g2_tools/timeout_budgets.yaml
+    - specs/g2_tools/TOOL_DISCLOSURE_POLICY.md
+    - specs/g2_tools/skills_registry.json
+    - specs/g2_tools/pins/npm-mcp-pins.json
     required_telemetry:
-      - tier4_items_count
-      - unauthenticated_mcp_servers
-      - audit severity counts
-      - pin enforcement for @upstash/context7-mcp@3.2.4
+    - tier4_items_count
+    - unauthenticated_mcp_servers
+    - audit severity counts
+    - pin enforcement for @upstash/context7-mcp@3.2.4
     next_domain: G3
     next_resume_token_expected: G3_CONTEXT_LAYER_LOCKED_v1
   G3:
@@ -300,38 +361,44 @@ domains:
     name: context_skills_memory
     state: APPROVED
     locked: true
-    locked_at: "2026-07-24"
+    locked_at: '2026-07-24'
     tag: context-v1.0.0
-    requires: [G1_HARNESS_APPROVED_v1, G2_TOOL_REGISTRY_LOCKED_v1]
-    primary_harness_touch: [H_CONTEXT]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    - G2_TOOL_REGISTRY_LOCKED_v1
+    primary_harness_touch:
+    - H_CONTEXT
     resume_token: G3_CONTEXT_LAYER_LOCKED_v1
     recommended: OPTION_2_STANDARD
     selected: OPTION_2_STANDARD
     granted: true
-    granted_at: "2026-07-24"
-    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    granted_at: '2026-07-24'
+    options:
+    - OPTION_1_CONSERVATIVE
+    - OPTION_2_STANDARD
+    - OPTION_3_CREATIVE
     artifacts:
-      - specs/g3_memory/CONTEXT_ENGINEERING_BLUEPRINT.md
-      - specs/g3_memory/SESSION_STATE_SPEC.md
-      - specs/g3_memory/HONCHO_INTEGRATION_MATRIX.yaml
-      - specs/g3_memory/token_budget.yaml
-      - specs/g3_memory/MEMORY_LOAD_POLICY.yaml
-      - specs/g3_memory/SKILL_COLOAD_AUDIT.yaml
-      - specs/g3_memory/G3_MIGRATION_CONTEXT.md
-      - skills/software-development/
-      - scripts/verify_g3_memory.py
-      - scripts/g3_memory/
-      - tests/test_g3_memory.py
+    - specs/g3_memory/CONTEXT_ENGINEERING_BLUEPRINT.md
+    - specs/g3_memory/SESSION_STATE_SPEC.md
+    - specs/g3_memory/HONCHO_INTEGRATION_MATRIX.yaml
+    - specs/g3_memory/token_budget.yaml
+    - specs/g3_memory/MEMORY_LOAD_POLICY.yaml
+    - specs/g3_memory/SKILL_COLOAD_AUDIT.yaml
+    - specs/g3_memory/G3_MIGRATION_CONTEXT.md
+    - skills/software-development/
+    - scripts/verify_g3_memory.py
+    - scripts/g3_memory/
+    - tests/test_g3_memory.py
     required_telemetry:
-      - skill_count_profile
-      - skill_count_workspace
-      - l1_budget_violations
-      - honcho_health_status
-      - auth_use_auth_flag
-      - token_budget_waterfall
-      - co_load_conflict_list
-      - scripts/verify_g3_memory.py green
-      - tests/test_g3_memory.py green
+    - skill_count_profile
+    - skill_count_workspace
+    - l1_budget_violations
+    - honcho_health_status
+    - auth_use_auth_flag
+    - token_budget_waterfall
+    - co_load_conflict_list
+    - scripts/verify_g3_memory.py green
+    - tests/test_g3_memory.py green
     next_domain: G4
     next_resume_token_expected: G4_TOPOLOGY_APPROVED_v1
   G4:
@@ -339,8 +406,14 @@ domains:
     name: multi_agent_orchestration
     state: IN_PROGRESS
     locked: false
-    requires: [G1_HARNESS_APPROVED_v1, G2_TOOL_REGISTRY_LOCKED_v1, G3_CONTEXT_LAYER_LOCKED_v1]
-    primary_harness_touch: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    - G2_TOOL_REGISTRY_LOCKED_v1
+    - G3_CONTEXT_LAYER_LOCKED_v1
+    primary_harness_touch:
+    - H_CONTEXT
+    - H_CONSTRAINT
+    - H_EVAL
     enables_level: L3
     resume_token_expected: G4_TOPOLOGY_APPROVED_v1
   G5:
@@ -348,35 +421,41 @@ domains:
     name: evaluation_observability
     state: APPROVED
     locked: true
-    locked_at: "2026-07-24"
+    locked_at: '2026-07-24'
     tag: eval-v1.0.0
-    requires: [G1_HARNESS_APPROVED_v1, G4_TOPOLOGY_APPROVED_v1]
-    primary_harness_touch: [H_EVAL]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    - G4_TOPOLOGY_APPROVED_v1
+    primary_harness_touch:
+    - H_EVAL
     resume_token: G5_EVAL_FRAMEWORK_APPROVED_v1
     resume_token_alias: G5_EVAL_APPROVED_v1
     recommended: OPTION_2_STANDARD
     selected: OPTION_2_STANDARD
     granted: true
-    granted_at: "2026-07-24"
-    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    granted_at: '2026-07-24'
+    options:
+    - OPTION_1_CONSERVATIVE
+    - OPTION_2_STANDARD
+    - OPTION_3_CREATIVE
     artifacts:
-      - specs/g5_evaluation/EVALUATION_HARNESS_SPEC.md
-      - specs/g5_evaluation/OBSERVABILITY_PILLARS_SPEC.yaml
-      - specs/g5_evaluation/CIRCUIT_BREAKER_RULES.yaml
-      - specs/g5_evaluation/EVAL_DATASET_BENCHMARKS.json
-      - specs/g5_evaluation/G5_MIGRATION_CONTEXT.md
-      - scripts/verify_g5_evaluation.py
-      - tests/test_g5_evaluation.py
+    - specs/g5_evaluation/EVALUATION_HARNESS_SPEC.md
+    - specs/g5_evaluation/OBSERVABILITY_PILLARS_SPEC.yaml
+    - specs/g5_evaluation/CIRCUIT_BREAKER_RULES.yaml
+    - specs/g5_evaluation/EVAL_DATASET_BENCHMARKS.json
+    - specs/g5_evaluation/G5_MIGRATION_CONTEXT.md
+    - scripts/verify_g5_evaluation.py
+    - tests/test_g5_evaluation.py
     required_telemetry:
-      - trajectory_schema_6_fields
-      - 7_pillar_effective_trust
-      - 5pct_15pct_degradation_thresholds
-      - trust_score_range_0_to_1
-      - circuit_breaker_15_fm_trip_triggers
-      - 6_quarantine_states
-      - 18_benchmark_scenarios
-      - scripts/verify_g5_evaluation.py green
-      - tests/test_g5_evaluation.py green
+    - trajectory_schema_6_fields
+    - 7_pillar_effective_trust
+    - 5pct_15pct_degradation_thresholds
+    - trust_score_range_0_to_1
+    - circuit_breaker_15_fm_trip_triggers
+    - 6_quarantine_states
+    - 18_benchmark_scenarios
+    - scripts/verify_g5_evaluation.py green
+    - tests/test_g5_evaluation.py green
     next_domain: G6
     next_resume_token_expected: G6_VIBE_ENV_LOCKED_v1
   G6:
@@ -384,37 +463,43 @@ domains:
     name: vibe_coding_spec_harness
     state: APPROVED
     locked: true
-    locked_at: "2026-07-24"
+    locked_at: '2026-07-24'
     tag: vibecoding-v1.0.0
-    requires: [G1_HARNESS_APPROVED_v1]
-    primary_harness_touch: [H_CONSTRAINT, H_EVAL]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    primary_harness_touch:
+    - H_CONSTRAINT
+    - H_EVAL
     resume_token: G6_VIBE_ENV_LOCKED_v1
     recommended: OPTION_2_STANDARD
     selected: OPTION_2_STANDARD
     granted: true
-    granted_at: "2026-07-24"
-    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    granted_at: '2026-07-24'
+    options:
+    - OPTION_1_CONSERVATIVE
+    - OPTION_2_STANDARD
+    - OPTION_3_CREATIVE
     artifacts:
-      - specs/g6_vibe/VIBECODING_SPECTRUM.md
-      - specs/g6_vibe/SURFACE_CAPABILITY_MATRIX.yaml
-      - specs/g6_vibe/vibe_environment.yaml
-      - specs/g6_vibe/slash_command_mappings.yaml
-      - specs/g6_vibe/AGENTS_INHERITANCE_RULES.md
-      - specs/g6_vibe/G6_MIGRATION_CONTEXT.md
-      - scripts/verify_g6_vibe.py
-      - tests/test_g6_vibe.py
+    - specs/g6_vibe/VIBECODING_SPECTRUM.md
+    - specs/g6_vibe/SURFACE_CAPABILITY_MATRIX.yaml
+    - specs/g6_vibe/vibe_environment.yaml
+    - specs/g6_vibe/slash_command_mappings.yaml
+    - specs/g6_vibe/AGENTS_INHERITANCE_RULES.md
+    - specs/g6_vibe/G6_MIGRATION_CONTEXT.md
+    - scripts/verify_g6_vibe.py
+    - tests/test_g6_vibe.py
     required_telemetry:
-      - spectrum_transition_triggers_9
-      - surface_capability_matrix_surfaces_6
-      - vibe_environment_workspace_modes_2
-      - g5_integration_7_keys
-      - constraints_inherited_18
-      - structural_test_intents_8
-      - scripts/verify_g6_vibe.py green
-      - tests/test_g6_vibe.py green
+    - spectrum_transition_triggers_9
+    - surface_capability_matrix_surfaces_6
+    - vibe_environment_workspace_modes_2
+    - g5_integration_7_keys
+    - constraints_inherited_18
+    - structural_test_intents_8
+    - scripts/verify_g6_vibe.py green
+    - tests/test_g6_vibe.py green
     verification:
-      unittest_suite: "93/93 OK (test_g6_vibe.py)"
-      pack_verifier: "203/203 OK (verify_g6_vibe.py)"
+      unittest_suite: 93/93 OK (test_g6_vibe.py)
+      pack_verifier: 203/203 OK (verify_g6_vibe.py)
     next_domain: G7
     next_resume_token_expected: G7_IMPROVEMENT_BOUNDS_v1
   G7:
@@ -425,13 +510,17 @@ domains:
     tag: self-improvement-v1.0.0
     resume_token: G7_IMPROVEMENT_BOUNDS_v1
     overlay: OPTION_2_STANDARD
-    requires: [G1_HARNESS_APPROVED_v1, G5]
-    primary_harness_touch: [H_EVAL, H_CONSTRAINT]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    - G5
+    primary_harness_touch:
+    - H_EVAL
+    - H_CONSTRAINT
     enables_level: L4
-    l4_agentcreator: false  # G7 grants bounded loop; AgentCreator needs separate enablement
+    l4_agentcreator: false
     verification:
-      unittest: "python -m unittest tests.test_g7_self_improve -v"
-      verifier: "python3 scripts/verify_g7_self_improve.py"
+      unittest: python -m unittest tests.test_g7_self_improve -v
+      verifier: python3 scripts/verify_g7_self_improve.py
       unittest_count: 15
       verifier_checks: 179
       dry_run_cycles: 10
@@ -441,37 +530,42 @@ domains:
     name: multitenant_policy
     state: APPROVED
     locked: true
-    locked_at: "2026-07-24"
+    locked_at: '2026-07-24'
     tag: multitenant-v1.0.0
-    requires: [G1_HARNESS_APPROVED_v1]
-    primary_harness_touch: [H_CONSTRAINT]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    primary_harness_touch:
+    - H_CONSTRAINT
     resume_token: G8_MULTITENANT_APPROVED_v1
     recommended: OPTION_2_STANDARD
     selected: OPTION_2_STANDARD
     granted: true
-    granted_at: "2026-07-24"
-    options: [OPTION_1_CONSERVATIVE, OPTION_2_STANDARD, OPTION_3_CREATIVE]
+    granted_at: '2026-07-24'
+    options:
+    - OPTION_1_CONSERVATIVE
+    - OPTION_2_STANDARD
+    - OPTION_3_CREATIVE
     artifacts:
-      - specs/g8_multitenant/MULTI_TENANT_SECURITY_ARCHITECTURE.md
-      - specs/g8_multitenant/CAPABILITY_DISCOVERY.yaml
-      - specs/g8_multitenant/POLICY_DSL_SPEC.md
-      - specs/g8_multitenant/tenant_policies.yaml
-      - specs/g8_multitenant/sandbox_templates.yaml
-      - specs/g8_multitenant/authorization_envelopes.yaml
-      - specs/g8_multitenant/observability_pipelines.yaml
-      - specs/g8_multitenant/G8_MIGRATION_CONTEXT.md
-      - scripts/verify_g8_multitenant.py
-      - tests/test_g8_multitenant.py
+    - specs/g8_multitenant/MULTI_TENANT_SECURITY_ARCHITECTURE.md
+    - specs/g8_multitenant/CAPABILITY_DISCOVERY.yaml
+    - specs/g8_multitenant/POLICY_DSL_SPEC.md
+    - specs/g8_multitenant/tenant_policies.yaml
+    - specs/g8_multitenant/sandbox_templates.yaml
+    - specs/g8_multitenant/authorization_envelopes.yaml
+    - specs/g8_multitenant/observability_pipelines.yaml
+    - specs/g8_multitenant/G8_MIGRATION_CONTEXT.md
+    - scripts/verify_g8_multitenant.py
+    - tests/test_g8_multitenant.py
     required_telemetry:
-      - cross_tenant_breach_count_must_be_0
-      - pii_redaction_coverage_100pct
-      - spiffe_svid_validation_100pct
-      - per_tenant_circuit_breaker_independence
-      - scripts/verify_g8_multitenant.py green
-      - tests/test_g8_multitenant.py green
+    - cross_tenant_breach_count_must_be_0
+    - pii_redaction_coverage_100pct
+    - spiffe_svid_validation_100pct
+    - per_tenant_circuit_breaker_independence
+    - scripts/verify_g8_multitenant.py green
+    - tests/test_g8_multitenant.py green
     verification:
-      unittest_suite: "40/40 OK (test_g8_multitenant.py)"
-      pack_verifier: "215/215 OK (verify_g8_multitenant.py)"
+      unittest_suite: 40/40 OK (test_g8_multitenant.py)
+      pack_verifier: 215/215 OK (verify_g8_multitenant.py)
       cross_tenant_breach_count: 0
       attack_vectors_simulated: 10
     next_domain: G9
@@ -485,31 +579,34 @@ domains:
     resume_token: G9_RESEARCH_FLEET_LOCKED_v1
     overlay: OPTION_2_STANDARD
     upstream_tag: multitenant-v1.0.0
-    requires: [G1_HARNESS_APPROVED_v1]
-    primary_harness_touch: [H_CONTEXT, H_EVAL]
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    primary_harness_touch:
+    - H_CONTEXT
+    - H_EVAL
     resume_token_expected: G9_RESEARCH_FLEET_LOCKED_v1
     artifacts:
-      - specs/g9_research/RESEARCH_LOOP_ARCHITECTURE.md
-      - specs/g9_research/CAPABILITY_DISCOVERY.yaml
-      - specs/g9_research/HYPOTHESIS_DSL_SPEC.md
-      - specs/g9_research/debate_protocol.yaml
-      - specs/g9_research/operators.yaml
-      - specs/g9_research/verifiable_reporting.yaml
-      - specs/g9_research/hitl_intervention_modes.yaml
-      - scripts/verify_g9_research.py
-      - tests/test_g9_research.py
+    - specs/g9_research/RESEARCH_LOOP_ARCHITECTURE.md
+    - specs/g9_research/CAPABILITY_DISCOVERY.yaml
+    - specs/g9_research/HYPOTHESIS_DSL_SPEC.md
+    - specs/g9_research/debate_protocol.yaml
+    - specs/g9_research/operators.yaml
+    - specs/g9_research/verifiable_reporting.yaml
+    - specs/g9_research/hitl_intervention_modes.yaml
+    - scripts/verify_g9_research.py
+    - tests/test_g9_research.py
     required_telemetry:
-      - citation_provenance_coverage_100pct
-      - false_positive_citation_rate_zero
-      - methodology_compliance_sv01_to_sv10_pass
-      - methodology_compliance_sem01_to_sem06_pass
-      - improve_cycle_ceiling_3_respected
-      - scripts/verify_g9_research.py green
-      - tests/test_g9_research.py green
+    - citation_provenance_coverage_100pct
+    - false_positive_citation_rate_zero
+    - methodology_compliance_sv01_to_sv10_pass
+    - methodology_compliance_sem01_to_sem06_pass
+    - improve_cycle_ceiling_3_respected
+    - scripts/verify_g9_research.py green
+    - tests/test_g9_research.py green
     verification:
-      unittest_suite: "72/72 OK (test_g9_research.py)"
-      pack_verifier: "330/330 OK (verify_g9_research.py)"
-      hallucination_simulation: "5 verified, 2 hallucinated caught, 0% false-positive, 100% citation coverage"
+      unittest_suite: 72/72 OK (test_g9_research.py)
+      pack_verifier: 330/330 OK (verify_g9_research.py)
+      hallucination_simulation: 5 verified, 2 hallucinated caught, 0% false-positive, 100% citation coverage
       improve_cycle_ceiling: 3
       secret_scan_hits: 0
     next_domain: G10
@@ -517,99 +614,316 @@ domains:
   G10:
     id: D_G10
     name: production_agentops
-    state: READY_FOR_DOMAIN
-    requires: [G1_HARNESS_APPROVED_v1, G2, G3, G4, G5, G6, G7, G8, G9]
-    primary_harness_touch: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    state: APPROVED
+    locked: true
+    locked_at: '2026-07-25'
+    tag: production-v1.0.0
+    resume_token: G10_PRODUCTION_DEPLOY_v1
+    overlay: OPTION_2_STANDARD
+    upstream_tag: research-loop-v1.0.0
+    upstream_lock_commit: '6299812'
+    requires:
+    - G1_HARNESS_APPROVED_v1
+    - G2
+    - G3
+    - G4
+    - G5
+    - G6
+    - G7
+    - G8
+    - G9
+    primary_harness_touch:
+    - H_CONTEXT
+    - H_CONSTRAINT
+    - H_EVAL
     resume_token_expected: G10_PRODUCTION_DEPLOY_v1
-
-# ---------------------------------------------------------------------------
-# Agent role nodes (factory floor)
-# ---------------------------------------------------------------------------
+    recommended: OPTION_2_STANDARD
+    selected: OPTION_2_STANDARD
+    granted: true
+    granted_at: '2026-07-25'
+    options:
+    - OPTION_1_CONSERVATIVE
+    - OPTION_2_STANDARD
+    - OPTION_3_CREATIVE
+    artifacts:
+    - specs/g10_production/PRODUCTION_AGENTOPS_BLUEPRINT.md
+    - specs/g10_production/CAPABILITY_DISCOVERY.yaml
+    - specs/g10_production/PRODUCTION_DSL_SPEC.md
+    - specs/g10_production/cicd_pipeline.yaml
+    - specs/g10_production/quality_gates.yaml
+    - specs/g10_production/doctor_checks.yaml
+    - specs/g10_production/fleet_management.yaml
+    - specs/g10_production/G10_MIGRATION_CONTEXT.md
+    - specs/g10_production/chaos_dry_run_metrics.json
+    - specs/g10_production/RELEASE_EVIDENCE_PACK.md
+    - scripts/dry_run_g10.py
+    - scripts/verify_g10_production.py
+    - tests/test_g10_production.py
+    required_telemetry:
+    - chaos_dry_run_5_of_5
+    - policy_llm06_blocks_8
+    - pii_leaks_0
+    - trust_rollback_to_v0.9.0-previous
+    - doctor_critical_fleet_isolation
+    - scripts/verify_g10_production.py green
+    - tests/test_g10_production.py green
+    - canary_schedule_1_5_25_100
+    verification:
+      unittest_suite: 39/39 OK (test_g10_production.py)
+      pack_verifier: 168/168 OK (verify_g10_production.py)
+      chaos_dry_run: 5/5 scenarios PASS
+      lkg_revision: v0.9.0-previous
+      policy_critical_blocks: 8
+      pii_leaks: 0
+      secret_scan_hits: 0
+    next_domain: null
+    final_gate: true
 agents:
   root_executor:
     id: A_ROOT
     level: L2
-    mode_support: [conductor, orchestrator]
-    harnesses: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    mode_support:
+    - conductor
+    - orchestrator
+    harnesses:
+    - H_CONTEXT
+    - H_CONSTRAINT
+    - H_EVAL
     model_policy: dynamic_matrix
   specialist_stub:
     id: A_SPECIALIST
     level: L3
     enabled: false
     requires_gate: G4_TOPOLOGY_APPROVED_v1
-    harnesses: [H_CONTEXT, H_CONSTRAINT, H_EVAL]
+    harnesses:
+    - H_CONTEXT
+    - H_CONSTRAINT
+    - H_EVAL
   agent_creator:
     id: A_CREATOR
     level: L4
     enabled: false
     requires_gate: G7_IMPROVEMENT_BOUNDS_v1
-
-# ---------------------------------------------------------------------------
-# Edges
-# edge.kind:
-#   deterministic  — pure machinery, no LM discretion
-#   dynamic        — LM chooses among lawful options
-#   hitl           — requires human resume token / tool pause
-# ---------------------------------------------------------------------------
 edges:
-  # Human configures factory
-  - { id: E001, from: HUMAN, to: H_CONTEXT, kind: hitl, label: configure_instructions_and_specs }
-  - { id: E002, from: HUMAN, to: H_CONSTRAINT, kind: hitl, label: approve_blocker_catalog }
-  - { id: E003, from: HUMAN, to: H_EVAL, kind: hitl, label: approve_rubrics_and_thresholds }
-
-  # Context → models
-  - { id: E010, from: H_CONTEXT, to: M_PREMIUM, kind: dynamic, label: route_if_architecture_or_synthesis }
-  - { id: E011, from: H_CONTEXT, to: M_STRONG, kind: dynamic, label: route_if_scaffold_or_spec_emit }
-  - { id: E012, from: H_CONTEXT, to: M_FLASH, kind: dynamic, label: route_if_validate_or_mechanical }
-
-  # Models → root agent
-  - { id: E020, from: M_PREMIUM, to: A_ROOT, kind: deterministic, label: bind_reasoning_tier }
-  - { id: E021, from: M_STRONG, to: A_ROOT, kind: deterministic, label: bind_coding_tier }
-  - { id: E022, from: M_FLASH, to: A_ROOT, kind: deterministic, label: bind_flash_tier }
-
-  # Autonomous loop (Read→Write→Test→Observe→Fix)
-  - { id: E030, from: A_ROOT, to: H_CONSTRAINT, kind: deterministic, label: pre_tool_hooks }
-  - { id: E031, from: H_CONSTRAINT, to: A_ROOT, kind: deterministic, label: allow_or_deny_action }
-  - { id: E032, from: A_ROOT, to: H_EVAL, kind: deterministic, label: submit_observation_and_artifacts }
-  - { id: E033, from: H_EVAL, to: A_ROOT, kind: dynamic, label: fail_feedback_into_fix_loop }
-  - { id: E034, from: H_EVAL, to: HUMAN, kind: hitl, label: escalate_HITL }
-  - { id: E035, from: H_EVAL, to: D_G1, kind: deterministic, label: record_pass_telemetry }
-
-  # Domain spine (sequential constitution → later domains)
-  - { id: E100, from: D_G1, to: HUMAN, kind: hitl, label: G1_HARD_STOP_decision_matrix }
-  - { id: E101, from: HUMAN, to: D_G1, kind: hitl, label: grant_G1_HARNESS_APPROVED_v1 }
-  - { id: E110, from: D_G1, to: D_G2, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E111, from: D_G1, to: D_G3, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E112, from: D_G1, to: D_G4, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E113, from: D_G1, to: D_G5, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E114, from: D_G1, to: D_G6, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E115, from: D_G5, to: D_G7, kind: deterministic, label: eval_bounds_before_self_improve }
-  - { id: E116, from: D_G1, to: D_G8, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E117, from: D_G1, to: D_G9, kind: deterministic, label: unlock_after_resume, gated_by: G1_HARNESS_APPROVED_v1 }
-  - { id: E118, from: D_G9, to: D_G10, kind: deterministic, label: research_ok_before_prod_pack }
-  - { id: E119, from: D_G8, to: D_G10, kind: deterministic, label: tenant_policy_before_prod }
-  - { id: E120, from: D_G7, to: D_G10, kind: deterministic, label: self_improve_bounds_before_prod }
-  - { id: E121, from: D_G6, to: D_G10, kind: deterministic, label: spec_harness_before_prod }
-  - { id: E122, from: D_G4, to: D_G10, kind: deterministic, label: topology_before_prod }
-  - { id: E123, from: D_G3, to: D_G10, kind: deterministic, label: context_layer_before_prod }
-  - { id: E124, from: D_G2, to: D_G10, kind: deterministic, label: tool_registry_before_prod }
-  - { id: E125, from: D_G5, to: D_G10, kind: deterministic, label: eval_framework_before_prod }
-  - { id: E130, from: D_G10, to: HUMAN, kind: hitl, label: final_production_gate }
-
-  # Multi-agent enablement (post G4)
-  - { id: E200, from: D_G4, to: A_SPECIALIST, kind: hitl, label: enable_L3_specialists, gated_by: G4_TOPOLOGY_APPROVED_v1 }
-  - { id: E201, from: A_ROOT, to: A_SPECIALIST, kind: dynamic, label: delegate_via_a2a_or_agent_tool, gated_by: G4_TOPOLOGY_APPROVED_v1 }
-  - { id: E202, from: A_SPECIALIST, to: H_EVAL, kind: deterministic, label: specialist_trajectory_score, gated_by: G4_TOPOLOGY_APPROVED_v1 }
-
-  # L4 enablement (post G7)
-  - { id: E300, from: D_G7, to: A_CREATOR, kind: hitl, label: enable_L4_creator, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
-  - { id: E301, from: A_ROOT, to: A_CREATOR, kind: dynamic, label: request_capability_expansion, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
-  - { id: E302, from: A_CREATOR, to: H_EVAL, kind: deterministic, label: meta_evaluate_new_capability, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
-  - { id: E303, from: A_CREATOR, to: HUMAN, kind: hitl, label: approve_new_agent_or_tool, gated_by: G7_IMPROVEMENT_BOUNDS_v1 }
-
-# ---------------------------------------------------------------------------
-# Option overlays (G1 decision) — structural consequences
-# ---------------------------------------------------------------------------
+- id: E001
+  from: HUMAN
+  to: H_CONTEXT
+  kind: hitl
+  label: configure_instructions_and_specs
+- id: E002
+  from: HUMAN
+  to: H_CONSTRAINT
+  kind: hitl
+  label: approve_blocker_catalog
+- id: E003
+  from: HUMAN
+  to: H_EVAL
+  kind: hitl
+  label: approve_rubrics_and_thresholds
+- id: E010
+  from: H_CONTEXT
+  to: M_PREMIUM
+  kind: dynamic
+  label: route_if_architecture_or_synthesis
+- id: E011
+  from: H_CONTEXT
+  to: M_STRONG
+  kind: dynamic
+  label: route_if_scaffold_or_spec_emit
+- id: E012
+  from: H_CONTEXT
+  to: M_FLASH
+  kind: dynamic
+  label: route_if_validate_or_mechanical
+- id: E020
+  from: M_PREMIUM
+  to: A_ROOT
+  kind: deterministic
+  label: bind_reasoning_tier
+- id: E021
+  from: M_STRONG
+  to: A_ROOT
+  kind: deterministic
+  label: bind_coding_tier
+- id: E022
+  from: M_FLASH
+  to: A_ROOT
+  kind: deterministic
+  label: bind_flash_tier
+- id: E030
+  from: A_ROOT
+  to: H_CONSTRAINT
+  kind: deterministic
+  label: pre_tool_hooks
+- id: E031
+  from: H_CONSTRAINT
+  to: A_ROOT
+  kind: deterministic
+  label: allow_or_deny_action
+- id: E032
+  from: A_ROOT
+  to: H_EVAL
+  kind: deterministic
+  label: submit_observation_and_artifacts
+- id: E033
+  from: H_EVAL
+  to: A_ROOT
+  kind: dynamic
+  label: fail_feedback_into_fix_loop
+- id: E034
+  from: H_EVAL
+  to: HUMAN
+  kind: hitl
+  label: escalate_HITL
+- id: E035
+  from: H_EVAL
+  to: D_G1
+  kind: deterministic
+  label: record_pass_telemetry
+- id: E100
+  from: D_G1
+  to: HUMAN
+  kind: hitl
+  label: G1_HARD_STOP_decision_matrix
+- id: E101
+  from: HUMAN
+  to: D_G1
+  kind: hitl
+  label: grant_G1_HARNESS_APPROVED_v1
+- id: E110
+  from: D_G1
+  to: D_G2
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E111
+  from: D_G1
+  to: D_G3
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E112
+  from: D_G1
+  to: D_G4
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E113
+  from: D_G1
+  to: D_G5
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E114
+  from: D_G1
+  to: D_G6
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E115
+  from: D_G5
+  to: D_G7
+  kind: deterministic
+  label: eval_bounds_before_self_improve
+- id: E116
+  from: D_G1
+  to: D_G8
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E117
+  from: D_G1
+  to: D_G9
+  kind: deterministic
+  label: unlock_after_resume
+  gated_by: G1_HARNESS_APPROVED_v1
+- id: E118
+  from: D_G9
+  to: D_G10
+  kind: deterministic
+  label: research_ok_before_prod_pack
+- id: E119
+  from: D_G8
+  to: D_G10
+  kind: deterministic
+  label: tenant_policy_before_prod
+- id: E120
+  from: D_G7
+  to: D_G10
+  kind: deterministic
+  label: self_improve_bounds_before_prod
+- id: E121
+  from: D_G6
+  to: D_G10
+  kind: deterministic
+  label: spec_harness_before_prod
+- id: E122
+  from: D_G4
+  to: D_G10
+  kind: deterministic
+  label: topology_before_prod
+- id: E123
+  from: D_G3
+  to: D_G10
+  kind: deterministic
+  label: context_layer_before_prod
+- id: E124
+  from: D_G2
+  to: D_G10
+  kind: deterministic
+  label: tool_registry_before_prod
+- id: E125
+  from: D_G5
+  to: D_G10
+  kind: deterministic
+  label: eval_framework_before_prod
+- id: E130
+  from: D_G10
+  to: HUMAN
+  kind: hitl
+  label: final_production_gate
+- id: E200
+  from: D_G4
+  to: A_SPECIALIST
+  kind: hitl
+  label: enable_L3_specialists
+  gated_by: G4_TOPOLOGY_APPROVED_v1
+- id: E201
+  from: A_ROOT
+  to: A_SPECIALIST
+  kind: dynamic
+  label: delegate_via_a2a_or_agent_tool
+  gated_by: G4_TOPOLOGY_APPROVED_v1
+- id: E202
+  from: A_SPECIALIST
+  to: H_EVAL
+  kind: deterministic
+  label: specialist_trajectory_score
+  gated_by: G4_TOPOLOGY_APPROVED_v1
+- id: E300
+  from: D_G7
+  to: A_CREATOR
+  kind: hitl
+  label: enable_L4_creator
+  gated_by: G7_IMPROVEMENT_BOUNDS_v1
+- id: E301
+  from: A_ROOT
+  to: A_CREATOR
+  kind: dynamic
+  label: request_capability_expansion
+  gated_by: G7_IMPROVEMENT_BOUNDS_v1
+- id: E302
+  from: A_CREATOR
+  to: H_EVAL
+  kind: deterministic
+  label: meta_evaluate_new_capability
+  gated_by: G7_IMPROVEMENT_BOUNDS_v1
+- id: E303
+  from: A_CREATOR
+  to: HUMAN
+  kind: hitl
+  label: approve_new_agent_or_tool
+  gated_by: G7_IMPROVEMENT_BOUNDS_v1
 active_decision_overlay: OPTION_2_STANDARD
 decision_overlays:
   OPTION_1_CONSERVATIVE:
@@ -617,18 +931,20 @@ decision_overlays:
     default_level: L1
     allow_L3: false
     allow_L4: false
-    topologies_allowed: [single_agent_tools, single_agent_sequential_multitool]
-    notes: "Sequential harness emphasis; blocks advanced G4/G7 patterns"
+    topologies_allowed:
+    - single_agent_tools
+    - single_agent_sequential_multitool
+    notes: Sequential harness emphasis; blocks advanced G4/G7 patterns
   OPTION_2_STANDARD:
     active: true
     default_level: L2
-    allow_L3: true  # after G4 gate
-    allow_L4: true  # after G7 gate
+    allow_L3: true
+    allow_L4: true
     topologies_allowed:
-      - single_agent_sequential_multitool
-      - hierarchical_coordinator_specialists
-      - sequential_assembly_line
-    notes: "Classic three-harness Factory + full audit trail — SELECTED"
+    - single_agent_sequential_multitool
+    - hierarchical_coordinator_specialists
+    - sequential_assembly_line
+    notes: Classic three-harness Factory + full audit trail — SELECTED
   OPTION_3_CREATIVE:
     active: false
     default_level: L2
@@ -636,65 +952,33 @@ decision_overlays:
     allow_L4: true
     allow_runtime_constraint_rewrite: true
     topologies_allowed:
-      - single_agent_sequential_multitool
-      - hierarchical_coordinator_specialists
-      - dynamic_with_agent_creator
-      - swarm  # deferred detail to G4
+    - single_agent_sequential_multitool
+    - hierarchical_coordinator_specialists
+    - dynamic_with_agent_creator
+    - swarm
     requires_strong_evaluation: true
-    notes: "Self-evolving harness selector — highest HITL + eval burden"
-
-# ---------------------------------------------------------------------------
-# Mermaid projection (documentation aid; source of truth is edges above)
-# ---------------------------------------------------------------------------
-mermaid: |
-  flowchart TB
-    HUMAN[Human Systems Architect]
-    CH[Context Harness]
-    KH[Constraint Harness]
-    EH[Evaluation Harness]
-    MP[Premium Frontier]
-    MS[Strong Coding]
-    MF[Fast Flash]
-    ROOT[Root Executor L2]
-    G1[Domain G1 Constitution]
-    GX[Domains G2-G10 gated]
-
-    HUMAN -->|HITL configure| CH
-    HUMAN -->|HITL approve| KH
-    HUMAN -->|HITL rubrics| EH
-    CH -->|dynamic route| MP
-    CH -->|dynamic route| MS
-    CH -->|dynamic route| MF
-    MP --> ROOT
-    MS --> ROOT
-    MF --> ROOT
-    ROOT -->|pre-tool deterministic| KH
-    KH -->|allow/deny| ROOT
-    ROOT -->|artifacts/traces| EH
-    EH -->|fail fix dynamic| ROOT
-    EH -->|escalate| HUMAN
-    EH --> G1
-    G1 -->|HARD_STOP| HUMAN
-    HUMAN -->|resume token| G1
-    G1 -->|deterministic unlock| GX
-
-# ---------------------------------------------------------------------------
-# Validation sniffs (consumed by G1 Step E structural tests)
-# ---------------------------------------------------------------------------
+    notes: Self-evolving harness selector — highest HITL + eval burden
+mermaid: "flowchart TB\n  HUMAN[Human Systems Architect]\n  CH[Context Harness]\n  KH[Constraint Harness]\n  EH[Evaluation\
+  \ Harness]\n  MP[Premium Frontier]\n  MS[Strong Coding]\n  MF[Fast Flash]\n  ROOT[Root Executor L2]\n  G1[Domain G1 Constitution]\n\
+  \  GX[Domains G2-G10 gated]\n\n  HUMAN -->|HITL configure| CH\n  HUMAN -->|HITL approve| KH\n  HUMAN -->|HITL rubrics| EH\n\
+  \  CH -->|dynamic route| MP\n  CH -->|dynamic route| MS\n  CH -->|dynamic route| MF\n  MP --> ROOT\n  MS --> ROOT\n  MF\
+  \ --> ROOT\n  ROOT -->|pre-tool deterministic| KH\n  KH -->|allow/deny| ROOT\n  ROOT -->|artifacts/traces| EH\n  EH -->|fail\
+  \ fix dynamic| ROOT\n  EH -->|escalate| HUMAN\n  EH --> G1\n  G1 -->|HARD_STOP| HUMAN\n  HUMAN -->|resume token| G1\n  G1\
+  \ -->|deterministic unlock| GX\n"
 validation:
   required_root_files:
-    - AGENTS.md
-    - HARNESS_SPEC.md
-    - specs/workflow_graph.yaml
+  - AGENTS.md
+  - HARNESS_SPEC.md
+  - specs/workflow_graph.yaml
   required_keys:
-    - harnesses.context_harness
-    - harnesses.constraint_harness
-    - harnesses.evaluation_harness
-    - taxonomy.levels.L0
-    - taxonomy.levels.L4
-    - domains.G1.hitl.resume_token
+  - harnesses.context_harness
+  - harnesses.constraint_harness
+  - harnesses.evaluation_harness
+  - taxonomy.levels.L0
+  - taxonomy.levels.L4
+  - domains.G1.hitl.resume_token
   invariants:
-    - "l4_enabled == false until G7 gate"
-    - "every domains.G2+ requires G1 resume token"
-    - "edges with gated_by must reference a known resume token or gate id"
-    - "no edge may mark irreversible production deploy as deterministic without hitl neighbor"
+  - l4_enabled == false until G7 gate
+  - every domains.G2+ requires G1 resume token
+  - edges with gated_by must reference a known resume token or gate id
+  - no edge may mark irreversible production deploy as deterministic without hitl neighbor

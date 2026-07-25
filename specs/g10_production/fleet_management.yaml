@@ -1,0 +1,314 @@
+# fleet_management.yaml
+# G10 — Fleet topology, canary schedules, dynamic model routing, rollback rules
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: research-loop-v1.0.0
+# BLUE resume: G10_PRODUCTION_DEPLOY_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G10
+kind: FleetTopology
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: research-loop-v1.0.0
+upstream_lock_commit: "6299812"
+blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+dsl_ref: PRODUCTION_DSL_SPEC.md
+g4_inheritance: specs/g4_orchestration/
+g5_inheritance: specs/g5_evaluation/
+g8_inheritance: specs/g8_multitenant/
+g9_inheritance: specs/g9_research/
+
+apiVersion: "1.0.0"
+metadata:
+  name: agentic-rd-fleet
+  release_id: "rel-pending-pregate"
+  overlay: OPTION_2_STANDARD
+  upstream_tag: research-loop-v1.0.0
+  resume_token: G10_PRODUCTION_DEPLOY_v1
+
+# ---------------------------------------------------------------------------
+# Fleet topology
+# ---------------------------------------------------------------------------
+fleet:
+  topology: hierarchical_coordinator_specialists
+  l4_agent_creator: false
+  max_concurrent_specialists: 3
+  max_spawn_depth: 1
+  observed_hermes_caps_not_pins:
+    delegation_max_concurrent_children: 3
+    delegation_max_spawn_depth: 1
+  a2a:
+    task_state_machine: required
+    goto_tool_wrap_unbounded: forbidden
+    agent_cards: "private registry schema + production targets post-wire"
+  multi_tenant:
+    per_tenant_svid: required
+    isolation_default: ISO-1
+    risk_tier_runtime:
+      RT-1: RT-ENG-02
+      RT-2: RT-ENG-02
+      RT-3: RT-ENG-03
+      RT-4: RT-ENG-04
+
+  roles:
+    - id: FR-COORD
+      name: coordinator
+      responsibilities:
+        - "mission decompose"
+        - "specialist dispatch"
+        - "HITL escalate"
+      model_task_class: architecture
+    - id: FR-IMPL
+      name: implementer_specialist
+      responsibilities: ["codegen from specs", "regen disposable"]
+      model_task_class: codegen
+    - id: FR-EVAL
+      name: evaluator_specialist
+      responsibilities: ["trajectory eval", "judge sampling"]
+      model_task_class: verify
+    - id: FR-SEC
+      name: policy_specialist
+      responsibilities: ["policy fixtures", "LLM06 audits"]
+      model_task_class: policy
+    - id: FR-RS
+      name: research_specialist
+      responsibilities: ["G9 DRAFT DEBUG IMPROVE", "citations"]
+      model_task_class: research
+    - id: FR-OPS
+      name: ops_specialist
+      responsibilities: ["Doctor", "canary watch", "rollback"]
+      model_task_class: ops
+
+# ---------------------------------------------------------------------------
+# Dynamic model routing (no frozen version pins)
+# ---------------------------------------------------------------------------
+model_routing:
+  policy: dynamic_tiers_only
+  forbid_frozen_version_pins_in_constitution: true
+  routes:
+    - task_class: architecture
+      tier: Premium_Frontier
+      examples: ["release architecture", "threat model delta", "gate payloads"]
+    - task_class: codegen
+      tier: Strong_Coding
+      examples: ["spec to disposable implement", "Gherkin sync", "YAML packs"]
+    - task_class: verify
+      tier: Fast_Flash
+      examples: ["lint", "doctor nudge", "mechanical digests"]
+    - task_class: policy
+      tier: Strong_Coding
+      examples: ["policy fixture authoring"]
+      note: "Live LLM06 decisions remain deterministic server-side"
+    - task_class: research
+      tier: Premium_Frontier
+      examples: ["synthesis", "methodology critique"]
+    - task_class: ops
+      tier: Fast_Flash
+      examples: ["canary metric compress", "alert summaries"]
+  canary_routing_overrides:
+    prefer_stable_tiers: true
+    disallow_experimental_providers: true
+
+# ---------------------------------------------------------------------------
+# Canary schedules (fleet-level)
+# ---------------------------------------------------------------------------
+canary:
+  overlay: OPTION_2_STANDARD
+  auto_rollback: true
+  observation_window_hours: 48
+  observation_window_allowed_range: [24, 72]
+  start_pct_must_equal: 1
+  schedule:
+    - id: C1
+      pct: 1
+      dwell_minutes: 60
+      exit_gates: [QG-001, QG-010, QG-020, QG-030]
+      traffic_backends: [RT-ENG-02, RT-ENG-01]
+    - id: C2
+      pct: 5
+      dwell_minutes: 120
+      exit_gates: [QG-001, QG-002, QG-010, QG-020, QG-030]
+      traffic_backends: [RT-ENG-02, RT-ENG-01]
+    - id: C3
+      pct: 25
+      dwell_minutes: 240
+      exit_gates: [QG-001, QG-002, QG-003, QG-010, QG-020, QG-030]
+      traffic_backends: [RT-ENG-02, RT-ENG-01]
+    - id: C4
+      pct: 100
+      dwell_minutes: 2880
+      exit_gates: [QG-001, QG-002, QG-003, QG-004, QG-010, QG-020, QG-030]
+      traffic_backends: [RT-ENG-02, RT-ENG-01, RT-ENG-03]
+  forbidden:
+    - "skip_stage"
+    - "start_above_1_percent"
+    - "disable_auto_rollback"
+    - "promote_from_prototype_branch"
+  progress_rule: "advance only if exit gates pass; any RB trigger resets to LKG"
+
+# ---------------------------------------------------------------------------
+# OTEL production sampling
+# ---------------------------------------------------------------------------
+otel:
+  mandatory: true
+  constraint: C-PA-06
+  root_span_required_attributes:
+    - trace_id
+    - tenant_id
+    - svid_sub
+    - release_id
+    - canary_bucket
+  span_types:
+    - root.request
+    - agent.turn
+    - tool.call
+    - delegate.task
+    - eval.judge
+    - policy.check
+    - release.gate
+  sampling:
+    production_baseline_ratio: 0.1
+    canary_boost_ratio: 1.0
+    error_always_sample: true
+  exporters:
+    - OTEL_Collector
+    - Google_Cloud_Observability
+  trust_metric: trust.decay_pct_canary
+
+# ---------------------------------------------------------------------------
+# Automatic rollback rules
+# ---------------------------------------------------------------------------
+rollback:
+  mode: automatic
+  last_known_good: "pending_until_first_promote"
+  last_known_good_immutable: true
+  max_minutes_to_lkg: 5
+  require_hitl_to_re_canary: true
+  cool_down_full_pipeline_cycles: 1
+  feature_flag_kill_switch: true
+  triggers:
+    - id: RB-01
+      name: circuit_breaker_trip
+      condition: "quarantine enters trip path OR trust_score < 0.50 OR immediate_trip_signal"
+      action: instant_lkg
+      severity: CRITICAL
+    - id: RB-02
+      name: policy_violation_surge
+      condition: "policy_deny_rate_delta_pct >= 15 OR llm06_critical_burst"
+      action: instant_lkg_plus_hitl
+      severity: CRITICAL
+    - id: RB-03
+      name: trust_decay_over_15_pct
+      condition: "trust_decay_pct_canary > 15"
+      action: instant_lkg
+      severity: CRITICAL
+    - id: RB-04
+      name: doctor_critical_fail
+      condition: "doctor_critical_fail_count > 0 in canary_or_prod"
+      action: instant_lkg_or_shed
+      severity: CRITICAL
+    - id: RB-05
+      name: pii_or_secret_leak
+      condition: "pii_egress_count > 0 OR secret_leak_count > 0"
+      action: instant_lkg_plus_quarantine
+      severity: CRITICAL
+    - id: RB-06
+      name: cross_tenant_breach
+      condition: "cross_tenant_breach_count > 0"
+      action: kill_switch
+      severity: CRITICAL
+    - id: RB-07
+      name: eval_probe_degradation
+      condition: "eval_delta_pct >= 15"
+      action: pause_or_rollback
+      severity: HIGH
+    - id: RB-08
+      name: cost_ceiling
+      condition: "projected_or_actual_cost > budget_ceiling"
+      action: trip_and_scale_in
+      severity: CRITICAL
+    - id: RB-09
+      name: error_budget_exhaust
+      condition: "slo_error_budget_remaining <= 0"
+      action: halt_canary_or_rollback
+      severity: HIGH
+
+# ---------------------------------------------------------------------------
+# Circuit breaker import (G5)
+# ---------------------------------------------------------------------------
+circuit_breaker:
+  source: specs/g5_evaluation/CIRCUIT_BREAKER_RULES.yaml
+  trip_thresholds:
+    warning: 0.85
+    hitl_review: 0.70
+    trip: 0.50
+  immediate_trip_signals:
+    - secret_detected
+    - pii_leakage_detected
+    - budget_ceiling_breach
+  auto_restore: false
+
+# ---------------------------------------------------------------------------
+# Policy live path
+# ---------------------------------------------------------------------------
+policy_live_path:
+  intent_status: WIRED_LIVE_PATH
+  prior_status: DECLARED_NOT_WIRED
+  non_delegatable: true
+  controls: [LLM06-01, LLM06-02, LLM06-03, LLM06-04, LLM06-05, LLM06-06, LLM06-07, LLM06-08]
+  decision_vocabulary: [allow, deny, hitl, rewrite_caps]
+
+# ---------------------------------------------------------------------------
+# Cultural / accountability hooks
+# ---------------------------------------------------------------------------
+accountability:
+  max_approvals_per_officer_per_hour: 3
+  roles:
+    release_officer: "canary go/no-go"
+    security: "LLM06 and SVID"
+    platform: "rollback machinery and SLOs"
+    systems_architect: "G10 token decision"
+  anti_token_maxing: true
+  constraint: C-PA-08
+
+# ---------------------------------------------------------------------------
+# Residual risks (fleet scope)
+# ---------------------------------------------------------------------------
+residual_risks:
+  - id: RR-FLEET-01
+    item: "A2A under real load untested"
+    severity: HIGH
+    treatment: "Step E chaos"
+  - id: RR-FLEET-02
+    item: "SPIRE not deployed"
+    severity: HIGH
+    treatment: "Doctor IDENT fail-closed in enforce"
+  - id: RR-FLEET-03
+    item: "Policy server wire lag"
+    severity: HIGH
+    treatment: "DOC-POL-01"
+  - id: RR-FLEET-04
+    item: "Honcho auth residual"
+    severity: HIGH
+    treatment: "DOC-MEM-02"
+
+# ---------------------------------------------------------------------------
+# Consistency
+# ---------------------------------------------------------------------------
+consistency:
+  overlay: OPTION_2_STANDARD
+  blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+  upstream_tag: research-loop-v1.0.0
+  canary_pct_sequence: [1, 5, 25, 100]
+  trust_decay_rollback_pct: 15
+  auto_flag_pct: 5
+  hitl_stop_pct: 15
+  companions:
+    - cicd_pipeline.yaml
+    - quality_gates.yaml
+    - doctor_checks.yaml
+    - PRODUCTION_DSL_SPEC.md
+    - PRODUCTION_AGENTOPS_BLUEPRINT.md
+    - CAPABILITY_DISCOVERY.yaml

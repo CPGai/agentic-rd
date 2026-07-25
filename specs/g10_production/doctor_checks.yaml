@@ -1,0 +1,348 @@
+# doctor_checks.yaml
+# G10 — Environment diagnostic probes (SVID, network, policy, memory, ...)
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: research-loop-v1.0.0
+# BLUE resume: G10_PRODUCTION_DEPLOY_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G10
+kind: DoctorSuite
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: research-loop-v1.0.0
+upstream_lock_commit: "6299812"
+blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+dsl_ref: PRODUCTION_DSL_SPEC.md
+constraint_ids: [C-PA-07]
+
+apiVersion: "1.0.0"
+metadata:
+  name: agentic-rd-doctor
+  release_id: "rel-pending-pregate"
+  overlay: OPTION_2_STANDARD
+  upstream_tag: research-loop-v1.0.0
+  resume_token: G10_PRODUCTION_DEPLOY_v1
+
+# ---------------------------------------------------------------------------
+# Runtime modes
+# ---------------------------------------------------------------------------
+modes:
+  observe:
+    description: "Log fails; do not block (dev only)"
+    block_on_critical: false
+  enforce:
+    description: "Fail-closed on CRITICAL — production default"
+    block_on_critical: true
+  default_production_mode: enforce
+
+# ---------------------------------------------------------------------------
+# Schedules
+# ---------------------------------------------------------------------------
+schedules:
+  pre_promote:
+    suite: full
+    required_green_severities: [CRITICAL, HIGH]
+  canary_dwell:
+    every_minutes: 5
+    suite: critical_plus_policy
+  production:
+    critical_every_minutes: 1
+    full_every_minutes: 15
+  hermes_secondary:
+    enabled: true
+    sole_production_doctor: false
+    note: "Hermes cron may nudge; cloud monitors authoritative"
+
+# ---------------------------------------------------------------------------
+# Probes
+# ---------------------------------------------------------------------------
+probes:
+  # --- Identity / SVID ---
+  - id: DOC-IDENT-01
+    name: svid_present_and_valid
+    probe_type: svid_validation
+    severity: CRITICAL
+    fail_closed: true
+    description: "Workload presents unexpired SPIFFE JWT-SVID or X509-SVID"
+    assertions:
+      - "svid_exists == true"
+      - "svid_expired == false"
+      - "ttl_remaining_seconds >= 60"
+    related_gap: GAP-02
+    stages: [STG-07, STG-08, STG-09]
+
+  - id: DOC-IDENT-02
+    name: svid_trust_domain_match
+    probe_type: svid_validation
+    severity: CRITICAL
+    fail_closed: true
+    description: "SVID trust domain matches tenant envelope trust domain"
+    assertions:
+      - "trust_domain_match == true"
+      - "tenant_id_binding == true"
+    stages: [STG-07, STG-08, STG-09]
+
+  - id: DOC-IDENT-03
+    name: zero_ambient_authority
+    probe_type: svid_validation
+    severity: CRITICAL
+    fail_closed: true
+    description: "No ambient cloud credentials outside short-lived SVID path"
+    assertions:
+      - "long_lived_key_files_absent == true"
+      - "capability_set_is_jit_downscoped == true"
+    stages: [STG-07, STG-08]
+
+  # --- Network boundary ---
+  - id: DOC-NET-01
+    name: network_namespace_boundary
+    probe_type: network_boundary
+    severity: CRITICAL
+    fail_closed: true
+    description: "Sandbox network boundary assertions hold (no unexpected underlay)"
+    assertions:
+      - "unexpected_host_bind == false"
+      - "egress_allowlist_enforced == true"
+    stages: [STG-07, STG-08, STG-09]
+
+  - id: DOC-NET-02
+    name: no_host_path_inheritance
+    probe_type: network_boundary
+    severity: CRITICAL
+    fail_closed: true
+    description: "appendWindowsPath=false respected; no host Windows path inheritance into prod runtime"
+    assertions:
+      - "append_windows_path == false"
+      - "host_path_mounts_disallowed == true"
+    stages: [STG-07, STG-08]
+    note: "Constitution sandbox boundary verification"
+
+  - id: DOC-NET-03
+    name: policy_server_reachable_privately
+    probe_type: network_boundary
+    severity: HIGH
+    fail_closed: true
+    description: "Policy server only on private path; not public internet"
+    assertions:
+      - "policy_endpoint_private == true"
+    stages: [STG-06, STG-07]
+
+  # --- Policy server ---
+  - id: DOC-POL-01
+    name: policy_server_ping
+    probe_type: policy_server_ping
+    severity: CRITICAL
+    fail_closed: true
+    description: "Policy server health and decision fixture"
+    assertions:
+      - "health_ok == true"
+      - "fixture_allow_ok == true"
+      - "fixture_deny_ok == true"
+      - "llm_cannot_downgrade_deny == true"
+    related_gap: GAP-01
+    stages: [STG-06, STG-07, STG-08, STG-09]
+
+  - id: DOC-POL-02
+    name: llm06_control_pack_loaded
+    probe_type: policy_server_ping
+    severity: CRITICAL
+    fail_closed: true
+    description: "All eight LLM06 non-delegatable controls loaded"
+    assertions:
+      - "controls_loaded_count == 8"
+      - "non_delegatable_all_true == true"
+    stages: [STG-06, STG-07]
+
+  - id: DOC-POL-03
+    name: authorization_envelope_schema
+    probe_type: policy_server_ping
+    severity: HIGH
+    fail_closed: true
+    description: "JIT envelope fields present per G8 schema"
+    assertions:
+      - "envelope_required_fields_present == true"
+    stages: [STG-06, STG-07]
+
+  # --- Memory bank ---
+  - id: DOC-MEM-01
+    name: memory_bank_health
+    probe_type: memory_bank_health
+    severity: CRITICAL
+    fail_closed: true
+    description: "Honcho or engine memory health endpoint OK"
+    assertions:
+      - "health_ok == true"
+      - "latency_ms <= 2000"
+    stages: [STG-07, STG-08, STG-09]
+
+  - id: DOC-MEM-02
+    name: memory_auth_enabled_prod
+    probe_type: memory_bank_health
+    severity: CRITICAL
+    fail_closed: true
+    description: "Production tenants require AUTH_USE_AUTH true or equivalent"
+    assertions:
+      - "auth_enabled == true OR risk_tier == RT-1_dev_only"
+    related_gap: GAP-03
+    stages: [STG-07, STG-08]
+    note: "G9 residual Honcho unauthenticated risk"
+
+  - id: DOC-MEM-03
+    name: memory_namespace_isolation
+    probe_type: memory_bank_health
+    severity: HIGH
+    fail_closed: true
+    description: "Tenant namespace isolation probe (no cross-read)"
+    assertions:
+      - "cross_tenant_read_denied == true"
+    stages: [STG-07, STG-08]
+
+  # --- Supply chain ---
+  - id: DOC-SUP-01
+    name: pin_concurrence
+    probe_type: pin_concurrence
+    severity: CRITICAL
+    fail_closed: true
+    description: "MCP pins and image digests match lock files"
+    assertions:
+      - "mcp_pins_match == true"
+      - "container_digest_pinned == true"
+    stages: [STG-03, STG-04, STG-07]
+
+  - id: DOC-SUP-02
+    name: agbom_snapshot_present
+    probe_type: pin_concurrence
+    severity: HIGH
+    fail_closed: false
+    description: "Runtime Agent Bill of Materials snapshot exists for release"
+    assertions:
+      - "agbom_digest_present == true"
+    stages: [STG-07, STG-08]
+
+  # --- Eval ---
+  - id: DOC-EVAL-01
+    name: eval_endpoint_health
+    probe_type: eval_endpoint
+    severity: HIGH
+    fail_closed: true
+    description: "Judge or eval harness endpoint reachable"
+    assertions:
+      - "eval_health_ok == true"
+      - "baseline_digest_pinned == true"
+    stages: [STG-05, STG-07]
+
+  - id: DOC-EVAL-02
+    name: trajectory_schema_live
+    probe_type: eval_endpoint
+    severity: MED
+    fail_closed: false
+    description: "Sample trajectory accepts Mission Scene Thought Action Observation Verdict"
+    assertions:
+      - "trajectory_schema_valid == true"
+    stages: [STG-07]
+
+  # --- Fleet ---
+  - id: DOC-FLEET-01
+    name: fleet_quorum
+    probe_type: fleet_quorum
+    severity: HIGH
+    fail_closed: true
+    description: "Coordinator reachable; specialist card registry OK"
+    assertions:
+      - "coordinator_ok == true"
+      - "card_registry_ok == true"
+    stages: [STG-07, STG-08]
+
+  - id: DOC-FLEET-02
+    name: a2a_handshake_smoke
+    probe_type: fleet_quorum
+    severity: HIGH
+    fail_closed: true
+    description: "A2A task state machine smoke path returns completed or needs_input"
+    assertions:
+      - "handshake_terminal_state_ok == true"
+    stages: [STG-07]
+
+  # --- Budget ---
+  - id: DOC-BUD-01
+    name: budget_api_readable
+    probe_type: budget_readable
+    severity: HIGH
+    fail_closed: true
+    description: "Cost ceiling configuration readable and not already breached"
+    assertions:
+      - "budget_readable == true"
+      - "already_breached == false"
+    stages: [STG-07, STG-08, STG-09]
+
+  # --- Substrate self-check (non-prod edge) ---
+  - id: DOC-SUB-01
+    name: wsl_dev_substrate_only
+    probe_type: network_boundary
+    severity: MED
+    fail_closed: false
+    description: "Developer substrate must not advertise as production edge"
+    assertions:
+      - "production_edge_flag == false_on_wsl_hermes"
+    stages: [STG-04]
+
+# ---------------------------------------------------------------------------
+# Suites
+# ---------------------------------------------------------------------------
+suites:
+  full:
+    include: "all probes"
+  critical_plus_policy:
+    include_ids:
+      - DOC-IDENT-01
+      - DOC-IDENT-02
+      - DOC-NET-01
+      - DOC-NET-02
+      - DOC-POL-01
+      - DOC-POL-02
+      - DOC-MEM-01
+      - DOC-MEM-02
+      - DOC-SUP-01
+      - DOC-BUD-01
+  critical_subset:
+    include_ids:
+      - DOC-IDENT-01
+      - DOC-POL-01
+      - DOC-MEM-01
+      - DOC-NET-01
+      - DOC-SUP-01
+
+# ---------------------------------------------------------------------------
+# Failure handling
+# ---------------------------------------------------------------------------
+on_probe_fail:
+  CRITICAL:
+    pre_promote: block_promote
+    canary_or_prod: auto_rollback
+    maps_to: RB-04
+  HIGH:
+    pre_promote: block_promote
+    canary_or_prod: auto_flag
+  MED:
+    pre_promote: auto_flag
+    canary_or_prod: auto_flag
+  LOW:
+    pre_promote: log
+    canary_or_prod: log
+
+# ---------------------------------------------------------------------------
+# Consistency
+# ---------------------------------------------------------------------------
+consistency:
+  overlay: OPTION_2_STANDARD
+  blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+  upstream_tag: research-loop-v1.0.0
+  companions:
+    - cicd_pipeline.yaml
+    - quality_gates.yaml
+    - fleet_management.yaml
+    - PRODUCTION_DSL_SPEC.md
+    - PRODUCTION_AGENTOPS_BLUEPRINT.md
+    - CAPABILITY_DISCOVERY.yaml

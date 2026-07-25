@@ -1,0 +1,396 @@
+# CAPABILITY_DISCOVERY.yaml
+# G10 — Production Runtime, CI/CD, Telemetry & Procurement Inventory
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: research-loop-v1.0.0 (G9 LOCKED)
+# BLUE resume: G10_PRODUCTION_DEPLOY_v1
+# Tier: Fast Flash (Step B)
+
+version: "1.0.0-draft"
+domain: G10
+kind: capability_discovery
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: research-loop-v1.0.0
+upstream_lock_commit: "6299812"
+blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+authoritative_upstream_resume: G9_RESEARCH_FLEET_LOCKED_v1
+
+# ---------------------------------------------------------------------------
+# 1. Production runtime environments
+# ---------------------------------------------------------------------------
+production_runtimes:
+  - id: RT-ENG-01
+    name: "Vertex AI Agent Engine"
+    vendor: "Google Cloud"
+    category: managed_agent_runtime
+    isolation_fit: [ISO-1, ISO-2]
+    risk_tiers: [RT-1, RT-2, RT-3]
+    state_model: "engine_managed_session_or_external"
+    a2a_support: "ADK to_a2a / A2aAgent executor (schema + target)"
+    eval_integration: "Vertex AI Evaluation"
+    traffic_split: "revision / traffic weighting when available"
+    option_2_eligible: true
+    procurement_tier: T2
+    availability: "GCP project target — DECLARED_TARGET"
+    doctor_probes: [DOC-IDENT-01, DOC-NET-02, DOC-POL-01]
+    notes: "WP-F5 primary managed path; production templates only until wire"
+
+  - id: RT-ENG-02
+    name: "Google Cloud Run"
+    vendor: "Google Cloud"
+    category: serverless_container
+    isolation_fit: [ISO-1]
+    risk_tiers: [RT-1, RT-2]
+    state_model: "stateless_container_external_state_only"
+    scaling: "horizontal_scale_to_zero_optional"
+    traffic_split: "Cloud Run revisions + Cloud Load Balancing"
+    option_2_eligible: true
+    procurement_tier: T2
+    availability: "GCP project target — DECLARED_TARGET"
+    doctor_probes: [DOC-IDENT-01, DOC-NET-01, DOC-NET-02, DOC-SUP-01]
+    notes: "Stateless agent services; LRO via Jobs / Pub-Sub workers"
+
+  - id: RT-ENG-03
+    name: "GKE Agent Sandbox (gVisor)"
+    vendor: "Google Cloud / gVisor"
+    category: orchestrated_sandbox
+    isolation_fit: [ISO-2]
+    risk_tiers: [RT-3]
+    state_model: "pod_external_state"
+    option_2_eligible: true
+    procurement_tier: T2
+    availability: "GKE cluster with runsc — DECLARED_TARGET"
+    doctor_probes: [DOC-NET-01, DOC-IDENT-01, DOC-POL-01]
+    notes: "Regulated tenants; inherits G8 ISO-2 sandbox_templates"
+
+  - id: RT-ENG-04
+    name: "Firecracker / Kata microVM"
+    vendor: "AWS Firecracker / Kata Containers"
+    category: microvm
+    isolation_fit: [ISO-3]
+    risk_tiers: [RT-4]
+    option_2_eligible: true
+    procurement_tier: T3
+    availability: "optional high-risk path — not default"
+    notes: "Legal-hold / high-blast workloads only"
+
+  - id: RT-ENG-05
+    name: "Cloud Run Jobs / async workers"
+    vendor: "Google Cloud"
+    category: serverless_job
+    isolation_fit: [ISO-1]
+    risk_tiers: [RT-1, RT-2, RT-3]
+    option_2_eligible: true
+    procurement_tier: T2
+    notes: "LRO greater than 10000 ms per G2 policy; not interactive edge"
+
+  - id: RT-ENG-06
+    name: "Hermes local WSL2 substrate"
+    vendor: "Nous Research Hermes + local"
+    category: developer_runtime
+    isolation_fit: [ISO-1]
+    risk_tiers: [RT-1]
+    option_2_eligible: false
+    production_edge: false
+    procurement_tier: T1
+    notes: "Dev, eval, Doctor self-test only — never production edge"
+
+# ---------------------------------------------------------------------------
+# 2. CI/CD runner integrations
+# ---------------------------------------------------------------------------
+cicd_runners:
+  - id: CI-01
+    name: "GitHub Actions"
+    vendor: "GitHub"
+    role: "primary_pr_and_tag_pipelines"
+    triggers:
+      - "pull_request"
+      - "push_to_main"
+      - "workflow_dispatch"
+      - "gherkin_path_filters"
+    secrets_posture: "OIDC to cloud — no long-lived keys in repo"
+    option_2_eligible: true
+    procurement_tier: T1
+    maps_to_stages: [STG-01, STG-02, STG-03, STG-04, STG-05]
+
+  - id: CI-02
+    name: "Google Cloud Build"
+    vendor: "Google Cloud"
+    role: "staging_and_production_deploy"
+    triggers:
+      - "cloud_build_trigger_on_tag"
+      - "manual_promotion"
+    secrets_posture: "Secret Manager injection at runtime"
+    option_2_eligible: true
+    procurement_tier: T2
+    maps_to_stages: [STG-06, STG-07, STG-08, STG-09]
+    notes: "Agent Starter Pack pattern from WP-F5"
+
+  - id: CI-03
+    name: "Hermes background scheduler (cronjob)"
+    vendor: "Hermes Agent"
+    role: "secondary_watchdog_and_doctor_nudge"
+    triggers:
+      - "cron schedule"
+      - "notify_on_complete jobs"
+    option_2_eligible: true
+    production_sole_runner: false
+    procurement_tier: T1
+    maps_to_stages: [STG-10]
+    notes: "Must not be the only production Doctor; complements cloud monitors"
+
+  - id: CI-04
+    name: "Local unittest + pack verifiers"
+    vendor: "workspace scripts"
+    role: "structural_pack_verification"
+    option_2_eligible: true
+    procurement_tier: T1
+    maps_to_stages: [STG-04]
+    examples:
+      - "scripts/verify_g9_research.py"
+      - "future scripts/verify_g10_production.py"
+
+# ---------------------------------------------------------------------------
+# 3. Production telemetry collectors
+# ---------------------------------------------------------------------------
+telemetry_collectors:
+  - id: TEL-01
+    name: "OpenTelemetry Collector"
+    vendor: "CNCF OpenTelemetry"
+    role: "central_pipeline_agent"
+    receives: [traces, metrics, logs]
+    processors:
+      - "tenant_attribute_enforce"
+      - "pii_redaction_deterministic"
+      - "tail_sampling_canary_boost"
+    option_2_eligible: true
+    procurement_tier: T1
+    status: DECLARED_TARGET
+
+  - id: TEL-02
+    name: "Google Cloud Observability"
+    vendor: "Google Cloud"
+    components:
+      - "Cloud Trace"
+      - "Cloud Logging"
+      - "Cloud Monitoring"
+    role: "primary_gcp_backend"
+    option_2_eligible: true
+    procurement_tier: T2
+    status: DECLARED_TARGET
+    notes: "WP-F5 ops suite binding; ADK Cloud Trace integration seat"
+
+  - id: TEL-03
+    name: "G5 trajectory structured JSON logger"
+    vendor: "workspace G5 specs"
+    role: "Mission_Scene_Thought_Action_Observation_Verdict envelopes"
+    option_2_eligible: true
+    procurement_tier: T1
+    status: SPEC_LOCKED_INHERIT
+    source: "specs/g5_evaluation/OBSERVABILITY_PILLARS_SPEC.yaml"
+
+  - id: TEL-04
+    name: "G8 per-tenant OTEL pipelines"
+    vendor: "workspace G8 specs"
+    role: "cross_tenant_isolation_of_telemetry"
+    option_2_eligible: true
+    procurement_tier: T1
+    status: SPEC_LOCKED_INHERIT
+    source: "specs/g8_multitenant/observability_pipelines.yaml"
+
+  - id: TEL-05
+    name: "Prometheus-compatible metrics adapter"
+    vendor: "optional"
+    role: "secondary_metrics"
+    option_2_eligible: true
+    procurement_tier: T2
+    status: OPTIONAL
+
+# ---------------------------------------------------------------------------
+# 4. Policy, identity, and security dependencies
+# ---------------------------------------------------------------------------
+security_dependencies:
+  - id: SEC-01
+    name: "Enterprise policy server (G8 hybrid)"
+    status: "DECLARED_LIVE_PATH_INTENT"
+    prior_status: DECLARED_NOT_WIRED
+    non_delegatable_controls: ["LLM06-01", "LLM06-02", "LLM06-03", "LLM06-04", "LLM06-05", "LLM06-06", "LLM06-07", "LLM06-08"]
+    procurement_tier: T3
+    option_2_required: true
+
+  - id: SEC-02
+    name: "SPIFFE / SPIRE"
+    status: DECLARED_TARGET
+    svid_ttl: "15m"
+    zero_ambient_authority: true
+    procurement_tier: T2
+    option_2_required: true
+
+  - id: SEC-03
+    name: "Secret Manager"
+    vendor: "Google Cloud Secret Manager"
+    role: "runtime_secret_injection"
+    procurement_tier: T2
+    option_2_required: true
+
+  - id: SEC-04
+    name: "Supply-chain pin lock"
+    role: "MCP npm pins + image digests"
+    source: "specs/g2_tools/pins/"
+    procurement_tier: T1
+    option_2_required: true
+
+# ---------------------------------------------------------------------------
+# 5. Evaluation & research product path dependencies
+# ---------------------------------------------------------------------------
+evaluation_dependencies:
+  - id: EV-01
+    name: "G5 dual-judge eval harness"
+    source: "specs/g5_evaluation/"
+    thresholds:
+      auto_flag_pct: 5
+      hitl_stop_pct: 15
+    option_2_required: true
+    procurement_tier: T1
+
+  - id: EV-02
+    name: "G5 circuit breaker + trust score"
+    trust_range: [0.0, 1.0]
+    trip: 0.50
+    hitl_review: 0.70
+    warning: 0.85
+    canary_decay_rollback_pct: 15
+    option_2_required: true
+    procurement_tier: T1
+
+  - id: EV-03
+    name: "G9 citation fail-closed gates"
+    constraints: ["C-RS-05", "C-RS-07"]
+    option_2_required_for_research_products: true
+    procurement_tier: T1
+
+  - id: EV-04
+    name: "Vertex AI Evaluation service"
+    role: "managed_judge_jobs_optional"
+    procurement_tier: T2
+    option_2_eligible: true
+
+# ---------------------------------------------------------------------------
+# 6. IaC and packaging
+# ---------------------------------------------------------------------------
+iac_packaging:
+  - id: IAC-01
+    name: "Terraform"
+    role: "environment parity per WP-F5"
+    procurement_tier: T1
+    option_2_eligible: true
+  - id: IAC-02
+    name: "Google Agent Starter Pack patterns"
+    role: "reference CI/CD and deploy templates"
+    procurement_tier: T2
+    option_2_eligible: true
+  - id: IAC-03
+    name: "Container image digests"
+    role: "immutable release artifacts"
+    procurement_tier: T1
+    option_2_required: true
+
+# ---------------------------------------------------------------------------
+# 7. Workspace capability audit (live substrate — observational)
+# ---------------------------------------------------------------------------
+workspace_capability_audit:
+  substrate: "WSL2 Ubuntu-24.04 + .venv-hermes"
+  production_edge: false
+  verify_tools_present:
+    - path: "scripts/verify_g9_research.py"
+      role: "upstream pack green required"
+    - path: "tests/test_g9_research.py"
+      role: "upstream unit green required"
+  hermes_mechanisms:
+    - "cronjob / hermes cron"
+    - "delegate_task (max_concurrent_children observed=3)"
+    - "terminal + process watchdogs"
+  observed_caps_not_constitutional_pins:
+    delegation_max_concurrent_children: 3
+    delegation_max_spawn_depth: 1
+  g9_preconditions:
+    - "verify_g9_research.py 330/330"
+    - "unittest tests.test_g9_research 72/72"
+
+# ---------------------------------------------------------------------------
+# 8. Procurement mapping T1–T4
+# ---------------------------------------------------------------------------
+procurement_summary:
+  rule: "T1 native/skills → T2 vetted cloud/MCP → T3 custom policy/SPIRE wire → T4 prototype-only denied in prod"
+  tiers:
+    T1:
+      description: "Native workspace skills, stdlib verifiers, OTEL collector OSS, GITHUB Actions OSS"
+      production_default: true
+      examples: [CI-01, TEL-01, TEL-03, EV-01, EV-02, IAC-03]
+    T2:
+      description: "Vetted GCP runtimes, Cloud Build, Cloud Observability, SPIRE packages, Secret Manager"
+      production_default: true
+      examples: [RT-ENG-01, RT-ENG-02, RT-ENG-03, CI-02, TEL-02, SEC-02, SEC-03]
+    T3:
+      description: "Custom enterprise policy server implementation / microVM glue"
+      production_conditional: true
+      hitl_required: true
+      examples: [SEC-01, RT-ENG-04]
+    T4:
+      description: "Ad-hoc scripts, unpinned npx, dune prototypes"
+      production_default: false
+      option_2_prod: DENIED
+      examples: ["floating npx MCP", "prototype/* hot agents"]
+
+  gaps:
+    - id: GAP-01
+      item: "Live policy server process"
+      severity: HIGH
+      action: "Wire post G10 token; keep DECLARED_LIVE_PATH_INTENT"
+    - id: GAP-02
+      item: "SPIRE deployment"
+      severity: HIGH
+      action: "Platform track; Doctor fail-closed in enforce mode"
+    - id: GAP-03
+      item: "Honcho AUTH_USE_AUTH=true for prod tenants"
+      severity: HIGH
+      action: "Memory auth before RT>=2 traffic"
+    - id: GAP-04
+      item: "Real GCP project landing zone"
+      severity: MED
+      action: "IaC templates only in A-D"
+    - id: GAP-05
+      item: "Chaos harness execution"
+      severity: HIGH
+      action: "Step E after resume token"
+
+# ---------------------------------------------------------------------------
+# 9. Phase → source mapping (pipeline stages)
+# ---------------------------------------------------------------------------
+phase_source_mapping:
+  STG-01_spec_edit: [CI-01, IAC-03]
+  STG-02_lint: [CI-01, SEC-04]
+  STG-03_regen: [CI-01]
+  STG-04_structural: [CI-04, CI-01]
+  STG-05_eval: [EV-01, EV-02, EV-04, CI-01]
+  STG-06_policy: [SEC-01, SEC-02]
+  STG-07_staging: [RT-ENG-02, RT-ENG-01, CI-02, TEL-01]
+  STG-08_canary: [RT-ENG-02, RT-ENG-01, TEL-02, EV-02]
+  STG-09_production: [RT-ENG-01, RT-ENG-02, RT-ENG-03, SEC-01, TEL-01, TEL-02]
+  STG-10_feedback: [TEL-01, TEL-03, CI-03, EV-03]
+
+# ---------------------------------------------------------------------------
+# 10. Cross-artifact consistency anchors
+# ---------------------------------------------------------------------------
+consistency:
+  overlay: OPTION_2_STANDARD
+  blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+  upstream_tag: research-loop-v1.0.0
+  companions:
+    - PRODUCTION_AGENTOPS_BLUEPRINT.md
+    - PRODUCTION_DSL_SPEC.md
+    - cicd_pipeline.yaml
+    - quality_gates.yaml
+    - doctor_checks.yaml
+    - fleet_management.yaml

@@ -1,0 +1,292 @@
+# quality_gates.yaml
+# G10 — Production quality, security, PII, token budget thresholds
+# Status: DRAFT_PRE_GATE
+# Overlay: OPTION_2_STANDARD
+# Upstream: research-loop-v1.0.0
+# BLUE resume: G10_PRODUCTION_DEPLOY_v1
+# Tier: Strong Coding (Step D)
+
+version: "1.0.0-draft"
+domain: G10
+kind: QualityGateSet
+status: DRAFT_PRE_GATE
+overlay: OPTION_2_STANDARD
+upstream_tag: research-loop-v1.0.0
+upstream_lock_commit: "6299812"
+blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+dsl_ref: PRODUCTION_DSL_SPEC.md
+g5_inheritance: specs/g5_evaluation/
+g8_inheritance: specs/g8_multitenant/
+g9_inheritance: specs/g9_research/
+
+apiVersion: "1.0.0"
+metadata:
+  name: agentic-rd-quality-gates
+  release_id: "rel-pending-pregate"
+  overlay: OPTION_2_STANDARD
+  upstream_tag: research-loop-v1.0.0
+  resume_token: G10_PRODUCTION_DEPLOY_v1
+
+# ---------------------------------------------------------------------------
+# Universal delta bands (G5 / BLUE binding)
+# ---------------------------------------------------------------------------
+delta_bands:
+  green:
+    max_degradation_pct: 5
+    exclusive_upper: true
+    action: allow_promote
+  amber:
+    min_degradation_pct: 5
+    max_degradation_pct: 15
+    action: auto_flag
+  red:
+    min_degradation_pct: 15
+    action: hitl_stop
+  note: "5 percent auto-flag, 15 percent HITL stop — SEM-PA-01 SEM-PA-02"
+
+# ---------------------------------------------------------------------------
+# Trust absolute floors (G5)
+# ---------------------------------------------------------------------------
+trust_score:
+  range: [0.0, 1.0]
+  initial: 1.0
+  auto_restore: false
+  restore_method: manual_hitl
+  thresholds:
+    warning: 0.85
+    hitl_review: 0.70
+    trip: 0.50
+  canary_decay_rollback_pct: 15
+  decay_rule: "if (baseline - now) / baseline > 0.15 then RB-03"
+
+# ---------------------------------------------------------------------------
+# Quality gates catalog
+# ---------------------------------------------------------------------------
+quality_gates:
+  - id: QG-001
+    name: eval_delta_vs_baseline
+    class: quality
+    threshold: "degradation_pct < 5 pct green; >=5 auto_flag; >=15 hitl_stop"
+    on_fail: hitl_stop
+    metrics: [agent.success_rate, eval.scenario_pass_rate]
+    stages: [STG-05, STG-05_fast, STG-08, STG-09]
+
+  - id: QG-002
+    name: trust_score_floor
+    class: safety
+    threshold: "trust_score >= 0.70 to advance canary; trip < 0.50"
+    on_fail: auto_rollback
+    metrics: [trust.score]
+    stages: [STG-08, STG-09]
+
+  - id: QG-003
+    name: trust_canary_decay
+    class: safety
+    threshold: "trust_decay_pct <= 15"
+    on_fail: auto_rollback
+    metrics: [trust.decay_pct_canary]
+    stages: [STG-08, STG-09]
+    maps_to_rollback: RB-03
+
+  - id: QG-004
+    name: latency_slo
+    class: quality
+    threshold: "p95_simple_ms <= 8000; p95_tool_heavy_ms <= 30000"
+    on_fail: auto_flag
+    metrics: [agent.latency_p95_ms]
+    stages: [STG-07, STG-08, STG-09]
+
+  - id: QG-010
+    name: doctor_critical_zero
+    class: safety
+    threshold: "doctor_critical_fail_count == 0"
+    on_fail: block_promote
+    metrics: [doctor.probe_fail_total]
+    stages: [STG-07, STG-08, STG-09]
+    maps_to_rollback: RB-04
+
+  - id: QG-020
+    name: policy_llm06_non_delegatable
+    class: policy
+    threshold: "llm06_critical_fail_count == 0"
+    on_fail: auto_rollback
+    non_delegatable: true
+    llm_can_bypass: false
+    controls: [LLM06-01, LLM06-02, LLM06-03, LLM06-04, LLM06-05, LLM06-06, LLM06-07, LLM06-08]
+    metrics: [policy.llm06_block_total, policy.deny_rate]
+    stages: [STG-06, STG-08, STG-09]
+    surge_rules:
+      auto_flag_pct: 5
+      auto_rollback_pct: 15
+    maps_to_rollback: RB-02
+
+  - id: QG-021
+    name: policy_deny_surge
+    class: policy
+    threshold: "deny_rate_delta_pct < 5 green; >=5 auto_flag; >=15 auto_rollback"
+    on_fail: auto_rollback
+    stages: [STG-08, STG-09]
+
+  - id: QG-030
+    name: pii_zero_leak
+    class: pii
+    threshold: "pii_egress_count == 0"
+    on_fail: auto_rollback
+    non_delegatable: true
+    metrics: [policy.pii_block, security.pii_leak]
+    stages: [STG-06, STG-07, STG-08, STG-09]
+    maps_to_rollback: RB-05
+
+  - id: QG-031
+    name: secret_zero_leak
+    class: security
+    threshold: "secret_leak_count == 0"
+    on_fail: auto_rollback
+    stages: [STG-02, STG-06, STG-08, STG-09]
+    maps_to_rollback: RB-05
+
+  - id: QG-032
+    name: cross_tenant_zero_breach
+    class: security
+    threshold: "cross_tenant_breach_count == 0"
+    on_fail: kill_switch
+    stages: [STG-08, STG-09]
+    maps_to_rollback: RB-06
+
+  - id: QG-040
+    name: token_budget_turn
+    class: cost
+    threshold: "per_turn_tokens <= tenant_template_ceiling"
+    on_fail: auto_flag
+    stages: [STG-08, STG-09]
+
+  - id: QG-041
+    name: token_budget_session
+    class: cost
+    threshold: "session_tokens <= tenant_template_ceiling"
+    on_fail: hitl_stop
+    stages: [STG-08, STG-09]
+
+  - id: QG-042
+    name: monthly_cost_vs_budget
+    class: cost
+    threshold: "projected_monthly_cost_usd <= budget_usd"
+    on_fail: auto_rollback
+    stages: [STG-08, STG-09]
+    maps_to_rollback: RB-08
+
+  - id: QG-043
+    name: research_context_pool
+    class: cost
+    threshold: "research_context_tokens <= 15000"
+    on_fail: hitl_stop
+    inherits: G9_C-RS-03
+    stages: [STG-05, STG-08]
+
+  - id: QG-050
+    name: citation_fail_closed
+    class: research
+    threshold: "unresolved_or_fabricated_citations == 0 for factual release"
+    on_fail: block_promote
+    constraints: [C-RS-05, C-RS-07]
+    stages: [STG-05, STG-06]
+    note: "Research product path only when artifacts present"
+
+  - id: QG-051
+    name: research_mandatory_hitl
+    class: research
+    threshold: "HG-RS-01 and HG-RS-05 and HG-RS-07 cleared"
+    on_fail: block_promote
+    stages: [STG-08]
+    note: "SEM-PA-10"
+
+  - id: QG-060
+    name: pin_and_supply_chain
+    class: security
+    threshold: "mcp_pins_match AND image_digest_pinned"
+    on_fail: block_promote
+    stages: [STG-03, STG-04, STG-07]
+
+  - id: QG-061
+    name: l4_disabled
+    class: safety
+    threshold: "l4_agent_creator == false"
+    on_fail: block_promote
+    stages: [STG-04, STG-08]
+
+  - id: QG-070
+    name: evidence_pack_complete
+    class: quality
+    threshold: "all_required_evidence_sections_present"
+    on_fail: block_promote
+    stages: [STG-08]
+
+  - id: QG-080
+    name: judge_family_split
+    class: quality
+    threshold: "judge_model_family != agent_model_family"
+    on_fail: auto_flag
+    stages: [STG-05]
+    note: "G5 self-enhancement bias mitigation"
+
+# ---------------------------------------------------------------------------
+# Token budget defaults (overridden per tenant RT)
+# ---------------------------------------------------------------------------
+token_budgets:
+  defaults:
+    per_turn_ceiling: 8000
+    session_ceiling: 100000
+    research_context_pool: 15000
+  by_risk_tier:
+    RT-1:
+      per_turn_ceiling: 12000
+      session_ceiling: 200000
+    RT-2:
+      per_turn_ceiling: 8000
+      session_ceiling: 100000
+    RT-3:
+      per_turn_ceiling: 6000
+      session_ceiling: 80000
+    RT-4:
+      per_turn_ceiling: 4000
+      session_ceiling: 50000
+
+# ---------------------------------------------------------------------------
+# PII / security scrubbing
+# ---------------------------------------------------------------------------
+pii_security:
+  deterministic_filters_required: true
+  llm_advisory_only: true
+  llm_final_authority: false
+  log_redaction: mandatory
+  patterns_ref: specs/g8_multitenant/sandbox_templates.yaml
+
+# ---------------------------------------------------------------------------
+# Cultural controls (quality process)
+# ---------------------------------------------------------------------------
+cultural_safeguards:
+  max_approvals_per_officer_per_hour: 3
+  batch_approve_forbidden: true
+  cool_down_after_rollback_pipeline_cycles: 1
+  metric_gaming_guards:
+    - "dataset_digest_change_requires_hitl"
+    - "judge_family_split"
+    - "no_mute_doctor_critical_without_break_glass"
+
+# ---------------------------------------------------------------------------
+# Consistency
+# ---------------------------------------------------------------------------
+consistency:
+  overlay: OPTION_2_STANDARD
+  blue_resume_token: G10_PRODUCTION_DEPLOY_v1
+  upstream_tag: research-loop-v1.0.0
+  auto_flag_pct: 5
+  hitl_stop_pct: 15
+  trust_decay_rollback_pct: 15
+  companions:
+    - cicd_pipeline.yaml
+    - doctor_checks.yaml
+    - fleet_management.yaml
+    - PRODUCTION_DSL_SPEC.md
+    - PRODUCTION_AGENTOPS_BLUEPRINT.md
+    - CAPABILITY_DISCOVERY.yaml
