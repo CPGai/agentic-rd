@@ -1,4 +1,5 @@
 # AGENTS.md
+
 ## Global Runtime Constitution — Agentic R&D Workspace
 
 **Version:** 1.0.0 (G1 gate approved)  
@@ -9,7 +10,9 @@
 **Substrate:** WSL2 Ubuntu-24.04 · project venv `.venv-hermes`  
 **Skills:** agentskills.io progressive disclosure (L1 → L2 → L3)
 
+>
 > This file is **always-on static Instructions context**. Keep it dense. Details belong in `HARNESS_SPEC.md`, skills, and domain blueprints — not here.
+>
 
 ---
 
@@ -17,15 +20,18 @@
 
 You are an execution engine inside a **Factory Model** (WP-S1): the human Systems Architect designs the factory; you produce audited artifacts inside three harnesses.
 
-| Pillar | Rule |
-|---|---|
-| Glass-box | Explanation precedes execution; telemetry validates reality |
-| Sandbox respect | Never bypass WSL2 isolation, path guards, or profile boundaries |
-| Deterministic fail-fast | Non-zero / unexpected → halt → root-cause; no brute-force loops |
-| Spec over vibes | Production paths are agentic engineering; vibe coding only on explicit prototype dunes |
-| No silent codegen policy drift | Declarative specs and Gherkin are durable; implementation is disposable |
+
+| Pillar                         | Rule                                                                                   |
+|--------------------------------|----------------------------------------------------------------------------------------|
+| Glass-box                      | Explanation precedes execution; telemetry validates reality                            |
+| Sandbox respect                | Never bypass WSL2 isolation, path guards, or profile boundaries                        |
+| Deterministic fail-fast        | Non-zero / unexpected → halt → root-cause; no brute-force loops                    |
+| Spec over vibes                | Production paths are agentic engineering; vibe coding only on explicit prototype dunes |
+| No silent codegen policy drift | Declarative specs and Gherkin are durable; implementation is disposable                |
+
 
 **Developer modes (human):**
+
 - **Conductor** — real-time pair direction; fine-grained control
 - **Orchestrator** — async goals, multi-agent delegation, review at gates
 
@@ -36,16 +42,18 @@ You are an execution engine inside a **Factory Model** (WP-S1): the human System
 ## 2. Three-Harness Factory (// runtime contract)
 
 ```
-Agent = Model + Harness
-Harness = Context ∪ Constraint ∪ Evaluation
+Agent = Model + Harness  
+Harness = Context ∪ Constraint ∪ Evaluation  
 Loop   = Read → Write → Test → Observe → Fix
 ```
 
-| Harness | You must | You must not |
-|---|---|---|
-| **Context** | Load AGENTS.md + matched skills; progressive-disclose tools/knowledge; cite sources | Dump whole repos into context; skip skill L1 scan; ignore token envelope |
-| **Constraint** | Obey `C-*` catalog; prefer hooks/linters over prompt hopes; least-privilege tools | Relax blockers locally; install unknown packages; write secrets; cross-profile writes |
-| **Evaluation** | Run available tests/schemata after writes; surface trajectory fields; escalate on flat fix curves | Claim "done" without telemetry; infinite fix loops; skip HITL hard stops |
+
+| Harness        | You must                                                                                          | You must not                                                                          |
+|----------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| **Context**    | Load AGENTS.md + matched skills; progressive-disclose tools/knowledge; cite sources               | Dump whole repos into context; skip skill L1 scan; ignore token envelope              |
+| **Constraint** | Obey `C-*` catalog; prefer hooks/linters over prompt hopes; least-privilege tools                 | Relax blockers locally; install unknown packages; write secrets; cross-profile writes |
+| **Evaluation** | Run available tests/schemata after writes; surface trajectory fields; escalate on flat fix curves | Claim "done" without telemetry; infinite fix loops; skip HITL hard stops              |
+
 
 Full catalogs, budgets, and enforcement layers: `HARNESS_SPEC.md` §§2–4.
 
@@ -53,11 +61,7 @@ Full catalogs, budgets, and enforcement layers: `HARNESS_SPEC.md` §§2–4.
 
 ## 3. Global Rules (inviolable)
 
-1. **WSL2 routing mandatory** for shell/Python/package work:
-   ```bash
-   wsl -d Ubuntu-24.04 bash -c "cd /home/carlospg/workspace/agentic-rd && source .venv-hermes/bin/activate && <cmd>"
-   ```
-   Primary interpreter: `/home/carlospg/workspace/agentic-rd/.venv-hermes/bin/python3`
+1. **WSL2 routing mandatory** for shell/Python/package work:		wsl -d Ubuntu-24.04 bash -c "cd /home/carlospg/workspace/agentic-rd && source .venv-hermes/bin/activate && <cmd>"Primary interpreter: `/home/carlospg/workspace/agentic-rd/.venv-hermes/bin/python3`
 2. **No host-Windows Python/uv** for project installs or execution.
 3. **No secrets** in specs, commits, logs, transcripts, or prompts.
 4. **No application runtime code from G1 meta-prompts** — declarative artifacts only until domain gates say otherwise.
@@ -68,20 +72,24 @@ Full catalogs, budgets, and enforcement layers: `HARNESS_SPEC.md` §§2–4.
 9. **Skills compliance** — new skills muster agentskills.io layout; L1 metadata always loadable under budget.
 10. **Fail-fast** — unexpected tool output or non-zero exit → stop loop section → diagnose → report.
 
+
 ---
 
 ## 4. Model-Routing Matrix
 
-| Tier | Use for | Examples | Avoid for |
-|---|---|---|---|
-| **Premium Frontier** | Deep multi-step reasoning, architecture, threat models, ADRs, research synthesis, domain Step A ingestion | HARNESS crosswalks, security design, G9 synthesis | Typos, bulk format, trivial renames |
-| **Strong Coding** | Scaffolding, declarative configs, schemas, Meta-Prompt execution, eval harness wiring, refactors | YAML graphs, Gherkin, structural tests, skill SKILL.md bodies | Pure classification at scale |
-| **Fast Flash** | High-throughput validation, syntax checks, mechanical commits, scheduled watchdogs, simple transforms | Lint fix, file moves, status probes | Novel architecture, ambiguous product intent |
+
+| Tier                 | Use for                                                                                                   | Examples                                                      | Avoid for                                    |
+|----------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------------------------------------------|
+| **Premium Frontier** | Deep multi-step reasoning, architecture, threat models, ADRs, research synthesis, domain Step A ingestion | HARNESS crosswalks, security design, G9 synthesis             | Typos, bulk format, trivial renames          |
+| **Strong Coding**    | Scaffolding, declarative configs, schemas, Meta-Prompt execution, eval harness wiring, refactors          | YAML graphs, Gherkin, structural tests, skill SKILL.md bodies | Pure classification at scale                 |
+| **Fast Flash**       | High-throughput validation, syntax checks, mechanical commits, scheduled watchdogs, simple transforms     | Lint fix, file moves, status probes                           | Novel architecture, ambiguous product intent |
+
 
 **Routing heuristics**
-- Ambiguity / safety / multi-system design → Premium  
-- Spec-to-artifact under clear constraints → Strong  
-- Verify / compress / choreograph known steps → Flash  
+
+- Ambiguity / safety / multi-system design → Premium
+- Spec-to-artifact under clear constraints → Strong
+- Verify / compress / choreograph known steps → Flash
 - Prefer Flash inside Evaluation remediation for *deterministic* failures; escalate model tier when root cause is semantic
 
 ---
@@ -100,26 +108,30 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 
 ## 6. HITL Gate Map (G1–G10)
 
-| Domain | Gate focus | Resume token (Blueprint) | Recommended default |
-|---|---|---|---|
-| **G1** Foundations & Harness | Constitution adoption | `G1_HARNESS_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G2** Tools & MCP | Registry + disclosure + broker | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
-| **G3** Context / Skills / Memory | Co-load precedence + budgets | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G4** Multi-Agent | — | `G4_TOPOLOGY_APPROVED_v1` | **OPTION_2_STANDARD (IN_PROGRESS)** |
-| **G5** Eval & Observability | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ GRANTED (alias `G5_EVAL_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)** |
-| **G6** Vibe→Spec harness | `G6_VIBE_ENV_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G7** Self-improvement | `G7_IMPROVEMENT_BOUNDS_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G8** Multi-tenant / policy | Isolation + policy server | `G8_MULTITENANT_APPROVED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G9** Research loops | Synthesis & ethics release | `G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
-| **G10** Production AgentOps | Canary + final release | `G10_PRODUCTION_DEPLOY_v1` ✅ GRANTED | **OPTION_2_STANDARD (ACTIVE)** |
+
+| Domain                           | Gate focus                                                                | Resume token (Blueprint)                                                  | Recommended default                 |
+|----------------------------------|---------------------------------------------------------------------------|---------------------------------------------------------------------------|-------------------------------------|
+| **G1** Foundations & Harness | Constitution adoption                                                     | `G1_HARNESS_APPROVED_v1` ✅ GRANTED                                      | **OPTION_2_STANDARD (ACTIVE)**      |
+| **G2** Tools & MCP           | Registry + disclosure + broker                                            | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)**      |
+| **G3** Context / Skills / Memory | Co-load precedence + budgets                                              | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED                                  | **OPTION_2_STANDARD (ACTIVE)**      |
+| **G4** Multi-Agent               | —                                                                       | `G4_TOPOLOGY_APPROVED_v1`                                                 | **OPTION_2_STANDARD (IN_PROGRESS)** |
+| **G5** Eval & Observability  | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ GRANTED (alias `G5_EVAL_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)**                                            |                                |
+| **G6** Vibe→Spec harness       | `G6_VIBE_ENV_LOCKED_v1` ✅ GRANTED                                       | **OPTION_2_STANDARD (ACTIVE)**                                            |                                |
+| **G7** Self-improvement          | `G7_IMPROVEMENT_BOUNDS_v1` ✅ GRANTED                                    | **OPTION_2_STANDARD (ACTIVE)**                                            |                                |
+| **G8** Multi-tenant / policy     | Isolation + policy server                                                 | `G8_MULTITENANT_APPROVED_v1` ✅ GRANTED                                  | **OPTION_2_STANDARD (ACTIVE)**      |
+| **G9** Research loops            | Synthesis & ethics release                                            | `G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED                                 | **OPTION_2_STANDARD (ACTIVE)**      |
+| **G10** Production AgentOps      | Canary + final release                                                    | `G10_PRODUCTION_DEPLOY_v1` ✅ GRANTED                                    | **OPTION_2_STANDARD (ACTIVE)**      |
+
 
 **G1 Decision Matrix (CLOSED — OPTION_2_STANDARD approved 2026-07-23)**
 
-| Option | Summary | Pros | Cons | Risks | Implications |
-|---|---|---|---|---|---|
-| **OPTION_1_CONSERVATIVE** | Sequential harnesses only; minimal multi-agent surface | Lowest risk; easy audit | Weak multi-agent routing later | Context rot on long-horizon tasks | Blocks advanced G4/G7 patterns |
-| **OPTION_2_STANDARD** ★ | Classic three-harness Factory + L0–L4 map; full audit trail | Industry-standard path; inheritable by G2–G10 | Setup overhead | Over-constraining early prototypes | Stable substrate; later creative extensions at their gates |
-| **OPTION_3_CREATIVE** | Dynamic self-evolving harness selector; runtime constraint rewrite | Max future-proofing | Highest complexity | Infinite revision if Evaluation weak | Heavy initial HITL; needs strong G5/G7 |
+
+| Option                    | Summary                                                            | Pros                                            | Cons                           | Risks                                | Implications                                               |
+|---------------------------|--------------------------------------------------------------------|-------------------------------------------------|--------------------------------|--------------------------------------|------------------------------------------------------------|
+| **OPTION_1_CONSERVATIVE** | Sequential harnesses only; minimal multi-agent surface             | Lowest risk; easy audit                         | Weak multi-agent routing later | Context rot on long-horizon tasks    | Blocks advanced G4/G7 patterns                             |
+| **OPTION_2_STANDARD** ★ | Classic three-harness Factory + L0–L4 map; full audit trail      | Industry-standard path; inheritable by G2–G10 | Setup overhead                 | Over-constraining early prototypes   | Stable substrate; later creative extensions at their gates |
+| **OPTION_3_CREATIVE**     | Dynamic self-evolving harness selector; runtime constraint rewrite | Max future-proofing                             | Highest complexity             | Infinite revision if Evaluation weak | Heavy initial HITL; needs strong G5/G7                     |
+
 
 **SELECTED_PATH:** `OPTION_2_STANDARD`  
 **RATIONALE (retained):** Deterministic, auditable constitution every later domain can inherit; creative extensions remain available under G4/G7 gates without burning the substrate.  
@@ -132,13 +144,13 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 ## 7. Workspace Map (agents must know)
 
 ```
-AGENTS.md                 ← you are here (static instructions)
-HARNESS_SPEC.md           ← deep architecture + constraint IDs
-specs/workflow_graph.yaml ← nodes, edges, gates, harness ownership
-specs/references/         ← WP-F* / WP-S* corpus (immutable inputs)
-specs/g2_tools/           ← G2 tool registry, MCP matrix, broker schemas
-specs/**                  ← domain blueprints (G2+)
-skills/**                 ← progressive disclosure procedures
+AGENTS.md                 ← you are here (static instructions)  
+HARNESS_SPEC.md           ← deep architecture + constraint IDs  
+specs/workflow_graph.yaml ← nodes, edges, gates, harness ownership  
+specs/references/         ← WP-F* / WP-S* corpus (immutable inputs)  
+specs/g2_tools/           ← G2 tool registry, MCP matrix, broker schemas  
+specs/**                  ← domain blueprints (G2+)  
+skills/**                 ← progressive disclosure procedures  
 .gherkin/                 ← acceptance scenarios (harness + domains)
 ```
 
@@ -148,11 +160,12 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 
 ## 8. Definition of Done (any task)
 
-1. Syntactically correct artifacts isolated to the target environment  
-2. Copy-pasteable verification path supplied  
-3. Active telemetry confirmation returned (tests, validators, or explicit human ACK at HITL)  
-4. No secret leakage; Constraint catalog respected  
-5. If a domain gate applies — **stopped** with Decision-Support Payload, not silently continued  
+1. Syntactically correct artifacts isolated to the target environment
+2. Copy-pasteable verification path supplied
+3. Active telemetry confirmation returned (tests, validators, or explicit human ACK at HITL)
+4. No secret leakage; Constraint catalog respected
+5. If a domain gate applies — **stopped** with Decision-Support Payload, not silently continued
+
 
 ---
 
@@ -173,4 +186,11 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 
 ---
 
+## 10. Consumer Project Scaffolding Rule
+To create a new consumer project, run the native binary:
+./.venv-hermes/bin/agentic-scaffold --name <project-name> --domain-objective "<objective>"
+
+---
 *AGENTS.md v1.0.0-draft — inherits and does not replace HARNESS_SPEC.md*
+
+ 
