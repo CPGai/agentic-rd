@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-rd"
+version = "1.0.0"
+description = "Three-Harness Factory Model for autonomous agentic R&D — G1–G10 domain constitution"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Carlo" },
+]
+keywords = [
+  "agentic",
+  "ai",
+  "agents",
+  "research-and-development",
+  "harness",
+  "three-harness-factory",
+  "wsl2",
+  "hermes",
+  "scaffolding",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.scripts]
+agentic-scaffold = "scripts.scaffold_consumer_project:main"
+
+[project.urls]
+Repository = "https://github.com/carlos-pg/agentic-rd"
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["agentic_rd*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
