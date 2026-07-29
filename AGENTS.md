@@ -5,7 +5,7 @@
 **Version:** 1.0.0 (G1 gate approved)  
 **Binding deep-spec:** [`HARNESS_SPEC.md`](./HARNESS_SPEC.md)  
 **Topology:** [`specs/workflow_graph.yaml`](./specs/workflow_graph.yaml)  
-**Status:** APPROVED — `OPTION_2_STANDARD` · resume `G1_HARNESS_APPROVED_v1`  
+**Status:** ACTIVE — resume `G1_HARNESS_APPROVED_v1`  
 **Harness:** Hermes CLI + Antigravity unified harness  
 **Substrate:** WSL2 Ubuntu-24.04 · project venv `.venv-hermes`  
 **Skills:** agentskills.io progressive disclosure (L1 → L2 → L3)
@@ -35,7 +35,7 @@ You are an execution engine inside a **Factory Model** (WP-S1): the human System
 - **Conductor** — real-time pair direction; fine-grained control
 - **Orchestrator** — async goals, multi-agent delegation, review at gates
 
-**Default agent level:** **L2** (Strategic Problem-Solver). **L3** enabled after G4 approval (`G4_TOPOLOGY_APPROVED_v1` ✅ GRANTED). **L4** forbidden until G7 resume token.
+**Default agent level:** **L2** (Strategic Problem-Solver). **L3** enabled after G4 approval (`G4_TOPOLOGY_APPROVED_v1`). **L4** forbidden until G7 resume token.
 
 ---
 
@@ -111,33 +111,21 @@ Irreversible or payment/security-sensitive acts require Constraint pre-hook and,
 
 | Domain                           | Gate focus                                                                | Resume token (Blueprint)                                                  | Recommended default                 |
 |----------------------------------|---------------------------------------------------------------------------|---------------------------------------------------------------------------|-------------------------------------|
-| **G1** Foundations & Harness | Constitution adoption                                                     | `G1_HARNESS_APPROVED_v1` ✅ GRANTED                                      | **OPTION_2_STANDARD (ACTIVE)**      |
-| **G2** Tools & MCP           | Registry + disclosure + broker                                            | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ GRANTED (alias `G2_TOOLING_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)**      |
-| **G3** Context / Skills / Memory | Co-load precedence + budgets                                              | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED                                  | **OPTION_2_STANDARD (ACTIVE)**      |
-| **G4** Multi-Agent               | —                                                                       | `G4_TOPOLOGY_APPROVED_v1`                                                 | **OPTION_2_STANDARD (IN_PROGRESS)** |
-| **G5** Eval & Observability  | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ GRANTED (alias `G5_EVAL_APPROVED_v1`) | **OPTION_2_STANDARD (ACTIVE)**                                            |                                |
-| **G6** Vibe→Spec harness       | `G6_VIBE_ENV_LOCKED_v1` ✅ GRANTED                                       | **OPTION_2_STANDARD (ACTIVE)**                                            |                                |
-| **G7** Self-improvement          | `G7_IMPROVEMENT_BOUNDS_v1` ✅ GRANTED                                    | **OPTION_2_STANDARD (ACTIVE)**                                            |                                |
-| **G8** Multi-tenant / policy     | Isolation + policy server                                                 | `G8_MULTITENANT_APPROVED_v1` ✅ GRANTED                                  | **OPTION_2_STANDARD (ACTIVE)**      |
-| **G9** Research loops            | Synthesis & ethics release                                            | `G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED                                 | **OPTION_2_STANDARD (ACTIVE)**      |
-| **G10** Production AgentOps      | Canary + final release                                                    | `G10_PRODUCTION_DEPLOY_v1` ✅ GRANTED                                    | **OPTION_2_STANDARD (ACTIVE)**      |
+| **G1** Foundations & Harness | Constitution adoption                                                     | `G1_HARNESS_APPROVED_v1`                                                 | **ACTIVE**                          |
+| **G2** Tools & MCP           | Registry + disclosure + broker                                            | `G2_TOOL_REGISTRY_LOCKED_v1` (alias `G2_TOOLING_APPROVED_v1`)           | **ACTIVE**                          |
+| **G3** Context / Skills / Memory | Co-load precedence + budgets                                              | `G3_CONTEXT_LAYER_LOCKED_v1`                                             | **ACTIVE**                          |
+| **G4** Multi-Agent               | —                                                                       | `G4_TOPOLOGY_APPROVED_v1`                                                 | **ACTIVE**                          |
+| **G5** Eval & Observability  | `G5_EVAL_FRAMEWORK_APPROVED_v1` (alias `G5_EVAL_APPROVED_v1`)             | **ACTIVE**                                                                |                                     |
+| **G6** Vibe→Spec harness       | `G6_VIBE_ENV_LOCKED_v1`                                                   | **ACTIVE**                                                                |                                     |
+| **G7** Self-improvement          | `G7_IMPROVEMENT_BOUNDS_v1`                                                | **ACTIVE**                                                                |                                     |
+| **G8** Multi-tenant / policy     | Isolation + policy server                                                 | `G8_MULTITENANT_APPROVED_v1`                                             | **ACTIVE**                          |
+| **G9** Research loops            | Synthesis & ethics release                                            | `G9_RESEARCH_FLEET_LOCKED_v1`                                            | **ACTIVE**                          |
+| **G10** Production AgentOps      | Canary + final release                                                    | `G10_PRODUCTION_DEPLOY_v1`                                               | **ACTIVE**                          |
 
 
-**G1 Decision Matrix (CLOSED — OPTION_2_STANDARD approved 2026-07-23)**
-
-
-| Option                    | Summary                                                            | Pros                                            | Cons                           | Risks                                | Implications                                               |
-|---------------------------|--------------------------------------------------------------------|-------------------------------------------------|--------------------------------|--------------------------------------|------------------------------------------------------------|
-| **OPTION_1_CONSERVATIVE** | Sequential harnesses only; minimal multi-agent surface             | Lowest risk; easy audit                         | Weak multi-agent routing later | Context rot on long-horizon tasks    | Blocks advanced G4/G7 patterns                             |
-| **OPTION_2_STANDARD** ★ | Classic three-harness Factory + L0–L4 map; full audit trail      | Industry-standard path; inheritable by G2–G10 | Setup overhead                 | Over-constraining early prototypes   | Stable substrate; later creative extensions at their gates |
-| **OPTION_3_CREATIVE**     | Dynamic self-evolving harness selector; runtime constraint rewrite | Max future-proofing                             | Highest complexity             | Infinite revision if Evaluation weak | Heavy initial HITL; needs strong G5/G7                     |
-
-
-**SELECTED_PATH:** `OPTION_2_STANDARD`  
-**RATIONALE (retained):** Deterministic, auditable constitution every later domain can inherit; creative extensions remain available under G4/G7 gates without burning the substrate.  
-**HITL_SIGNAL:** Human granted `G1_HARNESS_APPROVED_v1` with `OPTION_2_STANDARD` (2026-07-23).  
-**STATUS:** `APPROVED` — G1 hard stop cleared. G2+ may proceed under Option-2 overlays.  
-**STILL_OPEN:** G1 Steps E/F structural mechanization + `HARNESS_AUDIT_REPORT.md` (non-blocking for domain start gated only on this resume token).
+**Gate Protocol Status: ACTIVE**
+- **ACTIVE_SPEC:** Operational Three-Harness Factory + L0–L4 map with deterministic audit trail.
+- **AUTHORITATIVE_GATES:** G1–G10 resume tokens govern progressive capability unlocks.
 
 ---
 
@@ -171,14 +159,14 @@ Module `GEMINI.md` / `CLAUDE.md` files **tighten** this constitution only.
 
 ## 9. Explicit Non-Actions
 
-- G1 is `APPROVED` (`G1_HARNESS_APPROVED_v1`); G2–G10 may start under OPTION_2_STANDARD overlays — still stop at each domain's own HITL gate
-- G4 is `APPROVED` (`G4_TOPOLOGY_APPROVED_v1` ✅ GRANTED); L3 enabled
-- G5 is `APPROVED` (`G5_EVAL_FRAMEWORK_APPROVED_v1`); G6+ may proceed under OPTION_2_STANDARD overlays — still stop at each domain's own HITL gate
-- G6 is `APPROVED` (`G6_VIBE_ENV_LOCKED_v1`); G7 may proceed under OPTION_2_STANDARD overlays — still stop at G7's own HITL gate
-- G7 is `APPROVED` (`G7_IMPROVEMENT_BOUNDS_v1`); G8 may proceed under OPTION_2_STANDARD overlays — still stop at G8's own HITL gate
-- G8 is `APPROVED` (`G8_MULTITENANT_APPROVED_v1` ✅ GRANTED); G9 may proceed under OPTION_2_STANDARD overlays — still stop at G9's own HITL gate
-- G9 is `APPROVED` (`G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED); G10 may proceed under OPTION_2_STANDARD overlays — still stop at G10's own HITL gate
-- G10 is `APPROVED` (`G10_PRODUCTION_DEPLOY_v1` ✅ GRANTED); tag `production-v1.0.0` locks Production AgentOps under OPTION_2_STANDARD (canary + auto-rollback). L4 AgentCreator remains disabled.
+- G1 is `APPROVED` (`G1_HARNESS_APPROVED_v1`); G2–G10 stop at each domain's own HITL gate
+- G4 is `APPROVED` (`G4_TOPOLOGY_APPROVED_v1`); L3 enabled
+- G5 is `APPROVED` (`G5_EVAL_FRAMEWORK_APPROVED_v1`); G6+ stop at each domain's own HITL gate
+- G6 is `APPROVED` (`G6_VIBE_ENV_LOCKED_v1`); G7 stops at G7's own HITL gate
+- G7 is `APPROVED` (`G7_IMPROVEMENT_BOUNDS_v1`); G8 stops at G8's own HITL gate
+- G8 is `APPROVED` (`G8_MULTITENANT_APPROVED_v1`); G9 stops at G9's own HITL gate
+- G9 is `APPROVED` (`G9_RESEARCH_FLEET_LOCKED_v1`); G10 stops at G10's own HITL gate
+- G10 is `APPROVED` (`G10_PRODUCTION_DEPLOY_v1`); tag `production-v1.0.0` locks Production AgentOps (canary + auto-rollback). L4 AgentCreator remains disabled.
 - Do not enable L4 AgentCreator (G7 token grants bounded self-improvement loop; L4 AgentCreator requires separate explicit enablement beyond G7)
 - Do not treat a green demo as a green eval
 - Do not expand static context past the § envelope in `HARNESS_SPEC.md` without progressive disclosure

@@ -20,7 +20,7 @@ STATIC (Instructions ∩ Guardrails ∩ pinned Memory)
   → Model
 ```
 
-## Caps (OPTION_2)
+## Caps
 - Static pack ≤ 20% of active window
 - Soft ≤ 3 concurrent L2 bodies
 - Flag if co-loaded L2 > ~8k tokens (~32k chars hedge)

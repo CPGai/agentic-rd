@@ -2,7 +2,7 @@
 
 **Domain:** G4 · Mock A2A Agent Card registry  
 **Lifecycle default:** `schema_only`  
-**Live remote invoke (OPTION_2):** **denied** unless card.`option_2.enabled` and policy allow.
+**Live remote invoke:** **denied** unless card.`option_2.enabled` and policy allow.
 
 ## Inventory
 

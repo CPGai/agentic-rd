@@ -170,9 +170,9 @@ Feature: Parallel research fan-out with join barrier
 ## 7. Feature template — payments (schema path)
 
 ```gherkin
-@domain:G4 @payment @option2 @hitl
+@domain:G4 @payment @hitl
 Feature: AP2 mandate-bounded micro payment path
-  Payments are schema-real but live settle defaults false under OPTION_2.
+  Payments are schema-real but live settle defaults false by default policy.
 
   @agent:card.root.orchestrator @risk:T4 @edge:hitl @payment
   Scenario: Create mandate requires human
@@ -195,7 +195,7 @@ Feature: AP2 mandate-bounded micro payment path
 ## 8. Feature template — handshake
 
 ```gherkin
-@domain:G4 @option2
+@domain:G4
 Feature: A2A discovery handshake
   @agent:card.root.orchestrator @risk:T2 @edge:deterministic
   Scenario: Happy path to RUNNING
@@ -205,8 +205,8 @@ Feature: A2A discovery handshake
     And caps.timeout_ms is set
 
   @agent:card.remote.billing_specialist_example @risk:T4 @edge:deterministic
-  Scenario: Remote example denied on OPTION_2
-    Given overlay OPTION_2_STANDARD
+  Scenario: Remote example denied by policy
+    Given active security policy
     When root attempts delegate to remote billing example
     Then decision is deny
     And enabled flag remains false

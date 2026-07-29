@@ -384,14 +384,9 @@ The flywheel is the operational embodiment of the evaluation framework — a con
 
 ## 8. Option Matrix (BLUE §G5)
 
-| Option | Summary | Pros | Cons | Risks |
-|---|---|---|---|---|
-| **OPTION_1_CONSERVATIVE** | Manual reviews only, exact-string match | Lowest risk, easy audit | No scalability, misses subtle degradation | Context rot on long-horizon tasks |
-| **OPTION_2_STANDARD** ★ | LLM-as-Judge + OTEL trajectories + Red/Blue/Green + 5%/15% thresholds | Meets Course-2 Effective Trust requirements; scalable; audit trail | Setup overhead; judge bias mitigation needed | Judge model cost; false positives at 5% |
-| **OPTION_3_CREATIVE** | Fully autonomous Agent-as-a-Judge with self-modifying rubrics | Max automation; self-improving evaluation | Infinite loop risk; rubric drift | Needs strong G5/G7; infinite revision if evaluation weak |
-
-**SELECTED_PATH:** `OPTION_2_STANDARD`  
-**RATIONALE:** Meets Course-2 Effective Trust requirements while keeping critical Red-team findings under human review. Balances automation with human judgment. 5%/15% thresholds provide graduated response.  
+**Evaluation Strategy Status: LOCKED (`G5_EVAL_FRAMEWORK_APPROVED_v1`)**
+- LLM-as-Judge + OTEL trajectories + Red/Blue/Green + 5%/15% thresholds.
+- Meets Course-2 Effective Trust requirements while keeping critical Red-team findings under human review.
 **REQUIRED_TELEMETRY:** Red-team bypass count, blocked slopsquatting/PII events, Judge agreement rate.
 
 ---

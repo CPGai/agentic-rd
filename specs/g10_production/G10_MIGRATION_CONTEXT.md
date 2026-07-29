@@ -115,7 +115,7 @@ Before starting G10 production AgentOps:
 ## 5. AGENTS.md State (Post-G9)
 
 Current state of key sections for G10:
-- Section 6 HITL Gate Map: G9 marked with `G9_RESEARCH_FLEET_LOCKED_v1` ✅ GRANTED
+- Section 6 HITL Gate Map: G9 marked with `G9_RESEARCH_FLEET_LOCKED_v1`
 - Section 9 Explicit Non-Actions: G9 APPROVED; G10 may proceed under OPTION_2_STANDARD overlays — still stop at G10's own HITL gate
 - G10 is the final domain with its own HITL gate — G9 does NOT auto-unlock G10
 

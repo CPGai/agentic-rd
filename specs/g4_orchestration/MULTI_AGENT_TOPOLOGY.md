@@ -1,8 +1,7 @@
 # MULTI_AGENT_TOPOLOGY.md
 
 **Domain:** G4 — Multi-Agent Orchestration  
-**Status:** DRAFT_PRE_GATE (Steps A–D emitted · HARD_STOP pending)  
-**Operating overlay:** `OPTION_2_STANDARD` (binding until HITL)  
+**Status:** LOCKED  
 **Authoritative resume token (BLUE):** `G4_TOPOLOGY_APPROVED_v1`  
 **Precedence:** Course-2 (WP-S2 / WP-S4 / WP-S1) supersedes Course-1 (WP-F1 / WP-F2 / WP-F4) on overlap  
 **Upstream locked:** G1 `HARNESS_SPEC.md` · G2 `TOOL_REGISTRY.md` · G3 `CONTEXT_ENGINEERING_BLUEPRINT.md` · `G4_MIGRATION_CONTEXT.md`  
@@ -392,14 +391,8 @@ Post-gate (deferred unless token expands scope): Step E structural tests, Step F
 **WHEN** human reviews options  
 **THEN** HARD_STOP until `G4_TOPOLOGY_APPROVED_v1`
 
-| Option | Summary |
-|---|---|
-| OPTION_1_CONSERVATIVE | Single orchestrator + few sequential specialists; **no** autonomous payments |
-| OPTION_2_STANDARD ★ | Hierarchical LLM root + explicit AgentTool leaves + AP2 **with spending limits** + policy server |
-| OPTION_3_CREATIVE | Full swarm + unrestricted A2A micro-economy + live A2UI aggregation |
-
-**RECOMMENDED_PATH:** `OPTION_2_STANDARD`  
-**RATIONALE:** Matches G-domain hierarchy; financial guardrails human-auditable; aligns G1/G2/G3 overlays without burning substrate.
+**Topology Standard Status: LOCKED (`G4_TOPOLOGY_APPROVED_v1`)**
+- Hierarchical LLM root + explicit AgentTool leaves + AP2 with spending limits + policy server.
 
 ---
 

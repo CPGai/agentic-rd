@@ -4,7 +4,7 @@
   "overlay": "OPTION_2_STANDARD",
   "resume_token": "G10_PRODUCTION_DEPLOY_v1",
   "upstream_tag": "research-loop-v1.0.0",
-  "timestamp_utc": "2026-07-25T11:49:20.273776+00:00",
+  "timestamp_utc": "2026-07-28T18:36:15.801666+00:00",
   "lkg_revision": "v0.9.0-previous",
   "canary_revision": "v1.0.0-canary-candidate",
   "scenarios": [

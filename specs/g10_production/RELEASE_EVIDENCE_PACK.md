@@ -1,8 +1,7 @@
 # RELEASE_EVIDENCE_PACK.md
 # G10 — Production AgentOps Final Release Evidence
 # Status: LOCKED
-# Overlay: OPTION_2_STANDARD
-# Resume token: G10_PRODUCTION_DEPLOY_v1 (GRANTED)
+# Resume token: G10_PRODUCTION_DEPLOY_v1
 # Tag: production-v1.0.0
 # Upstream: research-loop-v1.0.0 @ 6299812
 
@@ -16,7 +15,7 @@
 | Release tag | `production-v1.0.0` |
 | Overlay | OPTION_2_STANDARD |
 | Resume token | `G10_PRODUCTION_DEPLOY_v1` |
-| Granted | 2026-07-25 (HITL Sovereign Systems Architect) |
+| Granted | 2026-07-25 |
 | Upstream tag | `research-loop-v1.0.0` |
 | Upstream lock commit | `6299812` |
 | Final gate | true |
@@ -153,7 +152,7 @@ Max time to LKG (spec): ≤ 5 minutes
 
 | Role | Decision |
 |---|---|
-| Systems Architect (HITL) | Granted `G10_PRODUCTION_DEPLOY_v1` · OPTION_2_STANDARD |
+| Systems Architect (HITL) | Approved `G10_PRODUCTION_DEPLOY_v1` |
 | Release Officer | Evidence pack complete (this document) |
 | Security | LLM06 non-delegatable pack verified in chaos |
 | Platform | Verifier + unittest + dry-run green |

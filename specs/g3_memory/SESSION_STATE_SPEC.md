@@ -2,9 +2,7 @@
 
 **Domain:** G3 — Memory & Stateful Agents  
 **Status:** LOCKED · declarative only  
-**Operating overlay / selected path:** `OPTION_2_STANDARD`  
-**Resume token (BLUE authoritative):** `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED  
-**Granted at:** 2026-07-24  
+**Resume token (BLUE authoritative):** `G3_CONTEXT_LAYER_LOCKED_v1` (LOCKED)  
 **Parents:** `CONTEXT_ENGINEERING_BLUEPRINT.md` · `HARNESS_SPEC.md` §2 · WP-F3 · WP-S3  
 **Companion:** `HONCHO_INTEGRATION_MATRIX.yaml`
 
@@ -343,13 +341,13 @@ Each turn should be able to expose:
 - [x] `token_budget.yaml`  
 - [x] Workspace skills seed trees (5)  
 - [x] Pack verifier `scripts/verify_g3_memory.py`  
-- [x] HITL `G3_CONTEXT_LAYER_LOCKED_v1` granted OPTION_2_STANDARD
+- [x] `G3_CONTEXT_LAYER_LOCKED_v1` active spec lock
 
 ---
 
 ## 12. Non-actions
 
-- Do not enable L4 / auto skill mutation (OPTION_3 / G7).  
+- Do not enable L4 / auto skill mutation (G7 domain only).  
 - Do not treat G2 approval as G3 unlock.  
 - Do not bind broker runtime in this spec (`DECLARED_NOT_WIRED` remains).  
 - Do not claim CI coverage from declarative prose.

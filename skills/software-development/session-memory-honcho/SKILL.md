@@ -4,7 +4,7 @@ description: >
   Operate session lifecycle and Honcho memory under G3: namespaces
   user:/session:/app:, compaction bookmarks, hybrid recall, redaction.
   Use when persisting facts, recalling peer context, or compacting
-  long sessions. Do NOT use to auto-rewrite skills (G7/OPTION_3 only).
+  long sessions. Do NOT use to auto-rewrite skills (G7 domain only).
 priority: 85
 ---
 
@@ -17,7 +17,7 @@ priority: 85
 | `session:` | single conversation scratchpad |
 | `app:` | workspace/product config |
 
-## Honcho posture (OPTION_2)
+## Honcho posture
 - Provider: `honcho` via loopback API
 - Prefer: profile → context → search → reasoning (on demand)
 - `conclude` only for durable facts or PII delete

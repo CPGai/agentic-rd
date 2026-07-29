@@ -2,7 +2,6 @@
 name: consumer-project-scaffolder
 description: Scaffold new consumer projects that inherit the Agentic R&D three-harness constitution. Use when creating a new project that needs the full framework inheritance chain.
 version: 1.0.0
-author: AGY CLI (Gemini 3.6 Flash) → Hermes Supervisor audit
 platforms: [linux]
 category: software-development
 metadata:

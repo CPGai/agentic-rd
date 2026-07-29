@@ -1,7 +1,7 @@
 # G4 Migration Context — from G3 Context Layer Lock
 
 **Generated:** 2026-07-24  
-**Upstream gate:** G3 APPROVED · `OPTION_2_STANDARD` · `G3_CONTEXT_LAYER_LOCKED_v1`  
+**Upstream gate:** G3 APPROVED · `G3_CONTEXT_LAYER_LOCKED_v1`  
 **Downstream resume (expected):** `G4_TOPOLOGY_APPROVED_v1`  
 **Domain:** G4 — Multi-Agent Orchestration
 
@@ -67,4 +67,4 @@ wsl -d Ubuntu-24.04 bash -c "cd /home/carlospg/workspace/agentic-rd && source .v
 
 ## 6. HITL reminder
 
-G4 starts under OPTION_2 overlay but **must HARD_STOP** at its own gate with `G4_TOPOLOGY_APPROVED_v1` — do not treat G3 approval as G4 approval.
+G4 must **HARD_STOP** at its own gate with `G4_TOPOLOGY_APPROVED_v1` — do not treat G3 approval as G4 approval.

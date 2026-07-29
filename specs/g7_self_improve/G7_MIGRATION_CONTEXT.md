@@ -109,7 +109,7 @@ Before starting G7 self-improvement work:
 ## 6. AGENTS.md State (Post-G6)
 
 Current state of key sections for G7:
-- §6 HITL Gate Map: G6 marked `✅ GRANTED` with `G6_VIBE_ENV_LOCKED_v1`
+- §6 HITL Gate Map: G6 marked with `G6_VIBE_ENV_LOCKED_v1`
 - §9 Explicit Non-Actions: G4 APPROVED (L3 enabled), G5 APPROVED, G6 APPROVED
 - L4 AgentCreator is explicitly forbidden until G7 resume token
 - Module files may only tighten AGENTS.md — G7 self-modification must respect this

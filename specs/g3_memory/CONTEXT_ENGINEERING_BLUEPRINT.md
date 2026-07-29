@@ -1,9 +1,8 @@
 # CONTEXT_ENGINEERING_BLUEPRINT.md
 
 **Domain:** G3 — Memory & Stateful Agents (Sessions, Skills & Progressive Disclosure)  
-**Status:** LOCKED (OPTION_2_STANDARD · HITL cleared)  
-**Selected path:** `OPTION_2_STANDARD`  
-**Authoritative resume token (BLUE):** `G3_CONTEXT_LAYER_LOCKED_v1` ✅ GRANTED (2026-07-24)  
+**Status:** LOCKED  
+**Authoritative resume token (BLUE):** `G3_CONTEXT_LAYER_LOCKED_v1`  
 **Precedence:** Course-2 (WP-S3) supersedes Course-1 (WP-F3) on overlap  
 **Upstream:** G1 `HARNESS_SPEC.md` §2 · G2 `skills_registry.json` / `TOOL_DISCLOSURE_POLICY.md` · `G3_MIGRATION_CONTEXT.md`  
 **Sources ingested (PyMuPDF / fitz):**
@@ -303,6 +302,6 @@ Deferred full artifact: `SKILL_COLOAD_AUDIT` (BLUE when Step E) — partial inve
 1. Whitepapers ingested via PyMuPDF with cluster extracts under `/tmp/g3_extract/`.  
 2. Six types, skill anatomy, session/memory/token/co-load sections complete.  
 3. Maps cleanly to `SESSION_STATE_SPEC.md` + `HONCHO_INTEGRATION_MATRIX.yaml`.  
-4. HITL `G3_CONTEXT_LAYER_LOCKED_v1` granted under OPTION_2_STANDARD — pack managed via `scripts/verify_g3_memory.py` + tag `context-v1.0.0`.
+4. `G3_CONTEXT_LAYER_LOCKED_v1` locked — pack managed via `scripts/verify_g3_memory.py` + tag `context-v1.0.0`.
 
 *End of CONTEXT_ENGINEERING_BLUEPRINT.md*

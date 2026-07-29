@@ -112,7 +112,7 @@ Before starting G8 multi-tenant work:
 ## 6. AGENTS.md State (Post-G7)
 
 Current state of key sections for G8:
-- §6 HITL Gate Map: G7 marked `✅ GRANTED` with `G7_IMPROVEMENT_BOUNDS_v1`
+- §6 HITL Gate Map: G7 marked with `G7_IMPROVEMENT_BOUNDS_v1`
 - §9 Explicit Non-Actions: G7 APPROVED; L4 AgentCreator still disabled (separate enablement required)
 - G8 is the next domain with its own HITL gate — G7 does NOT auto-unlock G8
 

@@ -251,15 +251,9 @@ The G5 evaluation harness applies to all surfaces, including prototype/vibe path
 
 ## 8. Option Matrix (HITL Gate)
 
-| Option | Summary | Pros | Cons | Risks | Implications |
-|---|---|---|---|---|---|
-| **OPTION_1_CONSERVATIVE** | Pure vibe / Conductor mode only; no async orchestration | Lowest friction; fastest prototype velocity; minimal harness overhead | No spec-driven path; no evaluation gates; maintenance tax | High production debt; no audit trail; security blind spots | Blocks G7/G10 production patterns; vibe-only |
-| **OPTION_2_STANDARD** ★ | Async Orchestrator mode with specs first + evaluation gates + hybrid surface (Hermes CLI + Antigravity) | Prevents token-maxing and security leaks while preserving rapid feedback; full audit trail; SDD pattern; progressive disclosure | Setup overhead; transition discipline required | Over-constraining early prototypes if dune not respected | Stable substrate; G7–G10 can inherit; creative extensions at G7 gate |
-| **OPTION_3_CREATIVE** | Dynamic hybrid that auto-switches surface by test coverage and project maturity signals | Max adaptability; seamless vibe→spec transitions | Highest complexity; needs strong evaluation or infinite-loop risk | Runtime constraint rewrite; auto-surface-selection may misroute | Heavy initial HITL; needs G5/G7 strength; risk of premature automation |
-
-**SELECTED_PATH:** `OPTION_2_STANDARD`  
-**RATIONALE:** Prevents token-maxing and security leaks while preserving rapid feedback (BLUE §G6 L375). Specs-first with evaluation gates means teams move seamlessly as project maturity increases. Prototype dunes remain available for rapid exploration without blocking the production path.  
-**HITL_SIGNAL:** Pending human grant of `G6_VIBE_ENV_LOCKED_v1`.
+**Vibe Strategy Status: LOCKED (`G6_VIBE_ENV_LOCKED_v1`)**
+- Async Orchestrator mode with specs first + evaluation gates + hybrid surface.
+- Prevents token-maxing and security leaks while preserving rapid feedback.
 
 ---
 

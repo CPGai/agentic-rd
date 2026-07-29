@@ -425,15 +425,9 @@ See `debate_protocol.yaml` (Step D) for declarative parameters.
 
 ## 11. Option Decision Matrix
 
-| Option | Summary | Pros | Cons | Risks | Implications |
-|---|---|---|---|---|---|
-| **OPTION_1_CONSERVATIVE** | Fully supervised; every synthesis needs human sign-off | Maximum scientific integrity; zero hallucination risk | Very slow; doesn't scale; human bottleneck | Opportunity cost; research velocity too low for iterative domains | Research loops effectively human-driven; agents are assistants only |
-| **OPTION_2_STANDARD** ★ | Autonomous investigation + human-gated synthesis & ethical review | Free agent investigation with human gate on conclusions; balances velocity and integrity | Some latency at gates; requires robust citation verification | Gate fatigue if too many low-quality syntheses reach sign-off | Stable substrate; research agents autonomous within bounds; 7 HITL gates |
-| **OPTION_3_CREATIVE** | Fully autonomous 24/7 research with only post-hoc audit | Maximum research velocity; scales to large corpora | High risk of hallucinated citations slipping through; scientific integrity risk | "Free false findings at high confidence are worse than no reports" (BLUE); reputation damage | Requires perfect citation verification; any verification gap = ungrounded assertions in the wild |
-
-**SELECTED_PATH:** `OPTION_2_STANDARD`
-**RATIONALE:** BLUE §G9 explicit rationale: "Free false findings at high confidence are worse than no reports; human gate on synthesis protects scientific integrity." Autonomous investigation maximizes research velocity while 7 HITL gates protect scientific integrity at high-leverage points.
-**HITL_SIGNAL:** Awaiting human grant of `G9_RESEARCH_FLEET_LOCKED_v1`.
+**Research Strategy Status: LOCKED (`G9_RESEARCH_FLEET_LOCKED_v1`)**
+- Autonomous investigation + human-gated synthesis & ethical review.
+- Autonomous investigation maximizes research velocity while 7 HITL gates protect scientific integrity.
 
 ---
 

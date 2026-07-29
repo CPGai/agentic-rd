@@ -458,16 +458,9 @@ Every promotion past STG-07 produces an **immutable evidence pack** (object stor
 
 ## 17. Option Matrix
 
-| Option | Summary | Pros | Cons | Risks | Implications |
-|---|---|---|---|---|---|
-| OPTION_1_CONSERVATIVE | Remain non-production; specs only | No prod risk | Infinite postponement | Opportunity cost | System never serves users |
-| **OPTION_2_STANDARD ★** | Canary 1→5→25→100 + auto-rollback + live policy + Doctor + evidence | Reversible, auditable, inherits all gates | 24–72 h observation | Residual unknowns | Safe production entry |
-| OPTION_3_CREATIVE | Immediate full traffic + live self-improve + auto-heal max | Fastest value | Max blast radius | Cascading multi-agent/finance under load | Only if confidence absolute |
-
-**RECOMMENDED_PATH:** `OPTION_2_STANDARD`  
-**RATIONALE:** G1–G9 already validated architecture through research accuracy; canary + automatic rollback makes production entry reversible and auditable (BLUE §G10).  
-**RESUME_TOKEN:** `G10_PRODUCTION_DEPLOY_v1`  
-**STATUS after A–D:** specs ready; **HARD_STOP** before Step E chaos/dry-run and Step F `production-v1.0.0`.
+**Production Strategy Status: LOCKED (`G10_PRODUCTION_DEPLOY_v1`)**
+- Canary 1→5→25→100 + auto-rollback + live policy + Doctor + evidence.
+- Canary + automatic rollback makes production entry reversible and auditable.
 
 ---
 

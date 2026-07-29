@@ -33,16 +33,16 @@ The project's architectural constitution is triangulated across three binding ar
 |---|---|---|---|
 | **G1** | Agent Foundations & Architecture | 🏛️ All three | ✅ `APPROVED` |
 | **G2** | Tool Use & MCP | Constraint, Context | ✅ `APPROVED` |
-| **G3** | Context Engineering / Sessions / Memory | Context | ✅ COMPLETED (`context-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G4** | Multi-Agent Orchestration | All three | ✅ COMPLETED (`orchestration-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G5** | Evaluation & Observability | Evaluation | ✅ COMPLETED (`eval-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G6** | Vibe Coding → Spec Harness | Constraint, Evaluation | ✅ COMPLETED (`vibecoding-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G7** | Self-Improvement (L4 gated) | Evaluation, Constraint | ✅ COMPLETED (`self-improvement-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G8** | Multi-Tenant & Policy | Constraint | ✅ COMPLETED (`multitenant-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G9** | Autonomous Research Loops | Context, Evaluation | ✅ COMPLETED (`research-loop-v1.0.0` · `OPTION_2_STANDARD`) |
-| **G10** | Production AgentOps | All three | ✅ COMPLETED (`production-v1.0.0` · `OPTION_2_STANDARD`) |
+| **G3** | Context Engineering / Sessions / Memory | Context | ✅ `COMPLETED` (`context-v1.0.0`) |
+| **G4** | Multi-Agent Orchestration | All three | ✅ `COMPLETED` (`orchestration-v1.0.0`) |
+| **G5** | Evaluation & Observability | Evaluation | ✅ `COMPLETED` (`eval-v1.0.0`) |
+| **G6** | Vibe Coding → Spec Harness | Constraint, Evaluation | ✅ `COMPLETED` (`vibecoding-v1.0.0`) |
+| **G7** | Self-Improvement (L4 gated) | Evaluation, Constraint | ✅ `COMPLETED` (`self-improvement-v1.0.0`) |
+| **G8** | Multi-Tenant & Policy | Constraint | ✅ `COMPLETED` (`multitenant-v1.0.0`) |
+| **G9** | Autonomous Research Loops | Context, Evaluation | ✅ `COMPLETED` (`research-loop-v1.0.0`) |
+| **G10** | Production AgentOps | All three | ✅ `COMPLETED` (`production-v1.0.0`) |
 
-Each domain includes a 6-step delegation runbook (A–F), copy-pasteable Meta-Prompts, and a GIVEN/WHEN/THEN HITL gate with decision-support matrices (Option 1 Conservative / Option 2 Standard / Option 3 Creative).
+Each domain includes a 6-step delegation runbook (A–F), copy-pasteable Meta-Prompts, and a GIVEN/WHEN/THEN HITL gate.
 
 ---
 
@@ -117,12 +117,12 @@ Every strategic domain gate (G1–G10) surfaces a `HARD_STOP` decision matrix an
 
 ---
 
-## G1–G10 Gate Decisions (Active)
+## G1–G10 Operational Blueprint Status
 
 | Field | G1 Foundations | G2 Tools & MCP | G3 Context & Memory | G4 Multi-Agent | G5 Eval & Observability | G6 Vibe→Spec | G7 Self-Improvement | G8 Multi-Tenant | G9 Research Loops | G10 Production AgentOps |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Decision** | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` | `OPTION_2_STANDARD` |
-| **Resume Token** | `G1_HARNESS_APPROVED_v1` ✅ | `G2_TOOL_REGISTRY_LOCKED_v1` ✅ | `G3_CONTEXT_LAYER_LOCKED_v1` ✅ | `G4_TOPOLOGY_APPROVED_v1` ✅ | `G5_EVAL_FRAMEWORK_APPROVED_v1` ✅ | `G6_VIBE_ENV_LOCKED_v1` ✅ | `G7_IMPROVEMENT_BOUNDS_v1` ✅ | `G8_MULTITENANT_APPROVED_v1` ✅ | `G9_RESEARCH_FLEET_LOCKED_v1` ✅ | `G10_PRODUCTION_DEPLOY_v1` ✅ |
+| **Status** | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` | `ACTIVE` |
+| **Resume Token** | `G1_HARNESS_APPROVED_v1` | `G2_TOOL_REGISTRY_LOCKED_v1` | `G3_CONTEXT_LAYER_LOCKED_v1` | `G4_TOPOLOGY_APPROVED_v1` | `G5_EVAL_FRAMEWORK_APPROVED_v1` | `G6_VIBE_ENV_LOCKED_v1` | `G7_IMPROVEMENT_BOUNDS_v1` | `G8_MULTITENANT_APPROVED_v1` | `G9_RESEARCH_FLEET_LOCKED_v1` | `G10_PRODUCTION_DEPLOY_v1` |
 | **Tag** | — | `tool-registry-v1.0.0` | `context-v1.0.0` | `orchestration-v1.0.0` | `eval-v1.0.0` | `vibecoding-v1.0.0` | `self-improvement-v1.0.0` | `multitenant-v1.0.0` | `research-loop-v1.0.0` | `production-v1.0.0` |
 | **Harness / Substrate** | Three-harness Factory + full audit trail | Security Broker Proxy + NPM Pins + Loopback Boundary | Dynamic Token Budget + Honcho Memory + Skills Co-Load Policy | Hierarchical Coordinator + Agent Cards + Policy Seat (DECLARED) | LLM-as-Judge + OTEL Trajectories + Trust Score + Circuit Breaker + 5%/15% Thresholds | Vibe	o Agentic Spectrum + SDD + Dune Policy + G5 Inheritance + Slash Command Routing | Bounded Self-Improvement + 10 IT Types + DRAFT/DEBUG/IMPROVE + L4 Gated | ISO-1/2/3 Isolation + SPIFFE SVID + Hybrid Policy Server + Per-Tenant R/B/G | Gherkin BDD Hypotheses + DRAFT/DEBUG/IMPROVE + 7 HITL Gates + Fail-Closed Citation Verification | Spec-driven CI/CD + Canary 1/5/25/100 + Live Policy + OTEL + Doctor + Auto-Rollback |
 

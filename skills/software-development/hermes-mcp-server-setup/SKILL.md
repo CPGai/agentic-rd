@@ -10,7 +10,7 @@ priority: 70
 # Hermes MCP Server Setup (workspace seed)
 
 ## Rules
-1. Prefer T1 skills / T2 vetted MCP under OPTION_2 (no T4 in prod)
+1. Prefer T1 skills / T2 vetted MCP (no T4 in prod)
 2. Pin npm MCP packages (no floating `npx` without version)
 3. Redact secrets from config dumps
 4. Align pins across matrix, broker, skills_registry, pins JSON (G2)
