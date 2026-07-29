@@ -7,6 +7,7 @@ This document serves as the ground-truth, git-tracked backlog for framework conc
 | ID | Title | Domain | Priority | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | BL-SKILL-01 | Skill Namespace Collision and Overlap Resolution | Skill Registry / Interoperability | High | Open |
+| BL-DOC-01 | Purge Conversational Artifacts and HITL State Overlays | Documentation / Skills | Medium | Open |
 
 ---
 
@@ -30,3 +31,25 @@ When actioned, instruct Hermes or Antigravity to perform a full capability audit
 1. Establish an explicit **Namespace Prefixing & Priority Matrix** in `HARNESS_SPEC.md` (forcing strict precedence for custom domain skills over global fallbacks).
 2. Update root `AGENTS.md` to include a **Conflict Resolution Protocol** commanding coding agents to reject ambiguous or duplicate tool handlers.
 3. Verify that all consumer project scaffolding runs exclusively via the designated framework wrapper (`agentic-scaffold`) without falling back to external ADK scaffolding defaults.
+
+---
+
+### [BL-DOC-01] Purge Conversational Artifacts and HITL State Overlays from Documentation & Skills
+
+- **Domain/Layer:** Documentation Quality, Skill Specs (`skills/`), and Prompt Hygiene
+- **Severity/Priority:** Medium
+- **Origin:** Human Review & Strategic Architecture Oversight
+- **Status:** Open (Documented / Awaiting Handoff Execution)
+
+#### Description / User Concern
+During the iterative development and HITL decision phases across Domains G1–G10, downstream LLMs generated documentation and skill examples that retained conversational artifacts and developmental decision labels (e.g., `(OPTION_2)`, `Honcho posture (OPTION_2)`, `# (OPTION_2)`). These tags represent ephemeral human-selection state from the build phase and offer zero functional value in production, acting as conversational noise.
+
+#### Architectural Implication
+Retaining build-phase state markers inside production documentation and skill templates consumes context tokens unnecessarily and risks biasing downstream coding agents into treating temporary decision options as hardcoded execution rules.
+
+#### Actionable Handoff Directive (for Hermes / AGY)
+When actioned, instruct Hermes or Antigravity to:
+1. Scan `skills/`, `specs/`, and `docs/` for residual HITL decision string patterns (`(OPTION_2)`, `(OPTION_1)`, `(OPTION_3)`).
+2. Cleanly strip or refactor affected markdown files and `SKILL.md` examples to direct, production-ready technical statements.
+3. Run verification test suites to ensure no functional spec keys were corrupted.
+
