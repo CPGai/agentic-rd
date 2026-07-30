@@ -4,12 +4,10 @@ This document serves as the ground-truth, git-tracked backlog for framework conc
 
 ## Backlog Index
 
-
-| ID          | Title                                                  | Domain                            | Priority | Status    |
-|:------------|:-------------------------------------------------------|:----------------------------------|:---------|:----------|
-| BL-SKILL-01 | Skill Namespace Collision and Overlap Resolution       | Skill Registry / Interoperability | High     | Open      |
-| BL-DOC-01   | Purge Conversational Artifacts and HITL State Overlays | Documentation / Skills            | Medium   | COMPLETED |
-
+| ID | Title | Domain | Priority | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| BL-SKILL-01 | Skill Namespace Collision and Overlap Resolution | Skill Registry / Interoperability | High | Open |
+| BL-DOC-01 | Purge Conversational Artifacts and HITL State Overlays | Documentation / Skills | Medium | Open |
 
 ---
 
@@ -23,21 +21,16 @@ This document serves as the ground-truth, git-tracked backlog for framework conc
 - **Status:** Open (Documented / Awaiting Handoff Execution)
 
 #### Description / User Concern
-
 There is a clear risk of namespace collision and execution ambiguity between custom skills defined within the Agentic R&D framework (`/home/carlospg/workspace/agentic-rd/skills/`), native Hermes plugins/skills (e.g., global registry under `~/.hermes/skills/`), and external toolsets like the Google Agent Development Kit (ADK). When a coding agent (Hermes or Antigravity) is invoked, similar functions across these layers (such as agent scaffolding, tool invocation, or context management) risk confusing the agent about which execution standard to follow, leading to potential rule corruption or framework bleeding.
 
 #### Architectural Implication
-
 Unbounded or overlapping skill definitions violate the isolation and progressive-disclosure principles (`agentskills.io` L1/L2/L3 spec) established in the framework. If the root `AGENTS.md` and harness instructions do not explicitly disambiguate namespace precedents, coding agents may inadvertently mix Google ADK primitives with custom agentic-rd schemas, causing runtime errors, non-deterministic behaviors, or unwanted modifications inside the core framework repository.
 
 #### Actionable Handoff Directive (for Hermes / AGY)
-
 When actioned, instruct Hermes or Antigravity to perform a full capability audit across `~/.hermes/skills/`, the local framework `skills/` directory, and Google ADK command footprints:
-
 1. Establish an explicit **Namespace Prefixing & Priority Matrix** in `HARNESS_SPEC.md` (forcing strict precedence for custom domain skills over global fallbacks).
 2. Update root `AGENTS.md` to include a **Conflict Resolution Protocol** commanding coding agents to reject ambiguous or duplicate tool handlers.
 3. Verify that all consumer project scaffolding runs exclusively via the designated framework wrapper (`agentic-scaffold`) without falling back to external ADK scaffolding defaults.
-
 
 ---
 
@@ -46,17 +39,17 @@ When actioned, instruct Hermes or Antigravity to perform a full capability audit
 - **Domain/Layer:** Documentation Quality, Skill Specs (`skills/`), and Prompt Hygiene
 - **Severity/Priority:** Medium
 - **Origin:** Human Review & Strategic Architecture Oversight
-- **Status:** COMPLETED — resolved per commit `f3d2202`; audit trail in `docs/audit/BL-DOC-01_DISCOVERY_REPORT.md` and `docs/audit/Close_Issues/[BL-DOC-01]_walkthrough.md`
+- **Status:** Open (Documented / Awaiting Handoff Execution)
 
-#### Description
+#### Description / User Concern
+During the iterative development and HITL decision phases across Domains G1–G10, downstream LLMs generated documentation and skill examples that retained conversational artifacts and developmental decision labels (e.g., `(OPTION_2)`, `Honcho posture (OPTION_2)`, `# (OPTION_2)`). These tags represent ephemeral human-selection state from the build phase and offer zero functional value in production, acting as conversational noise.
 
-Conversational artifacts and HITL decision labels (`(OPTION_2)`, `Honcho posture (OPTION_2)`, `# (OPTION_2)`) generated during the G1–G10 build phases were purged from `skills/`, `specs/`, and `docs/`. All affected markdown files and `SKILL.md` examples were refactored to direct, production-ready technical statements.
+#### Architectural Implication
+Retaining build-phase state markers inside production documentation and skill templates consumes context tokens unnecessarily and risks biasing downstream coding agents into treating temporary decision options as hardcoded execution rules.
 
-#### Resolution
+#### Actionable Handoff Directive (for Hermes / AGY)
+When actioned, instruct Hermes or Antigravity to:
+1. Scan `skills/`, `specs/`, and `docs/` for residual HITL decision string patterns (`(OPTION_2)`, `(OPTION_1)`, `(OPTION_3)`).
+2. Cleanly strip or refactor affected markdown files and `SKILL.md` examples to direct, production-ready technical statements.
+3. Run verification test suites to ensure no functional spec keys were corrupted.
 
-- AGY executed a targeted scan-and-clean across all framework documentation surfaces.
-- Verification confirmed no functional spec keys were corrupted.
-- Full walkthrough of the AGY resolution is documented in `docs/audit/Close_Issues/[BL-DOC-01]_walkthrough.md`.
-
-
- 
