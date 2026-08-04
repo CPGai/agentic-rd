@@ -1,0 +1,36 @@
+catalog_id: META_GRAPH_TOPOLOGY_CATALOG_v1
+patterns:
+  single_step:
+    intent: Escape hatch for one action with one independently evaluable result.
+    graph_engine: bypassed
+    constraints:
+      - no_external_wait
+      - no_irreversible_side_effect
+      - no_parallel_dependency
+
+  sequence:
+    intent: Strictly ordered output-to-input dependencies.
+    graph_engine: enabled
+    required_controls: [typed_stage_contracts, failure_policy]
+
+  parallel_fan_out_fan_in:
+    intent: Independent concurrent execution paths joined deterministically.
+    graph_engine: enabled
+    required_controls: [immutable_input_snapshot, join_node, join_policy]
+
+  skeptic_audit:
+    intent: Parallel workers flow into an adversarial audit gate before synthesis.
+    graph_engine: enabled
+    required_controls: [typed_worker_outputs, skeptic_rubric, failure_policy]
+
+  hitl_approval:
+    intent: High-stakes action requiring an explicit user resume token.
+    graph_engine: enabled
+    required_controls: [hitl_gate, allowed_decisions, single_use_resume_token]
+
+selection_order:
+  - single_step
+  - sequence
+  - parallel_fan_out_fan_in
+  - skeptic_audit
+  - hitl_approval
