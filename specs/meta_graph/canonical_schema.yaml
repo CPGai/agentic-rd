@@ -1,0 +1,73 @@
+schema_id: META_GRAPH_GRAPH_SPEC_v1
+canonical_artifact: GRAPH_SPEC.yaml
+format: yaml
+
+graph_spec:
+  required:
+    - schema_version
+    - graph_id
+    - status
+    - side_effect_class
+    - hitl_requested
+    - entry_node
+    - nodes
+    - edges
+    - complexity_budget
+    - hitl_gate
+  properties:
+    schema_version:
+      type: string
+      const: graph-spec/1.0
+    graph_id:
+      type: string
+      pattern: "^[a-z][a-z0-9_-]*$"
+    status:
+      enum: [DRAFT, PENDING_HITL, APPROVED, REJECTED]
+    side_effect_class:
+      enum: [read_only, reversible, irreversible, egress, authorization, unknown]
+    hitl_requested:
+      type: boolean
+    entry_node:
+      type: [string, 'null']
+      null_allowed_when: topology_is_single_step
+    nodes:
+      type: array
+      item_required: [id, kind, label]
+      kinds: [planner, worker, skeptic, hitl, terminal]
+    edges:
+      type: array
+      item_required: [from, to]
+    controls:
+      type: object
+      required_by_topology:
+        single_step: [graph_engine]
+        sequence: [typed_stage_contracts, failure_policy]
+        parallel_fan_out_fan_in: [immutable_input_snapshot, join_policy, join_node]
+        skeptic_audit: [typed_worker_outputs, skeptic_rubric, failure_policy]
+        hitl_approval: [allowed_decisions, hitl_gate, single_use_resume_token]
+    complexity_budget:
+      required: [max_spawn_width, max_spawn_depth, max_refinement_iterations]
+      limits:
+        max_spawn_width: 3
+        max_spawn_depth: 1
+        max_refinement_iterations: 3
+    hitl_gate:
+      required: [required, resume_token]
+      properties:
+        required:
+          type: boolean
+        resume_token:
+          type: [string, 'null']
+        token_policy:
+          enum: [issuer_generated_single_use]
+          required_when: required_is_true
+
+invariants:
+  - graph_id_is_stable
+  - entry_node_exists_in_nodes_unless_single_step
+  - all_edge_endpoints_exist_in_nodes
+  - controls_match_selected_topology
+  - complexity_budget_respects_overlay_policy
+  - hitl_gate_required_for_high_stakes_objectives
+  - hitl_resume_token_is_issuer_generated_and_single_use
+  - generated_markdown_is_non_normative

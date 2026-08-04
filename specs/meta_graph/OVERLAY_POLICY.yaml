@@ -1,0 +1,28 @@
+overlay_id: META_GRAPH_ROUTING_OVERLAY_v1
+target_scope: specs/meta_graph/
+status: ACTIVE_LOCAL_SCOPE
+
+# This policy applies only while compiling or validating artifacts in target_scope.
+ephemeral_overrides:
+  g4_orchestration:
+    status: ACTIVE_LOCAL_SCOPE
+    l3_specialists_enabled: true
+    max_spawn_width: 3
+    max_spawn_depth: 1
+
+root_immutability:
+  AGENTS.md: UNTOUCHED
+  HARNESS_SPEC.md: UNTOUCHED
+  specs/workflow_graph.yaml: UNTOUCHED
+
+default_routing: single_agent
+fallback_behavior: standard_single_agent_routing
+
+constraints:
+  overlay_may_not:
+    - mutate_root_constitution
+    - increase_spawn_width_above_3
+    - increase_spawn_depth_above_1
+    - enable_l4_agents
+    - bypass_hitl_gate
+  scope_boundary: target_scope_only
