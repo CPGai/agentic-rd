@@ -1,10 +1,14 @@
 """Deterministic compiler for the isolated Meta-Graph routing overlay."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from hashlib import sha256
+import json
 from pathlib import Path
 import re
 from typing import Any, Mapping
+
+from jsonschema import Draft202012Validator
 
 import yaml
 
@@ -70,6 +74,104 @@ SIDE_EFFECT_CLASSES = {
 HIGH_RISK_SIDE_EFFECT_CLASSES = {"irreversible", "egress", "authorization", "unknown"}
 
 
+class CanonicalSchemaValidator:
+    """Load and apply the versioned canonical JSON Schema."""
+
+    def __init__(self) -> None:
+        schema_path = REPOSITORY_ROOT / "specs" / "meta_graph" / "canonical_schema.json"
+        self._validator = Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8")))
+
+    def validate(self, graph: dict[str, Any]) -> None:
+        errors = sorted(self._validator.iter_errors(graph), key=lambda error: list(error.path))
+        if errors:
+            raise ValueError(f"schema validation failed: {errors[0].message}")
+
+
+class GraphPathAnalyzer:
+    """Enumerate finite entry-to-terminal paths for graph-gate invariants."""
+
+    def __init__(self, graph: dict[str, Any]) -> None:
+        self._adjacency: dict[str, list[str]] = {}
+        for edge in graph["edges"]:
+            self._adjacency.setdefault(edge["from"], []).append(edge["to"])
+
+    def reachable(self, entry_node: str) -> set[str]:
+        seen: set[str] = set()
+        stack = [entry_node]
+        while stack:
+            node = stack.pop()
+            if node in seen:
+                continue
+            seen.add(node)
+            stack.extend(self._adjacency.get(node, []))
+        return seen
+
+    def paths(self, entry_node: str) -> list[list[str]]:
+        paths: list[list[str]] = []
+
+        def visit(node: str, trail: list[str]) -> None:
+            successors = self._adjacency.get(node, [])
+            if not successors:
+                paths.append(trail)
+                return
+            for successor in successors:
+                if successor in trail:
+                    raise ValueError("graph cycles are not supported")
+                visit(successor, [*trail, successor])
+
+        visit(entry_node, [entry_node])
+        return paths
+
+
+
+@dataclass(frozen=True)
+class CompileRequest:
+    objective: str
+    side_effect_class: str
+    hitl_required: bool
+
+    @classmethod
+    def from_input(cls, request: str | Mapping[str, Any]) -> "CompileRequest":
+        objective, side_effect_class, hitl_required = _parse_request(request)
+        return cls(objective, side_effect_class, hitl_required)
+
+
+@dataclass(frozen=True)
+class MermaidNode:
+    node_id: str
+    label: str
+
+    def __post_init__(self) -> None:
+        if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", self.node_id) is None:
+            raise ValueError("node ID is not Mermaid-safe")
+
+    def to_mermaid(self) -> str:
+        return f"    {self.node_id}[{_mermaid_label(self.label)}]"
+
+
+@dataclass(frozen=True)
+class MermaidEdge:
+    source: str
+    target: str
+
+    def __post_init__(self) -> None:
+        for node_id in (self.source, self.target):
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", node_id) is None:
+                raise ValueError("edge endpoint is not Mermaid-safe")
+
+    def to_mermaid(self) -> str:
+        return f"    {self.source} --> {self.target}"
+
+
+@dataclass(frozen=True)
+class MermaidGraph:
+    nodes: list[MermaidNode]
+    edges: list[MermaidEdge]
+
+    def to_mermaid(self) -> str:
+        return "\n".join(["graph TD", *(node.to_mermaid() for node in self.nodes), *(edge.to_mermaid() for edge in self.edges)])
+
+
 def parse_objective(objective: str) -> str:
     """Normalize a non-empty operational objective."""
     normalized = " ".join(objective.split())
@@ -88,16 +190,24 @@ def _parse_request(request: str | Mapping[str, Any]) -> tuple[str, str, bool]:
     if not isinstance(request, Mapping):
         raise TypeError("request must be an objective string or structured mapping")
     required = {"objective", "side_effect_class", "hitl_required"}
+    unexpected = set(request.keys()) - required
+    if unexpected:
+        raise ValueError(f"unexpected structured request fields: {sorted(unexpected)}")
     missing = required - request.keys()
     if missing:
         raise ValueError(f"structured request is missing fields: {sorted(missing)}")
-    objective = parse_objective(str(request["objective"]))
+    raw_objective = request["objective"]
+    if not isinstance(raw_objective, str) or not raw_objective.strip():
+        raise ValueError("objective must be a non-blank string")
+    objective = parse_objective(raw_objective)
     side_effect_class = request["side_effect_class"]
     hitl_required = request["hitl_required"]
     if side_effect_class not in SIDE_EFFECT_CLASSES:
         raise ValueError("side_effect_class is not supported")
     if not isinstance(hitl_required, bool):
         raise ValueError("hitl_required must be boolean")
+    if side_effect_class == "unknown":
+        hitl_required = True
     if side_effect_class in HIGH_RISK_SIDE_EFFECT_CLASSES and not hitl_required:
         raise ValueError("high-risk side_effect_class requires hitl_required=true")
     return objective, side_effect_class, hitl_required
@@ -136,7 +246,7 @@ def select_topology(objective: str, *, hitl_required: bool) -> str:
     """Select the smallest topology; HITL comes from typed request metadata."""
     normalized = parse_objective(objective).lower()
     if uses_single_step_escape_hatch(normalized):
-        return "single_step"
+        return "hitl_approval" if hitl_required else "single_step"
     if "skeptic" in normalized or "audit" in normalized:
         return "skeptic_audit"
     if "parallel" in normalized or "multi-worker" in normalized or "multi worker" in normalized:
@@ -274,7 +384,8 @@ def _complex_graph(
 
 def build_graph_spec(request: str | Mapping[str, Any]) -> dict[str, Any]:
     """Build a deterministic canonical graph specification from typed input."""
-    normalized, side_effect_class, hitl_required = _parse_request(request)
+    request = CompileRequest.from_input(request)
+    normalized, side_effect_class, hitl_required = request.objective, request.side_effect_class, request.hitl_required
     topology = select_topology(normalized, hitl_required=hitl_required)
     if topology == "single_step":
         return {
@@ -306,6 +417,7 @@ def compile_objective(request: str | Mapping[str, Any]) -> dict[str, Any]:
 
 def validate_graph_spec(graph: dict[str, Any]) -> None:
     """Reject graph artifacts that violate the canonical overlay contract."""
+    CanonicalSchemaValidator().validate(graph)
     required = {
         "schema_version",
         "graph_id",
@@ -356,14 +468,33 @@ def validate_graph_spec(graph: dict[str, Any]) -> None:
     if not required_controls[topology].issubset(graph["controls"]):
         raise ValueError(f"controls do not satisfy topology: {topology}")
 
+    if any(
+        not isinstance(node.get("id"), str)
+        or re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", node["id"]) is None
+        for node in graph["nodes"]
+    ):
+        raise ValueError("node ID is not Mermaid-safe")
     node_ids = {node["id"] for node in graph["nodes"]}
     if len(node_ids) != len(graph["nodes"]):
         raise ValueError("node IDs must be unique")
+    node_by_id = {node["id"]: node for node in graph["nodes"]}
     controls = graph["controls"]
+    expected_control_values = {
+        "sequence": {"typed_stage_contracts": "required", "failure_policy": "fail_fast"},
+        "parallel_fan_out_fan_in": {"immutable_input_snapshot": "required", "join_policy": "all_success_or_fail_fast", "join_node": "join"},
+        "skeptic_audit": {"typed_worker_outputs": "required", "skeptic_rubric": "required", "failure_policy": "fail_fast"},
+        "hitl_approval": {"allowed_decisions": ["APPROVE", "REJECT", "REQUEST_REVISION"], "hitl_gate": "required", "single_use_resume_token": "external_issuer"},
+    }
+    for control_name, expected_value in expected_control_values.get(topology, {}).items():
+        if controls[control_name] != expected_value:
+            raise ValueError(f"control {control_name} has an invalid value")
     if topology == "single_step" and controls["graph_engine"] != "bypassed":
         raise ValueError("single_step graph_engine must be bypassed")
-    if topology == "parallel_fan_out_fan_in" and controls["join_node"] not in node_ids:
-        raise ValueError("parallel join_node must reference a graph node")
+    if topology == "parallel_fan_out_fan_in":
+        if controls["join_node"] not in node_ids:
+            raise ValueError("parallel join_node must reference a graph node")
+        if controls["join_policy"] != "all_success_or_fail_fast":
+            raise ValueError("parallel join_policy must be all_success_or_fail_fast")
     if topology == "hitl_approval":
         if controls["hitl_gate"] != "required":
             raise ValueError("hitl_approval control must require an HITL gate")
@@ -389,11 +520,15 @@ def validate_graph_spec(graph: dict[str, Any]) -> None:
         raise ValueError("side_effect_class is not supported")
     if side_effect_class in HIGH_RISK_SIDE_EFFECT_CLASSES and not hitl_required:
         raise ValueError("high-risk side_effect_class requires an HITL gate")
+    if hitl_gate["required"] != hitl_required:
+        raise ValueError("hitl_gate.required must match hitl_requested")
     if hitl_required and not hitl_gate["required"]:
         raise ValueError("high-stakes objective requires an HITL gate")
     if hitl_gate["required"]:
         if "hitl" not in node_ids:
             raise ValueError("required HITL gate must have an HITL node")
+        if node_by_id["hitl"].get("kind") != "hitl":
+            raise ValueError("required HITL node kind must be hitl")
         if graph["status"] != "PENDING_HITL":
             raise ValueError("HITL graph status must be PENDING_HITL")
         if hitl_gate["resume_token"] is not None:
@@ -403,13 +538,35 @@ def validate_graph_spec(graph: dict[str, Any]) -> None:
     elif hitl_gate["resume_token"] is not None:
         raise ValueError("non-HITL graph must not contain a resume_token")
 
+    analyzer = GraphPathAnalyzer(graph)
+    if any(edge["from"] == "terminal" for edge in graph["edges"]):
+        raise ValueError("terminal node must be a sink")
+    unreachable = node_ids - analyzer.reachable(graph["entry_node"])
+    if unreachable:
+        raise ValueError(f"unreachable graph nodes: {sorted(unreachable)}")
+    if topology != "single_step":
+        analyzer.paths(graph["entry_node"])
+    if hitl_required:
+        execution_paths = analyzer.paths(graph["entry_node"])
+        if not execution_paths or any("hitl" not in path for path in execution_paths):
+            raise ValueError("every execution path must traverse the required HITL gate")
+
+
+def _mermaid_label(label: str) -> str:
+    """Return inert text safe for Mermaid bracket node labels."""
+    sanitized = re.sub(r"[\[\]\"'\r\n]", " ", label)
+    sanitized = sanitized.replace("-->", " to ")
+    return " ".join(sanitized.split())
+
 
 def render_graph_markdown(graph: dict[str, Any]) -> str:
     """Render the exact canonical node and edge layout as Mermaid Markdown."""
     validate_graph_spec(graph)
-    mermaid_nodes = [f"    {node['id']}[{node['label']}]" for node in graph["nodes"]]
-    mermaid_edges = [f"    {edge['from']} --> {edge['to']}" for edge in graph["edges"]]
-    diagram = "\n".join(["graph TD", *mermaid_nodes, *mermaid_edges])
+    ast = MermaidGraph(
+        [MermaidNode(node["id"], node["label"]) for node in graph["nodes"]],
+        [MermaidEdge(edge["from"], edge["to"]) for edge in graph["edges"]],
+    )
+    diagram = ast.to_mermaid()
     state = {
         "graph_id": graph["graph_id"],
         "status": graph["status"],
@@ -450,6 +607,8 @@ def write_graph_artifacts(
     output_path.mkdir(parents=True, exist_ok=True)
     yaml_path = output_path / "GRAPH_SPEC.yaml"
     markdown_path = output_path / "GRAPH_SPEC.md"
+    if yaml_path.is_symlink() or markdown_path.is_symlink():
+        raise ValueError("artifact output path must not be a symlink")
     yaml_path.write_text(yaml.safe_dump(graph, sort_keys=False), encoding="utf-8")
     markdown_path.write_text(render_graph_markdown(graph), encoding="utf-8")
     return yaml_path, markdown_path

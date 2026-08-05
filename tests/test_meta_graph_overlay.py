@@ -62,6 +62,20 @@ def test_structured_input_requires_hitl_for_high_risk_class() -> None:
     assert graph["hitl_gate"]["required"] is True
 
 
+def test_explicit_hitl_request_overrides_single_step() -> None:
+    graph = _compiler()(
+        {"objective": "Inspect the proposed deployment plan.", "side_effect_class": "reversible", "hitl_required": True}
+    )
+    assert graph["status"] == "PENDING_HITL"
+    assert graph["hitl_gate"]["required"] is True
+    assert graph["topology"] != "single_step"
+
+
+def test_structured_objective_must_be_a_nonblank_string() -> None:
+    with pytest.raises(ValueError, match="objective must be a non-blank string"):
+        _compiler()({"objective": None, "side_effect_class": "authorization", "hitl_required": True})
+
+
 def _load_yaml(name: str) -> dict[str, object]:
     path = OVERLAY / name
     assert path.is_file(), f"missing overlay artifact: {path}"
@@ -232,3 +246,186 @@ def test_validator_rejects_null_entry_node_for_non_single_step(
     with pytest.raises(ValueError, match="entry_node"):
         compiler.write_graph_artifacts(graph, artifact_root / "invalid")
     assert not (artifact_root / "invalid" / "GRAPH_SPEC.yaml").exists()
+
+
+def test_validator_requires_semantic_hitl_controls_and_node_kind() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    request = {
+        "objective": "Approve a production change.",
+        "side_effect_class": "authorization",
+        "hitl_required": True,
+    }
+    invalid_control = compiler.compile_objective(request)
+    invalid_control["controls"]["hitl_gate"] = "bypassed"
+    with pytest.raises(ValueError, match="control"):
+        compiler.validate_graph_spec(invalid_control)
+
+    invalid_node = compiler.compile_objective(request)
+    next(node for node in invalid_node["nodes"] if node["id"] == "hitl")["kind"] = "worker"
+    with pytest.raises(ValueError, match="kind"):
+        compiler.validate_graph_spec(invalid_node)
+
+
+def test_mermaid_labels_cannot_inject_syntax_or_edges() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(
+        {
+            "objective": "Research [test] 'quote' \"double\"\nNext line",
+            "side_effect_class": "reversible",
+            "hitl_required": False,
+        }
+    )
+    graph["nodes"][0]["label"] = "Safe] --> injected[Node]\n'\""
+    markdown = compiler.render_graph_markdown(graph)
+    diagram = markdown.split("```mermaid\n", 1)[1].split("\n```", 1)[0]
+
+    node_line = next(line for line in diagram.splitlines() if "objective_normalizer" in line)
+    assert node_line.count("[") == 1
+    assert node_line.count("]") == 1
+    assert "'" not in node_line
+    assert '"' not in node_line
+    assert diagram.count("-->") == len(graph["edges"])
+
+
+def test_validator_rejects_mermaid_unsafe_node_identifiers() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(
+        {"objective": "Create a local report.", "side_effect_class": "reversible", "hitl_required": False}
+    )
+    graph["nodes"][0]["id"] = "safe] --> injected[Node"
+    graph["edges"][0]["from"] = "safe] --> injected[Node"
+    graph["entry_node"] = "safe] --> injected[Node"
+    with pytest.raises(ValueError, match="schema validation failed"):
+        compiler.render_graph_markdown(graph)
+
+
+@pytest.mark.parametrize(
+    ("input_data", "control", "invalid_value"),
+    [
+        ({"objective": "Create a local report.", "side_effect_class": "reversible", "hitl_required": False}, "typed_stage_contracts", "bypassed"),
+        ({"objective": "Create a local report.", "side_effect_class": "reversible", "hitl_required": False}, "failure_policy", "continue_on_error"),
+        ({"objective": "Research with parallel workers.", "side_effect_class": "reversible", "hitl_required": False}, "immutable_input_snapshot", "bypassed"),
+        ({"objective": "Research with parallel workers.", "side_effect_class": "reversible", "hitl_required": False}, "join_node", "planner"),
+        ({"objective": "Audit findings with a skeptic.", "side_effect_class": "reversible", "hitl_required": False}, "typed_worker_outputs", "optional"),
+        ({"objective": "Approve a production change.", "side_effect_class": "authorization", "hitl_required": True}, "allowed_decisions", ["AUTO_APPROVE"]),
+    ],
+)
+def test_validator_rejects_disabled_required_control_values(input_data: dict[str, object], control: str, invalid_value: object) -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(input_data)
+    graph["controls"][control] = invalid_value
+    with pytest.raises(ValueError, match="control"):
+        compiler.validate_graph_spec(graph)
+
+
+def test_json_schema_validation_enforces_contract() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(
+        {"objective": "Create a local report.", "side_effect_class": "reversible", "hitl_required": False}
+    )
+    graph["status"] = "INVALID"
+    graph["unexpected"] = True
+    with pytest.raises(ValueError, match="schema"):
+        compiler.validate_graph_spec(graph)
+
+
+def test_dfs_path_dominator_catches_shortcut_bypasses() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(
+        {"objective": "Authorize a vendor contract.", "side_effect_class": "authorization", "hitl_required": True}
+    )
+    graph["edges"].append({"from": "planner", "to": "terminal"})
+    with pytest.raises(ValueError, match="every execution path must traverse the required HITL gate"):
+        compiler.validate_graph_spec(graph)
+
+
+def test_compile_request_typed_envelope() -> None:
+    from agentic_rd.meta_graph.compiler import CompileRequest
+
+    request = CompileRequest.from_input({"objective": "Inspect records.", "side_effect_class": "unknown", "hitl_required": False})
+    assert request.objective == "Inspect records."
+    assert request.hitl_required is True
+    assert CompileRequest.from_input("List files.").side_effect_class == "read_only"
+
+
+def test_mermaid_ast_value_objects_sanitize_and_validate() -> None:
+    from agentic_rd.meta_graph.compiler import MermaidEdge, MermaidNode, MermaidGraph
+
+    node = MermaidNode("safe_id", "Bad] --> injected['quote']\nNext")
+    edge = MermaidEdge("safe_id", "terminal")
+    output = MermaidGraph([node], [edge]).to_mermaid()
+    assert output.count("-->") == 1
+    assert "injected[" not in output
+    with pytest.raises(ValueError, match="Mermaid-safe"):
+        MermaidNode("bad] --> injected", "label")
+
+
+def test_orphaned_hitl_graph_nodes_fail_closed() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(
+        {"objective": "Authorize a vendor contract.", "side_effect_class": "authorization", "hitl_required": True}
+    )
+    graph["nodes"].append({"id": "orphan", "kind": "worker", "label": "Orphan"})
+    graph["edges"].append({"from": "orphan", "to": "terminal"})
+    with pytest.raises(ValueError, match="unreachable"):
+        compiler.validate_graph_spec(graph)
+
+
+def test_schema_rejects_extra_controls_and_envelope_fields() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective(
+        {"objective": "Create a local report.", "side_effect_class": "reversible", "hitl_required": False}
+    )
+    graph["controls"]["injected"] = "bypass"
+    with pytest.raises(ValueError, match="schema validation failed"):
+        compiler.validate_graph_spec(graph)
+    with pytest.raises(ValueError, match="unexpected"):
+        compiler.CompileRequest.from_input({"objective": "x", "side_effect_class": "reversible", "hitl_required": False, "unexpected": True})
+
+
+def test_validator_rejects_cycles_and_non_sink_terminal() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    cycle = compiler.compile_objective({"objective": "Research in sequence.", "side_effect_class": "reversible", "hitl_required": False})
+    cycle["edges"].append({"from": "stage_executor", "to": "planner"})
+    with pytest.raises(ValueError, match="cycle"):
+        compiler.validate_graph_spec(cycle)
+
+    continuation = compiler.compile_objective({"objective": "Research in sequence.", "side_effect_class": "reversible", "hitl_required": False})
+    continuation["edges"].append({"from": "terminal", "to": "stage_executor"})
+    with pytest.raises(ValueError, match="terminal"):
+        compiler.validate_graph_spec(continuation)
+
+
+def test_validator_binds_hitl_gate_to_request() -> None:
+    from agentic_rd.meta_graph import compiler
+
+    graph = compiler.compile_objective({"objective": "Research in sequence.", "side_effect_class": "reversible", "hitl_required": False})
+    graph["hitl_gate"]["required"] = True
+    graph["status"] = "PENDING_HITL"
+    with pytest.raises(ValueError, match="hitl_requested"):
+        compiler.validate_graph_spec(graph)
+
+
+def test_writer_rejects_existing_output_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from agentic_rd.meta_graph import compiler
+
+    artifact_root = tmp_path / "specs" / "meta_graph"
+    artifact_root.mkdir(parents=True)
+    monkeypatch.setattr(compiler, "OVERLAY_ARTIFACT_ROOT", artifact_root)
+    outside = tmp_path / "outside.yaml"
+    yaml_path = artifact_root / "GRAPH_SPEC.yaml"
+    yaml_path.symlink_to(outside)
+    graph = _compiler()("Inspect the repository Python packages.")
+    with pytest.raises(ValueError, match="symlink"):
+        compiler.write_graph_artifacts(graph)

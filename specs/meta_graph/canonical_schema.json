@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-rd.local/specs/meta_graph/canonical_schema.json",
+  "title": "Meta-Graph Canonical Graph Specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "graph_id", "status", "objective", "side_effect_class", "hitl_requested", "topology", "entry_node", "nodes", "edges", "controls", "complexity_budget", "hitl_gate"],
+  "properties": {
+    "schema_version": {"const": "graph-spec/1.0"},
+    "graph_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "status": {"enum": ["DRAFT", "PENDING_HITL", "APPROVED", "REJECTED"]},
+    "objective": {"type": "string", "minLength": 1},
+    "side_effect_class": {"enum": ["read_only", "reversible", "irreversible", "egress", "authorization", "unknown"]},
+    "hitl_requested": {"type": "boolean"},
+    "topology": {"enum": ["single_step", "sequence", "parallel_fan_out_fan_in", "skeptic_audit", "hitl_approval"]},
+    "entry_node": {"type": ["string", "null"]},
+    "nodes": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "kind", "label"], "properties": {"id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"}, "kind": {"enum": ["planner", "worker", "skeptic", "hitl", "terminal"]}, "label": {"type": "string"}}}},
+    "edges": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["from", "to"], "properties": {"from": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"}, "to": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"}}}},
+    "controls": {"type": "object", "additionalProperties": false, "properties": {"graph_engine": {"type": "string"}, "typed_stage_contracts": {"type": "string"}, "failure_policy": {"type": "string"}, "immutable_input_snapshot": {"type": "string"}, "join_policy": {"type": "string"}, "join_node": {"type": "string"}, "typed_worker_outputs": {"type": "string"}, "skeptic_rubric": {"type": "string"}, "allowed_decisions": {"type": "array", "items": {"type": "string"}}, "hitl_gate": {"type": "string"}, "single_use_resume_token": {"type": "string"}}},
+    "complexity_budget": {"type": "object", "additionalProperties": false, "required": ["max_spawn_width", "max_spawn_depth", "max_refinement_iterations"], "properties": {"max_spawn_width": {"type": "integer", "minimum": 0, "maximum": 3}, "max_spawn_depth": {"type": "integer", "minimum": 0, "maximum": 1}, "max_refinement_iterations": {"type": "integer", "minimum": 0, "maximum": 3}}},
+    "hitl_gate": {"type": "object", "additionalProperties": false, "required": ["required", "resume_token"], "properties": {"required": {"type": "boolean"}, "resume_token": {"type": ["string", "null"]}, "token_policy": {"const": "issuer_generated_single_use"}}}
+  }
+}

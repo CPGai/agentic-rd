@@ -8,6 +8,9 @@ version = "1.0.0"
 description = "Three-Harness Factory Model for autonomous agentic R&D — G1–G10 domain constitution"
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+  "jsonschema>=4.23,<5",
+]
 license = { text = "MIT" }
 authors = [
   { name = "Carlo" },
